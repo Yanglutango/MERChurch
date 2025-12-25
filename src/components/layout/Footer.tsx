@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Heart, Mail, Phone, Send, DollarSign, CreditCard, Building2 } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog'
@@ -10,26 +10,82 @@ import { Card } from '../ui/card'
 import { useAppStore } from '../../stores/appStore'
 import { toast } from 'sonner'
 
+type PaymentMethod = 'iban' | 'mcx'
+
 const Footer = () => {
   const { t } = useAppStore()
   const [isDevSupportOpen, setIsDevSupportOpen] = useState(false)
   const [showContact, setShowContact] = useState(false)
+  const [loading, setLoading] = useState(false)
+
   const [supportForm, setSupportForm] = useState({
     name: '',
     email: '',
     phone: '',
     amount: '',
     message: '',
-    method: 'iban' as 'iban' | 'mcx',
+    method: 'iban' as PaymentMethod,
   })
 
+  // Inicialização opcional: poderia sincronizar com user prefs se houver
+  useEffect(() => {
+    // placeholder para sincronizar com store/usuário se necessário
+  }, [])
+
+  const validateEmail = (email: string) => {
+    return /\S+@\S+\.\S+/.test(email)
+  }
+
   const handleSupport = () => {
-    if (!supportForm.name || !supportForm.email || !supportForm.amount) {
+    // Validações básicas
+    if (!supportForm.name.trim() || !supportForm.email.trim() || !supportForm.amount.trim()) {
       toast.error('Preencha todos os campos obrigatórios')
       return
     }
 
+    if (!validateEmail(supportForm.email)) {
+      toast.error('Email inválido')
+      return
+    }
+
+    const amount = parseFloat(supportForm.amount.replace(',', '.'))
+    if (isNaN(amount) || amount <= 0) {
+      toast.error('Informe um valor válido maior que zero')
+      return
+    }
+
+    // Se tudo ok, mostra a tela de contato/resumo
     setShowContact(true)
+  }
+
+  const resetForm = () => {
+    setSupportForm({
+      name: '',
+      email: '',
+      phone: '',
+      amount: '',
+      message: '',
+      method: 'iban',
+    })
+  }
+
+  const confirmSupport = async () => {
+    setLoading(true)
+    try {
+      // Aqui você integraria com o gateway de pagamento ou backend.
+      // Simulação de delay:
+      await new Promise((res) => setTimeout(res, 700))
+
+      setIsDevSupportOpen(false)
+      setShowContact(false)
+      resetForm()
+      toast.success('Obrigado pelo seu apoio! 🙏')
+    } catch (err) {
+      console.error(err)
+      toast.error('Ocorreu um erro ao processar seu apoio. Tente novamente.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const devContact = {
@@ -47,7 +103,8 @@ const Footer = () => {
             {/* Left - Copyright */}
             <div className="text-center md:text-left">
               <p className="text-sm text-muted-foreground">
-                © {new Date().getFullYear()} <span className="font-semibold text-foreground">KAIRÓS</span> - MER
+                © {new Date().getFullYear()}{' '}
+                <span className="font-semibold text-foreground">KAIRÓS</span> - MER
               </p>
               <p className="text-xs text-muted-foreground/60 mt-1">
                 Desenvolvido com <Heart className="inline h-3 w-3 text-red-900" /> para glorificar a Deus
@@ -56,19 +113,21 @@ const Footer = () => {
 
             {/* Center/Right - Dev Support */}
             <div className="flex items-center gap-3">
-              <span className="text-sm text-muted-foreground hidden sm:inline">
-                Gostou da app?
-              </span>
+              <span className="text-sm text-muted-foreground hidden sm:inline">Gostou da app?</span>
+
               <Dialog open={isDevSupportOpen} onOpenChange={setIsDevSupportOpen}>
                 <Button
                   onClick={() => setIsDevSupportOpen(true)}
                   variant="outline"
                   size="sm"
                   className="group border-2 hover:border-accent hover:bg-accent/10 transition-all font-semibold"
+                  aria-haspopup="dialog"
+                  aria-expanded={isDevSupportOpen}
                 >
                   <Heart className="h-4 w-4 mr-2 text-accent group-hover:scale-110 transition-transform" />
                   Apoie o Dev
                 </Button>
+
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle className="text-2xl flex items-center gap-2">
@@ -81,7 +140,7 @@ const Footer = () => {
                     <div className="space-y-6">
                       <div className="p-6 bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 rounded-2xl border-2 border-primary/20 text-center">
                         <p className="text-muted-foreground leading-relaxed">
-                          Sua contribuição ajuda a manter e melhorar esta plataforma, permitindo que continuemos a servir a 
+                          Sua contribuição ajuda a manter e melhorar esta plataforma, permitindo que continuemos a servir a
                           comunidade MER com excelência. Obrigado pelo seu apoio! 🙏
                         </p>
                       </div>
@@ -92,6 +151,7 @@ const Footer = () => {
                             <Label htmlFor="dev-name">Nome Completo *</Label>
                             <Input
                               id="dev-name"
+                              aria-label="Nome completo"
                               value={supportForm.name}
                               onChange={(e) => setSupportForm({ ...supportForm, name: e.target.value })}
                               placeholder="Seu nome"
@@ -103,6 +163,7 @@ const Footer = () => {
                             <Input
                               id="dev-email"
                               type="email"
+                              aria-label="Email para contato"
                               value={supportForm.email}
                               onChange={(e) => setSupportForm({ ...supportForm, email: e.target.value })}
                               placeholder="seu@email.com"
@@ -116,6 +177,7 @@ const Footer = () => {
                             <Input
                               id="dev-phone"
                               type="tel"
+                              aria-label="Telefone"
                               value={supportForm.phone}
                               onChange={(e) => setSupportForm({ ...supportForm, phone: e.target.value })}
                               placeholder="(244) 999-999-999"
@@ -126,8 +188,9 @@ const Footer = () => {
                             <Label htmlFor="dev-amount">Valor (Kz) *</Label>
                             <Input
                               id="dev-amount"
-                              type="number"
-                              step="0.01"
+                              type="text"
+                              inputMode="decimal"
+                              aria-label="Valor em kwanzas"
                               value={supportForm.amount}
                               onChange={(e) => setSupportForm({ ...supportForm, amount: e.target.value })}
                               placeholder="5000.00"
@@ -141,7 +204,7 @@ const Footer = () => {
                             value={supportForm.method}
                             onValueChange={(value: any) => setSupportForm({ ...supportForm, method: value })}
                           >
-                            <SelectTrigger>
+                            <SelectTrigger aria-label="Selecionar método de pagamento">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -165,6 +228,7 @@ const Footer = () => {
                           <Label htmlFor="dev-message">Mensagem (Opcional)</Label>
                           <Textarea
                             id="dev-message"
+                            aria-label="Mensagem de apoio"
                             value={supportForm.message}
                             onChange={(e) => setSupportForm({ ...supportForm, message: e.target.value })}
                             placeholder="Deixe uma mensagem de apoio..."
@@ -176,6 +240,7 @@ const Footer = () => {
                           onClick={handleSupport}
                           className="w-full bg-gradient-to-r from-primary via-accent to-primary text-white font-semibold text-lg py-6 shadow-lg hover:shadow-xl transition-shadow"
                           size="lg"
+                          aria-label="Continuar para pagamento"
                         >
                           <DollarSign className="h-5 w-5 mr-2" />
                           Continuar para Pagamento
@@ -192,125 +257,54 @@ const Footer = () => {
                           <div>
                             <h3 className="font-bold text-lg text-foreground">Obrigado pelo seu apoio!</h3>
                             <p className="text-sm text-muted-foreground">
-                              Valor: <span className="font-bold text-green-600">Kz {parseFloat(supportForm.amount || '0').toLocaleString('pt-AO', { minimumFractionDigits: 2 })}</span>
+                              Valor:{' '}
+                              <span className="font-bold text-green-600">
+                                Kz {parseFloat(supportForm.amount || '0').toLocaleString('pt-AO', { minimumFractionDigits: 2 })}
+                              </span>
                             </p>
                           </div>
                         </div>
-                        
-                        <div className="space-y-4">
-                          <div className="p-4 bg-card rounded-xl border-2 border-border">
-                            <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                              <Mail className="h-4 w-4 text-primary" />
-                              Contato do Desenvolvedor
-                            </h4>
-                            <div className="space-y-2 text-sm">
-                              <div className="flex items-center gap-2">
-                                <Phone className="h-4 w-4 text-green-500" />
-                                <span className="text-muted-foreground">WhatsApp:</span>
-                                <a
-                                  href={`https://wa.me/${devContact.whatsapp.replace(/\s/g, '')}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-primary font-semibold hover:underline"
-                                >
-                                  {devContact.whatsapp}
-                                </a>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Mail className="h-4 w-4 text-blue-500" />
-                                <span className="text-muted-foreground">Email:</span>
-                                <a
-                                  href={`mailto:${devContact.email}`}
-                                  className="text-primary font-semibold hover:underline"
-                                >
-                                  {devContact.email}
-                                </a>
-                              </div>
-                            </div>
-                          </div>
 
-                          {supportForm.method === 'iban' && (
-                            <div className="p-4 bg-card rounded-xl border-2 border-border">
-                              <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                                <Building2 className="h-4 w-4 text-primary" />
-                                Dados Bancários (IBAN)
-                              </h4>
-                              <div className="space-y-2">
-                                <div>
-                                  <p className="text-xs text-muted-foreground">Conta Bancária:</p>
-                                  <p className="font-mono text-sm font-semibold text-foreground bg-muted px-3 py-2 rounded-lg">
-                                    {devContact.iban}
-                                  </p>
-                                </div>
-                                <div>
-                                  <p className="text-xs text-muted-foreground">Titular:</p>
-                                  <p className="text-sm font-semibold text-foreground">Yanivo Lutango</p>
-                                </div>
-                                <div>
-                                  <p className="text-xs text-muted-foreground">Banco:</p>
-                                  <p className="text-sm font-semibold text-foreground">Millenium Atlântico</p>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          {supportForm.method === 'mcx' && (
-                            <div className="p-4 bg-card rounded-xl border-2 border-border">
-                              <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                                <CreditCard className="h-4 w-4 text-primary" />
-                                Multicaixa Express (MCX)
-                              </h4>
-                              <div className="space-y-2">
-                                <div>
-                                  <p className="text-xs text-muted-foreground">Número MCX:</p>
-                                  <p className="font-mono text-2xl font-bold text-foreground bg-muted px-4 py-3 rounded-lg text-center">
-                                    {devContact.mcxNumber}
-                                  </p>
-                                </div>
-                                <div className="text-center">
-                                  <p className="text-xs text-muted-foreground">Nome:</p>
-                                  <p className="text-sm font-semibold text-foreground">Garcia Yanivo Lutango</p>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          <div className="p-4 bg-gradient-to-r from-primary/5 to-accent/5 rounded-xl border-2 border-primary/10">
-                            <p className="text-sm text-muted-foreground text-center">
-                              Após realizar a transferência, entre em contato via WhatsApp ou Email com o comprovante para confirmação. 
-                              Muito obrigado pelo seu apoio! 🙏✨
+                        <div className="text-sm text-muted-foreground space-y-2 mb-4">
+                          <p>
+                            Método: <span className="font-medium text-foreground">{supportForm.method === 'iban' ? 'IBAN' : 'MCX'}</span>
+                          </p>
+                          {supportForm.method === 'iban' ? (
+                            <p>
+                              IBAN: <span className="font-mono text-sm">{devContact.iban}</span>
                             </p>
-                          </div>
+                          ) : (
+                            <p>
+                              Número MCX: <span className="font-mono text-sm">{devContact.mcxNumber}</span>
+                            </p>
+                          )}
+                          <p>
+                            Contato: <a className="underline" href={`mailto:${devContact.email}`}>{devContact.email}</a>
+                          </p>
+                        </div>
+
+                        <div className="flex gap-3">
+                          {/* Botão Voltar */}
+                          <Button
+                            onClick={() => setShowContact(false)}
+                            variant="outline"
+                            className="flex-1"
+                            aria-label="Voltar para o formulário"
+                          >
+                            Voltar
+                          </Button>
+
+                          {/* Botão Concluir */}
+                          <Button
+                            onClick={confirmSupport}
+                            className="flex-1 bg-gradient-to-r from-primary to-accent text-white font-semibold hover:opacity-90 transition-opacity"
+                            aria-label="Concluir apoio"
+                            disabled={loading}
+                          >
+                            {loading ? 'Processando...' : 'Concluir'}
+                          </Button>
                         </div>
                       </Card>
-
-                      <div className="flex gap-3">
-                        <Button
-                          onClick={() => setShowContact(false)}
-                          variant="outline"
-                          className="flex-1"
-                        >
-                          Voltar
-                        </Button>
-                        <Button
-                          onClick={() => {
-                            setIsDevSupportOpen(false)
-                            setShowContact(false)
-                            setSupportForm({
-                              name: '',
-                              email: '',
-                              phone: '',
-                              amount: '',
-                              message: '',
-                              method: 'iban',
-                            })
-                            toast.success('Obrigado pelo seu apoio! 🙏')
-                          }}
-                          className="flex-1 bg-gradient-to-r from-primary to-accent text-white"
-                        >
-                          Concluir
-                        </Button>
-                      </div>
                     </div>
                   )}
                 </DialogContent>
