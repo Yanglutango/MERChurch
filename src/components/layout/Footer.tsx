@@ -41,7 +41,7 @@ const Footer = () => {
 
   return (
     <>
-      <footer className="relative mt-20 border-t border-border/30 bg-background/50 backdrop-blur-sm">
+      <footer className="relative mt-10 border-t border-border/30 bg-background/50 backdrop-blur-sm">
         <div className="container-custom py-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             {/* Left - Copyright */}
@@ -244,11 +244,11 @@ const Footer = () => {
                                 </div>
                                 <div>
                                   <p className="text-xs text-muted-foreground">Titular:</p>
-                                  <p className="text-sm font-semibold text-foreground">Garcia Yanivo Lutango</p>
+                                  <p className="text-sm font-semibold text-foreground">Yanivo Lutango</p>
                                 </div>
                                 <div>
                                   <p className="text-xs text-muted-foreground">Banco:</p>
-                                  <p className="text-sm font-semibold text-foreground">BAI - Banco Angolano de Investimentos</p>
+                                  <p className="text-sm font-semibold text-foreground">Millenium Atlântico</p>
                                 </div>
                               </div>
                             </div>
