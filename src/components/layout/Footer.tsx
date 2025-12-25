@@ -41,7 +41,7 @@ const Footer = () => {
 
   return (
     <>
-      <footer className="relative mt-10 border-t border-border/30 bg-background/50 backdrop-blur-sm">
+      <footer className="relative mt-5 border-t border-border/30 bg-background/50 backdrop-blur-sm">
         <div className="container-custom py-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             {/* Left - Copyright */}
@@ -50,7 +50,7 @@ const Footer = () => {
                 © {new Date().getFullYear()} <span className="font-semibold text-foreground">KAIRÓS</span> - MER
               </p>
               <p className="text-xs text-muted-foreground/60 mt-1">
-                Desenvolvido com <Heart className="inline h-3 w-3 text-red-500" /> para glorificar a Deus
+                Desenvolvido com <Heart className="inline h-3 w-3 text-red-900" /> para glorificar a Deus
               </p>
             </div>
 
