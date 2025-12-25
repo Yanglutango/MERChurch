@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- SEO Meta Tags -->
+    <title>MER - Missão Evangélica da Reconciliação | Comunidade de Fé e Amor</title>
+    <meta name="description" content="Missão Evangélica da Reconciliação - Uma comunidade vibrante de fé, amor e esperança. Junte-se a nós em adoração, eventos, células e transformação espiritual." />
+    <meta name="keywords" content="igreja, MER, missão evangélica, reconciliação, fé, comunidade cristã, cultos, eventos, células, doações" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.onspace.app" />
+    <meta property="og:title" content="MER - Missão Evangélica da Reconciliação" />
+    <meta property="og:description" content="Uma comunidade vibrante de fé, amor e esperança. Junte-se a nós em adoração, eventos e transformação espiritual." />
+    <meta property="og:image" content="https://images.unsplash.com/photo-1438232992991-995b7058bbb3?w=1200&h=630&fit=crop" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="Missão Evangélica da Reconciliação" />
+    <meta property="og:locale" content="pt_BR" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://www.onspace.app" />
+    <meta name="twitter:title" content="MER - Missão Evangélica da Reconciliação" />
+    <meta name="twitter:description" content="Uma comunidade vibrante de fé, amor e esperança. Junte-se a nós em adoração, eventos e transformação espiritual." />
+    <meta name="twitter:image" content="https://images.unsplash.com/photo-1438232992991-995b7058bbb3?w=1200&h=630&fit=crop" />
+
+    <!-- Schema.org JSON-LD -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Church",
+      "name": "Missão Evangélica da Reconciliação",
+      "url": "https://www.onspace.app",
+      "description": "Uma comunidade vibrante de fé, amor e esperança. Junte-se a nós em adoração, eventos e transformação espiritual.",
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "BR"
+      }
+    }
+    </script>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+
+    <!-- ✅ Script para aplicar tema antes do React -->
+    <script>
+      (function() {
+        const storedTheme = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const theme = storedTheme || (prefersDark ? 'dark' : 'light');
+
+        const root = document.documentElement;
+        root.classList.remove('light', 'dark'); // limpa qualquer estado anterior
+        root.classList.add(theme);              // aplica 'light' ou 'dark'
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

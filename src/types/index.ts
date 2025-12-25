@@ -1,0 +1,148 @@
+export interface AuthUser {
+  id: string
+  email: string
+  username: string
+  avatar?: string
+  role: 'member' | 'admin' | 'guest'
+  phone?: string
+  congregation?: string
+  themeMode?: 'light' | 'dark'
+  accentColor?: string
+}
+
+export interface Notification {
+  id: string
+  userId: string
+  title: string
+  message: string
+  type: 'sermon' | 'event' | 'announcement' | 'prayer' | 'counseling'
+  isRead: boolean
+  createdAt: string
+}
+
+export interface Sermon {
+  id: string
+  title: string
+  description?: string
+  speaker: string
+  videoUrl?: string
+  audioUrl?: string
+  thumbnailUrl?: string
+  date: string
+  category?: string
+  views: number
+  createdAt: string
+}
+
+export interface Event {
+  id: string
+  title: string
+  description?: string
+  date: string
+  endDate?: string
+  location?: string
+  imageUrl?: string
+  category?: string
+  maxAttendees?: number
+  createdBy?: string
+  createdAt: string
+}
+
+export interface Ministry {
+  id: string
+  name: string
+  description?: string
+  leaderId?: string
+  imageUrl?: string
+  color?: string
+  createdAt: string
+}
+
+export interface PrayerRequest {
+  id: string
+  userId: string
+  title: string
+  description: string
+  isAnonymous: boolean
+  isAnswered: boolean
+  prayerCount: number
+  createdAt: string
+  user?: {
+    username: string
+    avatar?: string
+  }
+}
+
+export interface CounselingRequest {
+  id: string
+  userId: string
+  name: string
+  email: string
+  phone?: string
+  subject: string
+  message: string
+  status: 'pending' | 'in_progress' | 'resolved'
+  adminResponse?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface Transaction {
+  id: string
+  userId?: string
+  amount: number
+  type: 'tithe' | 'offering' | 'donation' | 'project'
+  method: 'credit_card' | 'debit_card' | 'pix' | 'transfer'
+  status: 'pending' | 'completed' | 'failed'
+  description?: string
+  projectId?: string
+  createdAt: string
+}
+
+export interface Course {
+  id: string
+  title: string
+  description?: string
+  instructorId?: string
+  thumbnailUrl?: string
+  durationHours?: number
+  level?: 'beginner' | 'intermediate' | 'advanced'
+  isPublished: boolean
+  createdAt: string
+}
+
+export interface Lesson {
+  id: string
+  courseId: string
+  title: string
+  content?: string
+  videoUrl?: string
+  orderIndex: number
+  durationMinutes?: number
+  createdAt: string
+}
+
+export interface CommunityPost {
+  id: string
+  userId: string
+  content: string
+  imageUrl?: string
+  likesCount: number
+  commentsCount: number
+  createdAt: string
+  user?: {
+    username: string
+    avatar?: string
+  }
+}
+
+export interface LiveMessage {
+  id: string
+  userId: string
+  message: string
+  createdAt: string
+  user?: {
+    username: string
+    avatar?: string
+  }
+}

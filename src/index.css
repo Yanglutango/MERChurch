@@ -1,0 +1,201 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import './animations.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* KAIRÓS Logo Colors - Light Mode */
+    --background: 0 0% 100%;
+    --foreground: 205 60% 15%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 205 60% 15%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 205 60% 15%;
+    
+    /* Primary: Navy Blue (from logo) */
+    --primary: 205 60% 18%;
+    --primary-foreground: 0 0% 100%;
+    
+    /* Secondary: Teal (from logo) */
+    --secondary: 192 40% 50%;
+    --secondary-foreground: 0 0% 100%;
+    
+    /* Muted */
+    --muted: 205 30% 96%;
+    --muted-foreground: 205 20% 45%;
+    
+    /* Accent: Gold (from logo) */
+    --accent: 40 55% 60%;
+    --accent-foreground: 205 60% 15%;
+    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 205 30% 90%;
+    --input: 205 30% 90%;
+    --ring: 192 40% 50%;
+    --radius: 0.5rem;
+  }
+
+  html.dark {
+    /* KAIRÓS Logo Colors - Dark Mode */
+    --background: 205 60% 8%;
+    --foreground: 205 20% 95%;
+    
+    --card: 205 55% 12%;
+    --card-foreground: 205 20% 95%;
+    
+    --popover: 205 55% 12%;
+    --popover-foreground: 205 20% 95%;
+    
+    /* Primary: Teal/Cyan (lighter in dark mode) */
+    --primary: 192 40% 50%;
+    --primary-foreground: 205 60% 8%;
+    
+    /* Secondary: Navy (darker in dark mode) */
+    --secondary: 205 50% 25%;
+    --secondary-foreground: 205 20% 95%;
+    
+    --muted: 205 45% 15%;
+    --muted-foreground: 205 15% 60%;
+    
+    /* Accent: Gold (adjusted for dark) */
+    --accent: 40 65% 55%;
+    --accent-foreground: 205 60% 8%;
+    
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 205 20% 95%;
+    
+    --border: 205 40% 18%;
+    --input: 205 40% 18%;
+    --ring: 192 40% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  /* Transição suave entre temas */
+  html {
+    transition: background-color 0.4s ease, color 0.4s ease;
+  }
+
+  body {
+    transition: background-color 0.4s ease, color 0.4s ease;
+  }
+
+  
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+  }
+}
+
+@layer components {
+  .gradient-primary {
+    @apply bg-gradient-to-br from-[#0A2E4A] to-[#4A90A4];
+  }
+  
+  .gradient-secondary {
+    @apply bg-gradient-to-br from-[#4A90A4] to-[#5BA3B8];
+  }
+  
+  .gradient-accent {
+    @apply bg-gradient-to-br from-[#D4A574] to-[#C89860];
+  }
+  
+  .gradient-divine {
+    @apply bg-gradient-to-br from-[#0A2E4A] via-[#4A90A4] to-[#D4A574];
+  }
+  
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-[#0A2E4A] via-[#4A90A4] to-[#D4A574];
+  }
+  
+  .glass {
+    @apply bg-white/5 backdrop-blur-xl border border-white/10;
+  }
+  
+  .glass-light {
+    @apply bg-white/80 backdrop-blur-xl border border-white/20;
+  }
+  
+  .elegant-border {
+    @apply border border-primary/20 hover:border-primary/40 transition-colors;
+  }
+  
+  .soft-shadow {
+    box-shadow: 
+      0 4px 6px -1px rgba(10, 46, 74, 0.1),
+      0 2px 4px -1px rgba(10, 46, 74, 0.06);
+  }
+  
+  .elevation-1 {
+    box-shadow: 0 1px 3px 0 rgba(10, 46, 74, 0.1), 0 1px 2px 0 rgba(10, 46, 74, 0.06);
+  }
+  
+  .elevation-2 {
+    box-shadow: 0 4px 6px -1px rgba(10, 46, 74, 0.1), 0 2px 4px -1px rgba(10, 46, 74, 0.06);
+  }
+  
+  .elevation-3 {
+    box-shadow: 0 10px 15px -3px rgba(10, 46, 74, 0.1), 0 4px 6px -2px rgba(10, 46, 74, 0.05);
+  }
+  
+  .section-padding {
+    @apply py-20 px-4 md:px-8 lg:px-16;
+  }
+  
+  .container-custom {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+}
+
+@layer utilities {
+  .animate-delay-100 { animation-delay: 100ms; }
+  .animate-delay-200 { animation-delay: 200ms; }
+  .animate-delay-300 { animation-delay: 300ms; }
+  .animate-delay-400 { animation-delay: 400ms; }
+  
+  .perspective-1000 { perspective: 1000px; }
+  .preserve-3d { transform-style: preserve-3d; }
+  .backface-hidden { backface-visibility: hidden; }
+  
+  .animate-fade-in { animation: fade-in 0.6s ease-out; }
+  .animate-slide-up { animation: slide-up 0.6s ease-out; }
+  .animate-gentle-float { animation: gentle-float 6s ease-in-out infinite; }
+  
+  .subtle-glow { box-shadow: 0 0 20px rgba(74, 144, 164, 0.15); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes gentle-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
