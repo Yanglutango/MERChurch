@@ -1,4 +1,7 @@
-// COMPLETE Multi-language support for KAIRÓS Platform - ALL PAGES TRANSLATED
+// src/i18n/translations.ts
+// Reunião dos blocos reescritos em um único arquivo de traduções.
+// Português (pt) é o idioma padrão da aplicação.
+
 export const translations = {
   pt: {
     // Brand
@@ -9,6 +12,7 @@ export const translations = {
       tagline: 'Somos o Povo da Fé e a Geração dos Poderosos',
       verse: '2 Coríntios 5:18',
     },
+
     // Navigation
     nav: {
       home: 'Início',
@@ -28,6 +32,7 @@ export const translations = {
       dashboard: 'Dashboard',
       logout: 'Sair',
     },
+
     // Auth
     auth: {
       welcomeBack: 'Bem-vindo de Volta',
@@ -57,6 +62,7 @@ export const translations = {
       otpSent: 'Código enviado para seu email!',
       otpInfo: 'Digite o código de 4 dígitos enviado para seu email',
     },
+
     // Common
     common: {
       loading: 'Carregando...',
@@ -80,6 +86,7 @@ export const translations = {
       registered: 'Inscrito',
       noResults: 'Nenhum resultado encontrado',
     },
+
     // Home
     home: {
       welcomeTitle: 'Bem-vindo à Família MER',
@@ -97,6 +104,7 @@ export const translations = {
         coursesAvailable: 'Cursos Disponíveis',
       },
     },
+
     // About
     about: {
       title: 'Sobre a MER',
@@ -126,6 +134,7 @@ export const translations = {
       messageSent: 'Mensagem enviada com sucesso!',
       location: 'Localização',
     },
+
     // Ministries
     ministries: {
       title: 'Ministérios',
@@ -135,7 +144,8 @@ export const translations = {
       members: 'membros',
       music: {
         name: 'Música',
-        description: 'Ministério de Louvor e Adoração que conduz a congregação à presença de Deus através da música',
+        description:
+          'Ministério de Louvor e Adoração que conduz a congregação à presença de Deus através da música',
       },
       youth: {
         name: 'Juventude',
@@ -147,7 +157,8 @@ export const translations = {
       },
       intercession: {
         name: 'Intercessão',
-        description: 'Ministério de Oração e Intercessão, levando as necessidades da igreja diante de Deus',
+        description:
+          'Ministério de Oração e Intercessão, levando as necessidades da igreja diante de Deus',
       },
       protocol: {
         name: 'Protocolo',
@@ -159,13 +170,16 @@ export const translations = {
       },
       leadership: {
         name: 'Liderança',
-        description: 'Ministério de Liderança, capacitando e desenvolvendo líderes para a obra de Deus',
+        description:
+          'Ministério de Liderança, capacitando e desenvolvendo líderes para a obra de Deus',
       },
       sundaySchool: {
         name: 'Escola Bíblica Dominical',
-        description: 'Ministério Infantil e de Adolescentes, ensinando a Palavra de Deus às novas gerações',
+        description:
+          'Ministério Infantil e de Adolescentes, ensinando a Palavra de Deus às novas gerações',
       },
     },
+
     // Treasury
     treasury: {
       title: 'Tesouraria',
@@ -206,6 +220,7 @@ export const translations = {
       reference: 'Referência',
       mcxNumber: 'Número MCX',
     },
+
     // Logos AI
     logos: {
       title: 'Logos',
@@ -217,6 +232,7 @@ export const translations = {
       newConversation: 'Nova Conversa',
       messages: 'mensagens',
     },
+
     // Settings
     settings: {
       title: 'Configurações',
@@ -234,9 +250,22 @@ export const translations = {
       selectLanguage: 'Selecionar Idioma',
       selectCurrency: 'Selecionar Moeda',
     },
+
+    // Footer (extras)
+    footer: {
+      supportTitle: 'Apoiar o Desenvolvedor',
+      supportThanks: 'Obrigado pelo seu apoio!',
+      contactEmail: 'Contato',
+      donate: 'Doar',
+      back: 'Voltar',
+      complete: 'Concluir',
+    },
   },
+
+  // -------------------------
+  // English (en)
+  // -------------------------
   en: {
-    // Brand
     brand: {
       name: 'KAIRÓS',
       church: 'MER',
@@ -244,7 +273,6 @@ export const translations = {
       tagline: 'We are the People of Faith and the Generation of the Mighty',
       verse: '2 Corinthians 5:18',
     },
-    // Navigation
     nav: {
       home: 'Home',
       live: 'Live',
@@ -263,7 +291,6 @@ export const translations = {
       dashboard: 'Dashboard',
       logout: 'Logout',
     },
-    // Auth
     auth: {
       welcomeBack: 'Welcome Back',
       joinUs: 'Join Our Community',
@@ -292,7 +319,6 @@ export const translations = {
       otpSent: 'Code sent to your email!',
       otpInfo: 'Enter the 4-digit code sent to your email',
     },
-    // Common
     common: {
       loading: 'Loading...',
       save: 'Save',
@@ -315,7 +341,6 @@ export const translations = {
       registered: 'Registered',
       noResults: 'No results found',
     },
-    // Home
     home: {
       welcomeTitle: 'Welcome to the MER Family',
       welcomeSubtitle: 'A place of faith, love and transformation',
@@ -332,7 +357,6 @@ export const translations = {
         coursesAvailable: 'Courses Available',
       },
     },
-    // About
     about: {
       title: 'About MER',
       ourHistory: 'Our History',
@@ -361,7 +385,6 @@ export const translations = {
       messageSent: 'Message sent successfully!',
       location: 'Location',
     },
-    // Ministries
     ministries: {
       title: 'Ministries',
       subtitle: 'Find your place in the MER family',
@@ -370,7 +393,7 @@ export const translations = {
       members: 'members',
       music: {
         name: 'Music',
-        description: 'Worship Ministry that leads the congregation to God\'s presence through music',
+        description: "Worship Ministry that leads the congregation to God's presence through music",
       },
       youth: {
         name: 'Youth',
@@ -378,11 +401,11 @@ export const translations = {
       },
       women: {
         name: 'Women',
-        description: 'Women\'s Ministry, strengthening and empowering women of faith',
+        description: "Women's Ministry, strengthening and empowering women of faith",
       },
       intercession: {
         name: 'Intercession',
-        description: 'Prayer and Intercession Ministry, bringing the church\'s needs before God',
+        description: "Prayer and Intercession Ministry, bringing the church's needs before God",
       },
       protocol: {
         name: 'Protocol',
@@ -394,14 +417,13 @@ export const translations = {
       },
       leadership: {
         name: 'Leadership',
-        description: 'Leadership Ministry, training and developing leaders for God\'s work',
+        description: "Leadership Ministry, training and developing leaders for God's work",
       },
       sundaySchool: {
         name: 'Sunday School',
-        description: 'Children and Teens Ministry, teaching God\'s Word to new generations',
+        description: "Children and Teens Ministry, teaching God's Word to new generations",
       },
     },
-    // Treasury
     treasury: {
       title: 'Treasury',
       totalContributed: 'Total Contributed',
@@ -441,7 +463,6 @@ export const translations = {
       reference: 'Reference',
       mcxNumber: 'MCX Number',
     },
-    // Logos AI
     logos: {
       title: 'Logos',
       subtitle: 'Intelligent Spiritual Assistant',
@@ -452,7 +473,6 @@ export const translations = {
       newConversation: 'New Conversation',
       messages: 'messages',
     },
-    // Settings
     settings: {
       title: 'Settings',
       profile: 'Profile',
@@ -469,9 +489,20 @@ export const translations = {
       selectLanguage: 'Select Language',
       selectCurrency: 'Select Currency',
     },
+    footer: {
+      supportTitle: 'Support the Developer',
+      supportThanks: 'Thank you for your support!',
+      contactEmail: 'Contact',
+      donate: 'Donate',
+      back: 'Back',
+      complete: 'Complete',
+    },
   },
+
+  // -------------------------
+  // French (fr)
+  // -------------------------
   fr: {
-    // Brand
     brand: {
       name: 'KAIRÓS',
       church: 'MER',
@@ -479,7 +510,6 @@ export const translations = {
       tagline: 'Nous sommes le Peuple de la Foi et la Génération des Puissants',
       verse: '2 Corinthiens 5:18',
     },
-    // Navigation
     nav: {
       home: 'Accueil',
       live: 'En Direct',
@@ -498,7 +528,6 @@ export const translations = {
       dashboard: 'Tableau de Bord',
       logout: 'Déconnexion',
     },
-    // Auth
     auth: {
       welcomeBack: 'Bon Retour',
       joinUs: 'Rejoignez Notre Communauté',
@@ -523,11 +552,10 @@ export const translations = {
       createAccountBtn: 'Créer un compte',
       signInBtn: 'Se connecter',
       adminKeyRequired: "Clé secrète pour l'accès administratif",
-      congregationInfo: 'Partagez de quelle congrégation vous faites partie',
+      congregationInfo: 'Partagez de quelle congrégation vous faz parte',
       otpSent: 'Code envoyé à votre email!',
       otpInfo: 'Entrez le code à 4 chiffres envoyé à votre email',
     },
-    // Common
     common: {
       loading: 'Chargement...',
       save: 'Enregistrer',
@@ -550,10 +578,9 @@ export const translations = {
       registered: 'Inscrit',
       noResults: 'Aucun résultat trouvé',
     },
-    // Home
     home: {
       welcomeTitle: 'Bienvenue dans la Famille MER',
-      welcomeSubtitle: 'Un lieu de foi, d\'amour et de transformation',
+      welcomeSubtitle: "Un lieu de foi, d'amour et de transformation",
       liveNow: 'CULTE EN DIRECT MAINTENANT',
       watchLive: 'Regarder en Direct',
       knowMore: 'En Savoir Plus',
@@ -567,7 +594,6 @@ export const translations = {
         coursesAvailable: 'Cours Disponibles',
       },
     },
-    // About
     about: {
       title: 'À Propos de MER',
       ourHistory: 'Notre Histoire',
@@ -596,7 +622,6 @@ export const translations = {
       messageSent: 'Message envoyé avec succès!',
       location: 'Emplacement',
     },
-    // Ministries
     ministries: {
       title: 'Ministères',
       subtitle: 'Trouvez votre place dans la famille MER',
@@ -605,7 +630,7 @@ export const translations = {
       members: 'membres',
       music: {
         name: 'Musique',
-        description: 'Ministère de Louange qui conduit la congrégation à la présence de Dieu par la musique',
+        description: "Ministère de Louange qui conduit la congrégation à la présence de Dieu par la musique",
       },
       youth: {
         name: 'Jeunesse',
@@ -617,26 +642,25 @@ export const translations = {
       },
       intercession: {
         name: 'Intercession',
-        description: 'Ministère de Prière et d\'Intercession, portant les besoins de l\'église devant Dieu',
+        description: "Ministère de Prière et d'Intercession, portant les besoins de l'église devant Dieu",
       },
       protocol: {
         name: 'Protocole',
-        description: 'Ministère d\'Accueil, faisant en sorte que tous se sentent les bienvenus',
+        description: "Ministère d'Accueil, faisant en sorte que tous se sentent les bienvenus",
       },
       socialAction: {
         name: 'Action Sociale',
-        description: 'Ministère d\'Action Sociale, servant la communauté et les nécessiteux',
+        description: "Ministère d'Action Sociale, servant la communauté et les nécessiteux",
       },
       leadership: {
         name: 'Leadership',
-        description: 'Ministère de Leadership, formant et développant des leaders pour l\'œuvre de Dieu',
+        description: "Ministère de Leadership, formant et développant des leaders pour l'œuvre de Dieu",
       },
       sundaySchool: {
         name: 'École du Dimanche',
-        description: 'Ministère des Enfants et Adolescents, enseignant la Parole de Dieu aux nouvelles générations',
+        description: "Ministère des Enfants et Adolescents, enseignant la Parole de Dieu aux nouvelles générations",
       },
     },
-    // Treasury
     treasury: {
       title: 'Trésorerie',
       totalContributed: 'Total Contribué',
@@ -676,25 +700,23 @@ export const translations = {
       reference: 'Référence',
       mcxNumber: 'Numéro MCX',
     },
-    // Logos AI
     logos: {
       title: 'Logos',
       subtitle: 'Assistant Spirituel Intelligent',
-      howCanHelp: 'Comment puis-je vous aider aujourd\'hui?',
+      howCanHelp: "Comment puis-je vous aider aujourd'hui?",
       askQuestions: 'Posez des questions sur la Bible et les thèmes de foi',
       placeholder: 'Tapez votre question...',
-      powered: 'Alimenté par l\'IA avancée',
+      powered: "Alimenté par l'IA avancée",
       newConversation: 'Nouvelle Conversation',
       messages: 'messages',
     },
-    // Settings
     settings: {
       title: 'Paramètres',
       profile: 'Profil',
       appearance: 'Apparence',
       languageCurrency: 'Langue et Devise',
       themeMode: 'Mode',
-      accentColor: 'Couleur d\'Accentuation',
+      accentColor: "Couleur d'Accentuation",
       customColor: 'Couleur Personnalisée',
       preview: 'Aperçu',
       accountType: 'Type de Compte',
@@ -704,9 +726,20 @@ export const translations = {
       selectLanguage: 'Sélectionner la Langue',
       selectCurrency: 'Sélectionner la Devise',
     },
+    footer: {
+      supportTitle: 'Soutenir le Développeur',
+      supportThanks: 'Merci pour votre soutien!',
+      contactEmail: 'Contact',
+      donate: 'Faire un don',
+      back: 'Retour',
+      complete: 'Terminer',
+    },
   },
+
+  // -------------------------
+  // Spanish (es)
+  // -------------------------
   es: {
-    // Brand
     brand: {
       name: 'KAIRÓS',
       church: 'MER',
@@ -714,7 +747,6 @@ export const translations = {
       tagline: 'Somos el Pueblo de la Fe y la Generación de los Poderosos',
       verse: '2 Corintios 5:18',
     },
-    // Navigation
     nav: {
       home: 'Inicio',
       live: 'En Vivo',
@@ -733,7 +765,6 @@ export const translations = {
       dashboard: 'Panel',
       logout: 'Salir',
     },
-    // Auth
     auth: {
       welcomeBack: 'Bienvenido de Nuevo',
       joinUs: 'Únete a Nuestra Comunidad',
@@ -762,7 +793,6 @@ export const translations = {
       otpSent: '¡Código enviado a tu email!',
       otpInfo: 'Ingresa el código de 4 dígitos enviado a tu email',
     },
-    // Common
     common: {
       loading: 'Cargando...',
       save: 'Guardar',
@@ -785,7 +815,6 @@ export const translations = {
       registered: 'Registrado',
       noResults: 'No se encontraron resultados',
     },
-    // Home
     home: {
       welcomeTitle: 'Bienvenido a la Familia MER',
       welcomeSubtitle: 'Un lugar de fe, amor y transformación',
@@ -802,7 +831,6 @@ export const translations = {
         coursesAvailable: 'Cursos Disponibles',
       },
     },
-    // About
     about: {
       title: 'Sobre MER',
       ourHistory: 'Nuestra Historia',
@@ -831,7 +859,6 @@ export const translations = {
       messageSent: '¡Mensaje enviado con éxito!',
       location: 'Ubicación',
     },
-    // Ministries
     ministries: {
       title: 'Ministerios',
       subtitle: 'Encuentra tu lugar en la familia MER',
@@ -840,7 +867,8 @@ export const translations = {
       members: 'miembros',
       music: {
         name: 'Música',
-        description: 'Ministerio de Alabanza que conduce a la congregación a la presencia de Dios a través de la música',
+        description:
+          'Ministerio de Alabanza que conduce a la congregación a la presencia de Dios a través de la música',
       },
       youth: {
         name: 'Juventud',
@@ -852,7 +880,8 @@ export const translations = {
       },
       intercession: {
         name: 'Intercesión',
-        description: 'Ministerio de Oración e Intercesión, llevando las necesidades de la iglesia ante Dios',
+        description:
+          'Ministerio de Oración e Intercesión, llevando las necesidades de la iglesia ante Dios',
       },
       protocol: {
         name: 'Protocolo',
@@ -868,10 +897,10 @@ export const translations = {
       },
       sundaySchool: {
         name: 'Escuela Dominical',
-        description: 'Ministerio Infantil y de Adolescentes, enseñando la Palabra de Dios a las nuevas generaciones',
+        description:
+          'Ministerio Infantil y de Adolescentes, enseñando la Palabra de Dios a las nuevas generaciones',
       },
     },
-    // Treasury
     treasury: {
       title: 'Tesorería',
       totalContributed: 'Total Contribuido',
@@ -911,7 +940,6 @@ export const translations = {
       reference: 'Referencia',
       mcxNumber: 'Número MCX',
     },
-    // Logos AI
     logos: {
       title: 'Logos',
       subtitle: 'Asistente Espiritual Inteligente',
@@ -922,7 +950,6 @@ export const translations = {
       newConversation: 'Nueva Conversación',
       messages: 'mensajes',
     },
-    // Settings
     settings: {
       title: 'Configuración',
       profile: 'Perfil',
@@ -938,6 +965,14 @@ export const translations = {
       themeUpdated: '¡Tema actualizado!',
       selectLanguage: 'Seleccionar Idioma',
       selectCurrency: 'Seleccionar Moneda',
+    },
+    footer: {
+      supportTitle: 'Apoyar al Desarrollador',
+      supportThanks: '¡Gracias por tu apoyo!',
+      contactEmail: 'Contacto',
+      donate: 'Donar',
+      back: 'Volver',
+      complete: 'Finalizar',
     },
   },
 } as const
