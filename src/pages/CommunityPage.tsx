@@ -8,18 +8,23 @@ import { useAuth } from '../hooks/useAuth'
 import { MessageCircle, Heart, Send, Trash2, Image as ImageIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import type { CommunityPost } from '../types'
+import { PageHeader } from '../components/shared/PageHeader'
+import { EmptyState } from '../components/shared/EmptyState'
+import { LoadingState } from '../components/shared/LoadingState'
 
 const CommunityPage = () => {
   const { user } = useAuth()
   const [posts, setPosts] = useState<CommunityPost[]>([])
   const [newPost, setNewPost] = useState('')
   const [loading, setLoading] = useState(false)
+  const [loadingPosts, setLoadingPosts] = useState(true)
 
   useEffect(() => {
     loadPosts()
   }, [])
 
   const loadPosts = async () => {
+    setLoadingPosts(true)
     const { data, error } = await supabase
       .from('community_posts')
       .select(`
@@ -30,10 +35,12 @@ const CommunityPage = () => {
 
     if (error) {
       console.error('Error loading posts:', error)
+      setLoadingPosts(false)
       return
     }
 
     setPosts(data as any)
+    setLoadingPosts(false)
   }
 
   const createPost = async () => {
@@ -102,6 +109,12 @@ const CommunityPage = () => {
   return (
     <Layout title="Comunidade">
       <div className="max-w-3xl mx-auto space-y-6">
+        <PageHeader
+          title="Comunidade"
+          description="Conecte-se com outros membros e compartilhe sua fé"
+          icon={MessageCircle}
+          gradient="from-pink-500 via-purple-500 to-indigo-500"
+        />
         {/* Create Post */}
         <Card className="p-6 border-2">
           <div className="flex gap-4">
@@ -138,7 +151,16 @@ const CommunityPage = () => {
         </Card>
 
         {/* Posts */}
-        <div className="space-y-4">
+        {loadingPosts ? (
+          <LoadingState message="Carregando publicações..." />
+        ) : posts.length === 0 ? (
+          <EmptyState
+            icon={MessageCircle}
+            title="Nenhuma publicação ainda"
+            description="Seja o primeiro a compartilhar algo com a comunidade!"
+          />
+        ) : (
+          <div className="space-y-4">
           {posts.map((post) => (
             <Card key={post.id} className="p-6 border-2 hover:border-primary/30 transition-all">
               <div className="flex gap-4">
@@ -206,13 +228,7 @@ const CommunityPage = () => {
               </div>
             </Card>
           ))}
-        </div>
-
-        {posts.length === 0 && (
-          <Card className="p-12 text-center border-2">
-            <MessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">Nenhuma publicação ainda. Seja o primeiro a compartilhar!</p>
-          </Card>
+          </div>
         )}
       </div>
     </Layout>

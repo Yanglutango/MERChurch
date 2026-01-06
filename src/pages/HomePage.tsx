@@ -18,6 +18,8 @@ import {
 } from 'lucide-react'
 import { Card } from '../components/ui/card'
 import { Button } from '../components/ui/button'
+import { StatCard } from '../components/shared/StatCard'
+import { ActionCard } from '../components/shared/ActionCard'
 
 const HomePage = () => {
   const navigate = useNavigate()
@@ -99,14 +101,14 @@ const HomePage = () => {
 
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {stats.map((stat, index) => (
-            <Card key={stat.label} className="p-6 border-2 hover:border-primary/50 transition-all hover:shadow-xl hover:-translate-y-1 duration-300 group">
-              <div className={`inline-flex p-3 rounded-2xl bg-gradient-to-br ${stat.color} mb-4 group-hover:scale-110 transition-transform`}>
-                <stat.icon className="h-7 w-7 text-white" />
-              </div>
-              <div className="text-3xl font-bold text-foreground mb-1">{stat.value}</div>
-              <div className="text-sm text-muted-foreground">{stat.label}</div>
-            </Card>
+          {stats.map((stat) => (
+            <StatCard
+              key={stat.label}
+              icon={stat.icon}
+              label={stat.label}
+              value={stat.value}
+              gradient={stat.color}
+            />
           ))}
         </div>
 
@@ -119,20 +121,15 @@ const HomePage = () => {
             {t('home.quickAccess')}
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-            {quickActions.map((action, index) => (
-              <Card
+            {quickActions.map((action) => (
+              <ActionCard
                 key={action.path}
+                icon={action.icon}
+                label={action.label}
+                description={action.description}
+                gradient={action.color}
                 onClick={() => navigate(action.path)}
-                className="group p-6 cursor-pointer hover:shadow-2xl transition-all duration-500 border-2 hover:border-primary/50 hover:-translate-y-2 transform"
-              >
-                <div className={`inline-flex p-4 rounded-2xl bg-gradient-to-br ${action.color} mb-4 group-hover:scale-110 transition-transform shadow-lg`}>
-                  <action.icon className="h-6 w-6 text-white" />
-                </div>
-                <h3 className="font-bold text-foreground mb-1 group-hover:text-primary transition-colors">
-                  {action.label}
-                </h3>
-                <p className="text-sm text-muted-foreground line-clamp-2">{action.description}</p>
-              </Card>
+              />
             ))}
           </div>
         </div>

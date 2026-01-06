@@ -7,11 +7,15 @@ import { useAuth } from '../hooks/useAuth'
 import { Calendar, Clock, MapPin, Users, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Event } from '../types'
+import { PageHeader } from '../components/shared/PageHeader'
+import { EmptyState } from '../components/shared/EmptyState'
+import { LoadingState } from '../components/shared/LoadingState'
 
 const AgendaPage = () => {
   const { user } = useAuth()
   const [events, setEvents] = useState<Event[]>([])
   const [registeredEvents, setRegisteredEvents] = useState<string[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     loadEvents()
@@ -19,6 +23,7 @@ const AgendaPage = () => {
   }, [])
 
   const loadEvents = async () => {
+    setLoading(true)
     const { data, error } = await supabase
       .from('events')
       .select('*')
@@ -27,10 +32,12 @@ const AgendaPage = () => {
 
     if (error) {
       console.error('Error loading events:', error)
+      setLoading(false)
       return
     }
 
     setEvents(data)
+    setLoading(false)
   }
 
   const loadRegistrations = async () => {
@@ -80,13 +87,23 @@ const AgendaPage = () => {
     }
   }
 
+  if (loading) {
+    return (
+      <Layout title="Agenda">
+        <LoadingState fullScreen message="Carregando eventos..." />
+      </Layout>
+    )
+  }
+
   return (
     <Layout title="Agenda">
       <div className="space-y-6">
-        <Card className="p-6 border-2 bg-gradient-to-r from-primary to-secondary text-white">
-          <h2 className="text-2xl font-bold mb-2">Agenda de Eventos</h2>
-          <p className="text-white/90">Participe dos nossos eventos e faça parte da família MER</p>
-        </Card>
+        <PageHeader
+          title="Agenda de Eventos"
+          description="Participe dos nossos eventos e faça parte da família MER"
+          icon={Calendar}
+          gradient="from-purple-500 via-pink-500 to-rose-500"
+        />
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {events.map((event) => {
@@ -149,9 +166,11 @@ const AgendaPage = () => {
         </div>
 
         {events.length === 0 && (
-          <Card className="p-12 text-center border-2">
-            <p className="text-muted-foreground">Nenhum evento programado no momento</p>
-          </Card>
+          <EmptyState
+            icon={Calendar}
+            title="Nenhum evento programado"
+            description="Novos eventos serão anunciados em breve"
+          />
         )}
       </div>
     </Layout>

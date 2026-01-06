@@ -4,19 +4,24 @@ import { Card } from '../components/ui/card'
 import { Input } from '../components/ui/input'
 import { Button } from '../components/ui/button'
 import { supabase } from '../lib/supabase'
-import { Play, Search, Filter, Eye } from 'lucide-react'
+import { Play, Search, Filter, Eye, BookOpen } from 'lucide-react'
 import type { Sermon } from '../types'
+import { PageHeader } from '../components/shared/PageHeader'
+import { EmptyState } from '../components/shared/EmptyState'
+import { LoadingState } from '../components/shared/LoadingState'
 
 const SermonsPage = () => {
   const [sermons, setSermons] = useState<Sermon[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     loadSermons()
   }, [])
 
   const loadSermons = async () => {
+    setLoading(true)
     const { data, error } = await supabase
       .from('sermons')
       .select('*')
@@ -24,10 +29,12 @@ const SermonsPage = () => {
 
     if (error) {
       console.error('Error loading sermons:', error)
+      setLoading(false)
       return
     }
 
     setSermons(data)
+    setLoading(false)
   }
 
   const filteredSermons = sermons.filter((sermon) => {
@@ -40,9 +47,23 @@ const SermonsPage = () => {
 
   const categories = ['all', ...Array.from(new Set(sermons.map((s) => s.category).filter(Boolean)))]
 
+  if (loading) {
+    return (
+      <Layout title="Sermões">
+        <LoadingState fullScreen message="Carregando sermões..." />
+      </Layout>
+    )
+  }
+
   return (
     <Layout title="Sermões">
       <div className="space-y-6">
+        <PageHeader
+          title="Sermões"
+          description="Assista e reviva momentos poderosos da Palavra"
+          icon={BookOpen}
+          gradient="from-blue-500 via-cyan-500 to-teal-500"
+        />
         {/* Header */}
         <Card className="p-6 border-2">
           <div className="flex flex-col md:flex-row gap-4">
@@ -143,9 +164,11 @@ const SermonsPage = () => {
         </div>
 
         {filteredSermons.length === 0 && (
-          <Card className="p-12 text-center border-2">
-            <p className="text-muted-foreground">Nenhum sermão encontrado</p>
-          </Card>
+          <EmptyState
+            icon={BookOpen}
+            title="Nenhum sermão encontrado"
+            description="Tente ajustar os filtros de busca"
+          />
         )}
       </div>
     </Layout>

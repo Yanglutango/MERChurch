@@ -8,15 +8,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
-import { DollarSign, CreditCard, QrCode, Building2, Filter, Calendar } from 'lucide-react'
+import { DollarSign, CreditCard, QrCode, Building2, Filter, Calendar, TrendingUp } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Transaction } from '../types'
+import { PageHeader } from '../components/shared/PageHeader'
+import { EmptyState } from '../components/shared/EmptyState'
+import { LoadingState } from '../components/shared/LoadingState'
 
 const TreasuryPage = () => {
   const { user } = useAuth()
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState({
     type: 'all',
     dateFrom: '',
@@ -40,6 +44,7 @@ const TreasuryPage = () => {
   }, [transactions, filters])
 
   const loadTransactions = async () => {
+    setLoading(true)
     const { data, error } = await supabase
       .from('transactions')
       .select('*')
@@ -48,10 +53,12 @@ const TreasuryPage = () => {
 
     if (error) {
       console.error('Error loading transactions:', error)
+      setLoading(false)
       return
     }
 
     setTransactions(data)
+    setLoading(false)
   }
 
   const applyFilters = () => {
@@ -133,9 +140,23 @@ const TreasuryPage = () => {
     return icons[method] || DollarSign
   }
 
+  if (loading) {
+    return (
+      <Layout title="Tesouraria">
+        <LoadingState fullScreen message="Carregando transações..." />
+      </Layout>
+    )
+  }
+
   return (
     <Layout title="Tesouraria">
       <div className="space-y-6">
+        <PageHeader
+          title="Tesouraria"
+          description="Gerencie suas contribuições com transparência"
+          icon={DollarSign}
+          gradient="from-green-500 via-emerald-500 to-teal-500"
+        />
         {/* Header & Stats */}
         <div className="grid md:grid-cols-3 gap-4">
           <Card className="p-6 border-2 bg-gradient-to-br from-green-500 to-emerald-500 text-white">
@@ -347,8 +368,12 @@ const TreasuryPage = () => {
           </div>
 
           {filteredTransactions.length === 0 && (
-            <div className="text-center py-12 text-muted-foreground">
-              Nenhuma transação encontrada
+            <div className="py-8">
+              <EmptyState
+                icon={DollarSign}
+                title="Nenhuma transação encontrada"
+                description="Tente ajustar os filtros ou faça sua primeira contribuição"
+              />
             </div>
           )}
         </Card>

@@ -12,8 +12,12 @@ import {
   TrendingUp,
   Activity,
 } from 'lucide-react'
+import { PageHeader } from '../components/shared/PageHeader'
+import { StatCard } from '../components/shared/StatCard'
+import { LoadingState } from '../components/shared/LoadingState'
 
 const DashboardPage = () => {
+  const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalSermons: 0,
@@ -30,6 +34,7 @@ const DashboardPage = () => {
   }, [])
 
   const loadStats = async () => {
+    setLoading(true)
     try {
       const [users, sermons, events, prayers, transactions, ministries, courses] = await Promise.all([
         supabase.from('user_profiles').select('id', { count: 'exact', head: true }),
@@ -56,6 +61,8 @@ const DashboardPage = () => {
       })
     } catch (error) {
       console.error('Error loading stats:', error)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -110,37 +117,35 @@ const DashboardPage = () => {
     },
   ]
 
+  if (loading) {
+    return (
+      <Layout title="Dashboard Administrativo">
+        <LoadingState fullScreen message="Carregando estatísticas..." />
+      </Layout>
+    )
+  }
+
   return (
     <Layout title="Dashboard Administrativo">
       <div className="space-y-6">
         {/* Header */}
-        <Card className="p-8 border-2 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 text-white">
-          <div className="flex items-center gap-4">
-            <div className="p-4 bg-white/20 backdrop-blur-sm rounded-2xl">
-              <LayoutDashboard className="h-12 w-12" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold mb-1">Dashboard Administrativo</h1>
-              <p className="text-white/90">Visão geral da plataforma MER</p>
-            </div>
-          </div>
-        </Card>
+        <PageHeader
+          title="Dashboard Administrativo"
+          description="Visão geral da plataforma MER"
+          icon={LayoutDashboard}
+          gradient="from-amber-500 via-orange-500 to-red-500"
+        />
 
         {/* Stats Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {statsCards.map((stat, index) => (
-            <Card
+            <StatCard
               key={index}
-              className="p-6 border-2 hover:border-primary/50 transition-all hover:shadow-xl"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className={`p-3 rounded-xl bg-gradient-to-br ${stat.color}`}>
-                  <stat.icon className="h-6 w-6 text-white" />
-                </div>
-              </div>
-              <div className="text-3xl font-bold text-foreground mb-1">{stat.value}</div>
-              <div className="text-sm text-muted-foreground">{stat.label}</div>
-            </Card>
+              icon={stat.icon}
+              label={stat.label}
+              value={stat.value}
+              gradient={stat.color}
+            />
           ))}
         </div>
 

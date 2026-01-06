@@ -11,12 +11,16 @@ import { useAuth } from '../hooks/useAuth'
 import { Users, Plus, UserPlus, UserMinus } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Ministry } from '../types'
+import { PageHeader } from '../components/shared/PageHeader'
+import { EmptyState } from '../components/shared/EmptyState'
+import { LoadingState } from '../components/shared/LoadingState'
 
 const MinistriesPage = () => {
   const { user } = useAuth()
   const [ministries, setMinistries] = useState<Ministry[]>([])
   const [joinedMinistries, setJoinedMinistries] = useState<string[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [newMinistry, setNewMinistry] = useState({
     name: '',
     description: '',
@@ -29,14 +33,17 @@ const MinistriesPage = () => {
   }, [])
 
   const loadMinistries = async () => {
+    setLoading(true)
     const { data, error } = await supabase.from('ministries').select('*').order('created_at', { ascending: false })
 
     if (error) {
       console.error('Error loading ministries:', error)
+      setLoading(false)
       return
     }
 
     setMinistries(data)
+    setLoading(false)
   }
 
   const loadJoinedMinistries = async () => {
@@ -110,17 +117,25 @@ const MinistriesPage = () => {
     }
   }
 
+  if (loading) {
+    return (
+      <Layout title="Ministérios">
+        <LoadingState fullScreen message="Carregando ministérios..." />
+      </Layout>
+    )
+  }
+
   return (
     <Layout title="Ministérios">
       <div className="space-y-6">
         {/* Header */}
-        <Card className="p-6 border-2">
-          <div className="flex justify-between items-center">
-            <div>
-              <h2 className="text-2xl font-bold text-foreground mb-1">Ministérios</h2>
-              <p className="text-muted-foreground">Encontre seu lugar para servir</p>
-            </div>
-            {user?.role === 'admin' && (
+        <PageHeader
+          title="Ministérios"
+          description="Encontre seu lugar para servir e fazer a diferença"
+          icon={Users}
+          gradient="from-green-500 via-emerald-500 to-teal-500"
+          actions={
+            user?.role === 'admin' ? (
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
                   <Button>
@@ -167,9 +182,9 @@ const MinistriesPage = () => {
                   </div>
                 </DialogContent>
               </Dialog>
-            )}
-          </div>
-        </Card>
+            ) : undefined
+          }
+        />
 
         {/* Ministries Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -224,10 +239,11 @@ const MinistriesPage = () => {
         </div>
 
         {ministries.length === 0 && (
-          <Card className="p-12 text-center border-2">
-            <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">Nenhum ministério cadastrado ainda</p>
-          </Card>
+          <EmptyState
+            icon={Users}
+            title="Nenhum ministério cadastrado"
+            description="Novos ministérios serão adicionados em breve"
+          />
         )}
       </div>
     </Layout>

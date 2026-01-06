@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react'
 import Layout from '../components/layout/Layout'
 import { Card } from '../components/ui/card'
@@ -8,12 +9,14 @@ import { supabase } from '../lib/supabase'
 import { Send, Users, Radio as RadioIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import type { LiveMessage } from '../types'
+import { LoadingState } from '../components/shared/LoadingState'
 
 const LivePage = () => {
   const { user } = useAuth()
   const [messages, setMessages] = useState<LiveMessage[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [loading, setLoading] = useState(false)
+  const [loadingMessages, setLoadingMessages] = useState(true)
   const [viewerCount, setViewerCount] = useState(1247)
 
   useEffect(() => {
@@ -28,6 +31,7 @@ const LivePage = () => {
   }, [])
 
   const loadMessages = async () => {
+    setLoadingMessages(true)
     const { data, error } = await supabase
       .from('live_messages')
       .select(`
@@ -39,10 +43,12 @@ const LivePage = () => {
 
     if (error) {
       console.error('Error loading messages:', error)
+      setLoadingMessages(false)
       return
     }
 
     setMessages(data as any)
+    setLoadingMessages(false)
   }
 
   const sendMessage = async () => {
@@ -126,7 +132,15 @@ const LivePage = () => {
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {messages.map((msg) => (
+            {loadingMessages ? (
+              <div className="flex items-center justify-center h-full">
+                <LoadingState message="Carregando chat..." />
+              </div>
+            ) : (
+            // The original code had an extra set of curly braces here, causing a parsing error.
+            // JSX expects a single expression or a list of JSX elements directly after the colon in a ternary.
+            // Removing the outer curly braces fixes this.
+            messages.map((msg) => (
               <div key={msg.id} className="flex gap-3">
                 {msg.user?.avatar_url ? (
                   <img src={msg.user.avatar_url} alt="" className="h-8 w-8 rounded-full flex-shrink-0" />
@@ -145,7 +159,8 @@ const LivePage = () => {
                   <p className="text-sm text-muted-foreground">{msg.message}</p>
                 </div>
               </div>
-            ))}
+            ))
+            )}
           </div>
 
           <div className="p-4 border-t border-border">

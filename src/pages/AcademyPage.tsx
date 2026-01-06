@@ -7,11 +7,16 @@ import { useAuth } from '../hooks/useAuth'
 import { GraduationCap, Play, BookOpen, Clock, Award, TrendingUp } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Course } from '../types'
+import { PageHeader } from '../components/shared/PageHeader'
+import { StatCard } from '../components/shared/StatCard'
+import { EmptyState } from '../components/shared/EmptyState'
+import { LoadingState } from '../components/shared/LoadingState'
 
 const AcademyPage = () => {
   const { user } = useAuth()
   const [courses, setCourses] = useState<Course[]>([])
   const [enrolledCourses, setEnrolledCourses] = useState<string[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     loadCourses()
@@ -19,6 +24,7 @@ const AcademyPage = () => {
   }, [])
 
   const loadCourses = async () => {
+    setLoading(true)
     const { data, error} = await supabase
       .from('courses')
       .select('*')
@@ -27,10 +33,12 @@ const AcademyPage = () => {
 
     if (error) {
       console.error('Error loading courses:', error)
+      setLoading(false)
       return
     }
 
     setCourses(data)
+    setLoading(false)
   }
 
   const loadEnrollments = async () => {
@@ -71,36 +79,45 @@ const AcademyPage = () => {
     return badges[level || 'beginner']
   }
 
+  if (loading) {
+    return (
+      <Layout title="Escola EAD">
+        <LoadingState fullScreen message="Carregando cursos..." />
+      </Layout>
+    )
+  }
+
   return (
     <Layout title="Escola EAD">
       <div className="space-y-6">
         {/* Header */}
-        <Card className="p-8 border-2 bg-gradient-to-r from-primary via-purple-500 to-secondary text-white">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="p-4 bg-white/20 backdrop-blur-sm rounded-2xl">
-              <GraduationCap className="h-12 w-12" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold mb-2">Escola EAD - Academy</h1>
-              <p className="text-white/90 text-lg">Cresça no conhecimento da Palavra de Deus</p>
-            </div>
-          </div>
-        </Card>
+        <PageHeader
+          title="Escola EAD - Academy"
+          description="Cresça no conhecimento da Palavra de Deus"
+          icon={GraduationCap}
+          gradient="from-indigo-500 via-purple-500 to-pink-500"
+        />
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4">
-          <Card className="p-4 border-2 text-center">
-            <div className="text-3xl font-bold text-primary mb-1">{courses.length}</div>
-            <div className="text-sm text-muted-foreground">Cursos Disponíveis</div>
-          </Card>
-          <Card className="p-4 border-2 text-center">
-            <div className="text-3xl font-bold text-primary mb-1">{enrolledCourses.length}</div>
-            <div className="text-sm text-muted-foreground">Cursos Inscritos</div>
-          </Card>
-          <Card className="p-4 border-2 text-center">
-            <div className="text-3xl font-bold text-primary mb-1">0</div>
-            <div className="text-sm text-muted-foreground">Cursos Concluídos</div>
-          </Card>
+          <StatCard
+            icon={BookOpen}
+            label="Cursos Disponíveis"
+            value={courses.length}
+            gradient="from-blue-500 to-cyan-500"
+          />
+          <StatCard
+            icon={TrendingUp}
+            label="Cursos Inscritos"
+            value={enrolledCourses.length}
+            gradient="from-purple-500 to-pink-500"
+          />
+          <StatCard
+            icon={Award}
+            label="Cursos Concluídos"
+            value={0}
+            gradient="from-green-500 to-emerald-500"
+          />
         </div>
 
         {/* My Courses */}
@@ -222,10 +239,11 @@ const AcademyPage = () => {
         </div>
 
         {courses.length === 0 && (
-          <Card className="p-12 text-center border-2">
-            <GraduationCap className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">Nenhum curso disponível no momento</p>
-          </Card>
+          <EmptyState
+            icon={GraduationCap}
+            title="Nenhum curso disponível"
+            description="Novos cursos serão adicionados em breve"
+          />
         )}
       </div>
     </Layout>

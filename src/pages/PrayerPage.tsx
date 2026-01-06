@@ -12,12 +12,17 @@ import { useAuth } from '../hooks/useAuth'
 import { Heart, Plus, Check, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import type { PrayerRequest } from '../types'
+import { PageHeader } from '../components/shared/PageHeader'
+import { StatCard } from '../components/shared/StatCard'
+import { EmptyState } from '../components/shared/EmptyState'
+import { LoadingState } from '../components/shared/LoadingState'
 
 const PrayerPage = () => {
   const { user } = useAuth()
   const [prayers, setPrayers] = useState<PrayerRequest[]>([])
   const [prayedFor, setPrayedFor] = useState<string[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [newPrayer, setNewPrayer] = useState({
     title: '',
     description: '',
@@ -30,6 +35,7 @@ const PrayerPage = () => {
   }, [])
 
   const loadPrayers = async () => {
+    setLoading(true)
     const { data, error } = await supabase
       .from('prayer_requests')
       .select(`
@@ -40,10 +46,12 @@ const PrayerPage = () => {
 
     if (error) {
       console.error('Error loading prayers:', error)
+      setLoading(false)
       return
     }
 
     setPrayers(data as any)
+    setLoading(false)
   }
 
   const loadPrayedFor = async () => {
@@ -114,22 +122,26 @@ const PrayerPage = () => {
     toast.success('Obrigado por orar! 🙏')
   }
 
+  if (loading) {
+    return (
+      <Layout title="Oração">
+        <LoadingState fullScreen message="Carregando pedidos de oração..." />
+      </Layout>
+    )
+  }
+
   return (
     <Layout title="Oração">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
-        <Card className="p-8 border-2 bg-gradient-to-r from-red-500 via-pink-500 to-rose-500 text-white">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="p-4 bg-white/20 backdrop-blur-sm rounded-2xl">
-              <Heart className="h-12 w-12" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold mb-2">Muro de Oração</h1>
-              <p className="text-white/90 text-lg">Ore uns pelos outros e sejam curados</p>
-            </div>
-          </div>
+        <PageHeader
+          title="Muro de Oração"
+          description="Ore uns pelos outros e sejam curados"
+          icon={Heart}
+          gradient="from-red-500 via-pink-500 to-rose-500"
+          actions={
 
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button size="lg" className="bg-white text-primary hover:bg-white/90">
                 <Plus className="h-5 w-5 mr-2" />
@@ -184,20 +196,23 @@ const PrayerPage = () => {
               </div>
             </DialogContent>
           </Dialog>
-        </Card>
+          }
+        />
 
         {/* Stats */}
         <div className="grid grid-cols-2 gap-4">
-          <Card className="p-6 border-2 text-center">
-            <div className="text-3xl font-bold text-primary mb-1">{prayers.length}</div>
-            <div className="text-sm text-muted-foreground">Pedidos Ativos</div>
-          </Card>
-          <Card className="p-6 border-2 text-center">
-            <div className="text-3xl font-bold text-primary mb-1">
-              {prayers.reduce((sum, p) => sum + p.prayerCount, 0)}
-            </div>
-            <div className="text-sm text-muted-foreground">Orações Registradas</div>
-          </Card>
+          <StatCard
+            icon={Heart}
+            label="Pedidos Ativos"
+            value={prayers.length}
+            gradient="from-red-500 to-pink-500"
+          />
+          <StatCard
+            icon={Users}
+            label="Orações Registradas"
+            value={prayers.reduce((sum, p) => sum + p.prayerCount, 0)}
+            gradient="from-purple-500 to-indigo-500"
+          />
         </div>
 
         {/* Prayers List */}
@@ -276,10 +291,11 @@ const PrayerPage = () => {
         </div>
 
         {prayers.length === 0 && (
-          <Card className="p-12 text-center border-2">
-            <Heart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">Nenhum pedido de oração no momento</p>
-          </Card>
+          <EmptyState
+            icon={Heart}
+            title="Nenhum pedido de oração"
+            description="Seja o primeiro a compartilhar um pedido de oração"
+          />
         )}
       </div>
     </Layout>
