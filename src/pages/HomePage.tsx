@@ -59,37 +59,39 @@ const HomePage = () => {
             <div className="absolute inset-0 bg-gradient-to-r from-primary/95 via-blue-900/90 to-indigo-900/95" />
           </div>
 
-          <div className="relative z-10 p-8 md:p-16 text-white">
-            <div className="max-w-3xl">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full mb-6">
+          <div className="relative z-10 p-6 md:p-12 lg:p-16 text-white">
+            <div className="max-w-3xl space-y-6 md:space-y-8">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-white/20 backdrop-blur-sm rounded-full">
                 <div className="h-2 w-2 bg-red-500 rounded-full animate-pulse" />
-                <span className="text-sm font-semibold">{t('home.liveNow')}</span>
+                <span className="text-xs md:text-sm font-semibold">{t('home.liveNow')}</span>
               </div>
 
-              <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-                {t('home.welcomeTitle')}
-              </h1>
-              <p className="text-xl md:text-2xl text-white/90 mb-8 leading-relaxed">
-                {t('home.welcomeSubtitle')}
-              </p>
+              <div className="space-y-4">
+                <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold leading-tight">
+                  {t('home.welcomeTitle')}
+                </h1>
+                <p className="text-lg md:text-xl lg:text-2xl text-white/85 leading-relaxed max-w-2xl">
+                  {t('home.welcomeSubtitle')}
+                </p>
+              </div>
 
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-3 md:gap-4 pt-2">
                 <Button
                   size="lg"
                   onClick={() => navigate('/live')}
-                  className="bg-white text-primary hover:bg-white/90 font-semibold text-lg px-8 py-6 rounded-full shadow-2xl transform hover:scale-105 transition-transform"
+                  className="bg-white text-primary hover:bg-white/90 font-semibold text-base md:text-lg px-6 md:px-8 py-5 md:py-6 rounded-full shadow-2xl transform hover:scale-[1.02] transition-all duration-300"
                 >
-                  <Play className="mr-2 h-6 w-6" />
+                  <Play className="mr-2 h-5 w-5 md:h-6 md:w-6" />
                   {t('home.watchLive')}
                 </Button>
                 <Button
                   size="lg"
                   variant="outline"
                   onClick={() => navigate('/about')}
-                  className="border-2 border-white text-white hover:bg-white hover:text-primary font-semibold text-lg px-8 py-6 rounded-full transform hover:scale-105 transition-transform"
+                  className="border-2 border-white text-white hover:bg-white hover:text-primary font-semibold text-base md:text-lg px-6 md:px-8 py-5 md:py-6 rounded-full transform hover:scale-[1.02] transition-all duration-300"
                 >
                   {t('home.knowMore')}
-                  <ArrowRight className="ml-2 h-6 w-6" />
+                  <ArrowRight className="ml-2 h-5 w-5 md:h-6 md:w-6" />
                 </Button>
               </div>
             </div>
@@ -113,14 +115,14 @@ const HomePage = () => {
         </div>
 
         {/* Quick Actions */}
-        <div>
-          <h2 className="text-3xl font-bold text-foreground mb-6 flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-br from-primary to-accent rounded-xl">
-              <TrendingUp className="h-6 w-6 text-white" />
+        <div className="space-y-5 md:space-y-6">
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground flex items-center gap-3">
+            <div className="p-2 md:p-2.5 bg-gradient-to-br from-primary to-accent rounded-xl">
+              <TrendingUp className="h-5 w-5 md:h-6 md:w-6 text-white" />
             </div>
             {t('home.quickAccess')}
           </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
             {quickActions.map((action) => (
               <ActionCard
                 key={action.path}
@@ -135,61 +137,61 @@ const HomePage = () => {
         </div>
 
         {/* Recent Activity */}
-        <div className="grid lg:grid-cols-2 gap-6">
-          <Card className="p-8 border-2 hover:shadow-xl transition-shadow">
-            <h3 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl">
-                <BookOpen className="h-6 w-6 text-white" />
+        <div className="grid lg:grid-cols-2 gap-5 md:gap-6">
+          <Card className="p-6 md:p-8 border-2 hover:shadow-lg transition-all duration-300">
+            <h3 className="text-xl md:text-2xl font-bold text-foreground mb-5 md:mb-6 flex items-center gap-2.5 md:gap-3">
+              <div className="p-1.5 md:p-2 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg md:rounded-xl flex-shrink-0">
+                <BookOpen className="h-5 w-5 md:h-6 md:w-6 text-white" />
               </div>
-              {t('home.latestSermons')}
+              <span className="leading-tight">{t('home.latestSermons')}</span>
             </h3>
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               {[
                 { title: 'O Poder da Fé', speaker: 'Pr. João Silva', date: '20 Dez 2024' },
                 { title: 'Vencendo os Desafios', speaker: 'Pra. Maria Santos', date: '15 Dez 2024' },
                 { title: 'Amor Incondicional', speaker: 'Pr. Pedro Costa', date: '10 Dez 2024' },
               ].map((sermon) => (
-                <div key={sermon.title} className="flex items-start gap-4 p-4 rounded-xl hover:bg-muted/50 cursor-pointer transition-all group">
-                  <div className="p-3 bg-gradient-to-br from-primary to-secondary rounded-xl shadow-md group-hover:scale-110 transition-transform">
-                    <Play className="h-5 w-5 text-white" />
+                <div key={sermon.title} className="flex items-start gap-3 md:gap-4 p-3 md:p-4 rounded-lg md:rounded-xl hover:bg-muted/50 cursor-pointer transition-all duration-200 group">
+                  <div className="p-2 md:p-3 bg-gradient-to-br from-primary to-secondary rounded-lg md:rounded-xl shadow-md group-hover:scale-105 transition-transform flex-shrink-0">
+                    <Play className="h-4 w-4 md:h-5 md:w-5 text-white" />
                   </div>
-                  <div className="flex-1">
-                    <div className="font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">{sermon.title}</div>
-                    <div className="text-sm text-muted-foreground">{sermon.speaker} • {sermon.date}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-sm md:text-base text-foreground mb-0.5 group-hover:text-primary transition-colors leading-snug">{sermon.title}</div>
+                    <div className="text-xs md:text-sm text-muted-foreground leading-relaxed">{sermon.speaker} • {sermon.date}</div>
                   </div>
                 </div>
               ))}
             </div>
-            <Button onClick={() => navigate('/sermons')} className="w-full mt-6" variant="outline">
+            <Button onClick={() => navigate('/sermons')} className="w-full mt-5 md:mt-6" variant="outline" size="lg">
               {t('home.seeAllSermons')}
             </Button>
           </Card>
 
-          <Card className="p-8 border-2 hover:shadow-xl transition-shadow">
-            <h3 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl">
-                <Calendar className="h-6 w-6 text-white" />
+          <Card className="p-6 md:p-8 border-2 hover:shadow-lg transition-all duration-300">
+            <h3 className="text-xl md:text-2xl font-bold text-foreground mb-5 md:mb-6 flex items-center gap-2.5 md:gap-3">
+              <div className="p-1.5 md:p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg md:rounded-xl flex-shrink-0">
+                <Calendar className="h-5 w-5 md:h-6 md:w-6 text-white" />
               </div>
-              {t('home.upcomingEvents')}
+              <span className="leading-tight">{t('home.upcomingEvents')}</span>
             </h3>
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               {[
                 { title: 'Culto de Celebração', date: '24 Dez 2024', time: '18:00' },
                 { title: 'Retiro de Jovens', date: '05 Jan 2025', time: '08:00' },
                 { title: 'Conferência Anual', date: '15 Jan 2025', time: '19:00' },
               ].map((event) => (
-                <div key={event.title} className="flex items-start gap-4 p-4 rounded-xl hover:bg-muted/50 cursor-pointer transition-all group">
-                  <div className="p-3 bg-gradient-to-br from-secondary to-accent rounded-xl shadow-md group-hover:scale-110 transition-transform">
-                    <Calendar className="h-5 w-5 text-white" />
+                <div key={event.title} className="flex items-start gap-3 md:gap-4 p-3 md:p-4 rounded-lg md:rounded-xl hover:bg-muted/50 cursor-pointer transition-all duration-200 group">
+                  <div className="p-2 md:p-3 bg-gradient-to-br from-secondary to-accent rounded-lg md:rounded-xl shadow-md group-hover:scale-105 transition-transform flex-shrink-0">
+                    <Calendar className="h-4 w-4 md:h-5 md:w-5 text-white" />
                   </div>
-                  <div className="flex-1">
-                    <div className="font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">{event.title}</div>
-                    <div className="text-sm text-muted-foreground">{event.date} às {event.time}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-sm md:text-base text-foreground mb-0.5 group-hover:text-primary transition-colors leading-snug">{event.title}</div>
+                    <div className="text-xs md:text-sm text-muted-foreground leading-relaxed">{event.date} às {event.time}</div>
                   </div>
                 </div>
               ))}
             </div>
-            <Button onClick={() => navigate('/agenda')} className="w-full mt-6" variant="outline">
+            <Button onClick={() => navigate('/agenda')} className="w-full mt-5 md:mt-6" variant="outline" size="lg">
               {t('home.seeFullAgenda')}
             </Button>
           </Card>

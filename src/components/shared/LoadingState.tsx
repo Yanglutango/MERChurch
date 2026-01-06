@@ -11,18 +11,18 @@ export const LoadingState = ({ message = 'Carregando...', fullScreen = false }: 
     return (
       <div className="min-h-[400px] flex items-center justify-center">
         <div className="text-center space-y-4">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
-          <p className="text-muted-foreground">{message}</p>
+          <Loader2 className="h-10 w-10 md:h-12 md:w-12 animate-spin text-primary mx-auto" />
+          <p className="text-sm md:text-base text-muted-foreground font-medium">{message}</p>
         </div>
       </div>
     )
   }
 
   return (
-    <Card className="p-12 border-2">
+    <Card className="p-10 md:p-12 border-2">
       <div className="text-center space-y-4">
-        <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
-        <p className="text-muted-foreground">{message}</p>
+        <Loader2 className="h-10 w-10 md:h-12 md:w-12 animate-spin text-primary mx-auto" />
+        <p className="text-sm md:text-base text-muted-foreground font-medium">{message}</p>
       </div>
     </Card>
   )
