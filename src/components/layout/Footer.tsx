@@ -27,10 +27,13 @@ const Footer = () => {
     method: 'iban' as PaymentMethod,
   })
 
-  // Inicialização opcional: poderia sincronizar com user prefs se houver
   useEffect(() => {
-    // placeholder para sincronizar com store/usuário se necessário
-  }, [])
+    // Reset form when dialog closes
+    if (!isDevSupportOpen) {
+      setShowContact(false)
+      resetForm()
+    }
+  }, [isDevSupportOpen])
 
   const validateEmail = (email: string) => {
     return /\S+@\S+\.\S+/.test(email)

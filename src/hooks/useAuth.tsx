@@ -12,8 +12,8 @@ function mapSupabaseUser(user: User): AuthUser {
     avatar: user.user_metadata?.avatar_url || user.user_metadata?.picture,
     role: user.user_metadata?.role || 'member',
     phone: user.user_metadata?.phone,
-    themeMode: user.user_metadata?.theme_mode || 'light',
-    accentColor: user.user_metadata?.accent_color || '#8B5CF6',
+    themeMode: user.user_metadata?.theme_mode || 'system',
+    accentColor: user.user_metadata?.accent_color || '#4A90A4',
   }
 }
 

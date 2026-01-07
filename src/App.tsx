@@ -1,8 +1,10 @@
+import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { useAuth } from './hooks/useAuth'
 import AuthPage from './pages/AuthPage'
 import HomePage from './pages/HomePage'
+import DashboardPage from './pages/DashboardPage'
 import LivePage from './pages/LivePage'
 import SermonsPage from './pages/SermonsPage'
 import AgendaPage from './pages/AgendaPage'
@@ -16,30 +18,66 @@ import PrayerPage from './pages/PrayerPage'
 import CounselingPage from './pages/CounselingPage'
 import AboutPage from './pages/AboutPage'
 import SettingsPage from './pages/SettingsPage'
-import DashboardPage from './pages/DashboardPage'
-import { Loader2 } from 'lucide-react'
-import { useEffect } from 'react'
+import { useAuthStore } from './stores/authStore'
+import { supabase } from './lib/supabase'
 
 function App() {
   const { user, loading } = useAuth()
 
-  // ✅ Aplica o tema global no <html> logo no carregamento
+  // ✅ Garante que o tema seja aplicado ao carregar a aplicação
   useEffect(() => {
-    const storedTheme = localStorage.getItem('theme')
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    const theme = storedTheme || (prefersDark ? 'dark' : 'light')
+    const applyInitialTheme = async () => {
+      let themeMode: 'light' | 'dark' | 'system' = 'system'
+      
+      // Tenta obter do usuário logado
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('theme_mode')
+          .eq('id', session.user.id)
+          .single()
+        
+        if (profile?.theme_mode) {
+          themeMode = profile.theme_mode as 'light' | 'dark' | 'system'
+        }
+      } else {
+        // Sem usuário, usa localStorage ou padrão
+        const stored = localStorage.getItem('theme')
+        if (stored && ['light', 'dark', 'system'].includes(stored)) {
+          themeMode = stored as 'light' | 'dark' | 'system'
+        }
+      }
 
-    const root = document.documentElement
-    root.classList.remove('light', 'dark') // limpa qualquer estado anterior
-    root.classList.add(theme)              // aplica 'light' ou 'dark'
+      // Aplica o tema no DOM
+      const root = document.documentElement
+      root.classList.remove('light', 'dark')
+      
+      if (themeMode === 'system') {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+        root.classList.add(prefersDark ? 'dark' : 'light')
+      } else {
+        root.classList.add(themeMode)
+      }
+      
+      localStorage.setItem('theme', themeMode)
+    }
+
+    applyInitialTheme()
   }, [])
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Carregando...</p>
+        <div className="text-center space-y-6">
+          <div className="inline-flex p-5 bg-gradient-to-br from-primary to-accent rounded-3xl shadow-2xl animate-pulse">
+            <img
+              src="https://cdn-ai.onspace.ai/onspace/files/XApskyyhcaqpHfkzKVPzqb/kairoslogo.png"
+              alt="KAIRÓS Logo"
+              className="w-20 h-20 object-contain"
+            />
+          </div>
+          <p className="text-lg text-muted-foreground font-medium">Carregando...</p>
         </div>
       </div>
     )
@@ -47,13 +85,11 @@ function App() {
 
   return (
     <BrowserRouter>
-      <Toaster position="top-right" richColors />
       <Routes>
-        <Route
-          path="/auth"
-          element={!user ? <AuthPage /> : <Navigate to={user.role === 'admin' ? '/dashboard' : '/home'} />}
-        />
+        <Route path="/" element={user ? <Navigate to="/home" /> : <AuthPage />} />
+        <Route path="/auth" element={user ? <Navigate to="/home" /> : <AuthPage />} />
         <Route path="/home" element={user ? <HomePage /> : <Navigate to="/auth" />} />
+        <Route path="/dashboard" element={user?.role === 'admin' ? <DashboardPage /> : <Navigate to="/home" />} />
         <Route path="/live" element={user ? <LivePage /> : <Navigate to="/auth" />} />
         <Route path="/sermons" element={user ? <SermonsPage /> : <Navigate to="/auth" />} />
         <Route path="/agenda" element={user ? <AgendaPage /> : <Navigate to="/auth" />} />
@@ -67,9 +103,8 @@ function App() {
         <Route path="/counseling" element={user ? <CounselingPage /> : <Navigate to="/auth" />} />
         <Route path="/about" element={user ? <AboutPage /> : <Navigate to="/auth" />} />
         <Route path="/settings" element={user ? <SettingsPage /> : <Navigate to="/auth" />} />
-        <Route path="/dashboard" element={user?.role === 'admin' ? <DashboardPage /> : <Navigate to="/home" />} />
-        <Route path="/" element={<Navigate to={user ? (user.role === 'admin' ? '/dashboard' : '/home') : '/auth'} />} />
       </Routes>
+      <Toaster position="top-center" richColors closeButton />
     </BrowserRouter>
   )
 }

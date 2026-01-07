@@ -141,7 +141,7 @@ const Layout = ({ children, title }: LayoutProps) => {
             {/* Currency Selector */}
             <div className="relative hidden md:block">
               <button
-                onClick={() => setShowCurrencyMenu(!setShowCurrencyMenu)}
+                onClick={() => setShowCurrencyMenu(!showCurrencyMenu)}
                 className="p-2 hover:bg-muted rounded-lg transition-colors"
                 title={t('common.currency')}
               >

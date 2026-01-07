@@ -6,7 +6,7 @@ export interface AuthUser {
   role: 'member' | 'admin' | 'guest'
   phone?: string
   congregation?: string
-  themeMode?: 'light' | 'dark'
+  themeMode?: 'light' | 'dark' | 'system'
   accentColor?: string
 }
 

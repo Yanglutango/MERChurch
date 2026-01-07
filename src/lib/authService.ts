@@ -12,8 +12,8 @@ class AuthService {
       role: user.user_metadata?.role || 'member',
       phone: user.user_metadata?.phone,
       congregation: user.user_metadata?.congregation,
-      themeMode: user.user_metadata?.theme_mode || 'light',
-      accentColor: user.user_metadata?.accent_color || '#0EA5E9',
+      themeMode: user.user_metadata?.theme_mode || 'system',
+      accentColor: user.user_metadata?.accent_color || '#4A90A4',
     }
   }
 
