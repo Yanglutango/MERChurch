@@ -89,22 +89,23 @@ const Layout = ({ children, title }: LayoutProps) => {
   return (
     <div className="min-h-screen bg-background">
       {/* Top Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-lg border-b border-border shadow-sm">
-        <div className="flex items-center justify-between px-4 h-16">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-card/98 backdrop-blur-lg border-b border-border/50">
+        <div className="flex items-center justify-between px-4 h-14">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="lg:hidden p-2 hover:bg-muted rounded-lg transition-colors"
+              className="lg:hidden p-1.5 hover:bg-muted rounded-lg transition-colors"
+              aria-label="Menu"
             >
-              {isSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              {isSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
             
-            <Logo size="md" showText={true} />
+            <Logo size="sm" showText={true} />
           </div>
 
-          <h1 className="text-xl font-bold text-foreground hidden md:block">{title}</h1>
+          <h1 className="text-lg font-semibold text-foreground hidden md:block">{title}</h1>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {/* Theme Toggle */}
             <ThemeToggle />
 
@@ -112,13 +113,13 @@ const Layout = ({ children, title }: LayoutProps) => {
             <div className="relative hidden md:block">
               <button
                 onClick={() => setShowLangMenu(!showLangMenu)}
-                className="p-2 hover:bg-muted rounded-lg transition-colors"
+                className="p-1.5 hover:bg-muted rounded-lg transition-colors"
                 title={t('common.language')}
               >
-                <Languages className="h-5 w-5" />
+                <Languages className="h-4 w-4" />
               </button>
               {showLangMenu && (
-                <div className="absolute top-full right-0 mt-2 bg-card border border-border rounded-xl shadow-lg py-2 min-w-[160px] z-50">
+                <div className="absolute top-full right-0 mt-1.5 bg-card border border-border rounded-lg shadow-lg py-1 min-w-[140px] z-50">
                   {languages.map((lang) => (
                     <button
                       key={lang.code}
@@ -126,12 +127,12 @@ const Layout = ({ children, title }: LayoutProps) => {
                         setLanguage(lang.code as any)
                         setShowLangMenu(false)
                       }}
-                      className={`w-full px-4 py-2 text-left hover:bg-muted transition-colors flex items-center gap-2 ${
-                        language === lang.code ? 'text-primary font-semibold bg-primary/10' : ''
+                      className={`w-full px-3 py-1.5 text-left hover:bg-muted transition-colors flex items-center gap-2 text-sm ${
+                        language === lang.code ? 'text-primary font-medium bg-primary/5' : ''
                       }`}
                     >
-                      <span>{lang.flag}</span>
-                      <span className="text-sm">{lang.name}</span>
+                      <span className="text-base">{lang.flag}</span>
+                      <span>{lang.name}</span>
                     </button>
                   ))}
                 </div>
@@ -142,13 +143,13 @@ const Layout = ({ children, title }: LayoutProps) => {
             <div className="relative hidden md:block">
               <button
                 onClick={() => setShowCurrencyMenu(!showCurrencyMenu)}
-                className="p-2 hover:bg-muted rounded-lg transition-colors"
+                className="p-1.5 hover:bg-muted rounded-lg transition-colors"
                 title={t('common.currency')}
               >
-                <Coins className="h-5 w-5" />
+                <Coins className="h-4 w-4" />
               </button>
               {showCurrencyMenu && (
-                <div className="absolute top-full right-0 mt-2 bg-card border border-border rounded-xl shadow-lg py-2 min-w-[140px] z-50">
+                <div className="absolute top-full right-0 mt-1.5 bg-card border border-border rounded-lg shadow-lg py-1 min-w-[120px] z-50">
                   {currencies.map((curr) => (
                     <button
                       key={curr.code}
@@ -156,13 +157,13 @@ const Layout = ({ children, title }: LayoutProps) => {
                         setCurrency(curr.code as any)
                         setShowCurrencyMenu(false)
                       }}
-                      className={`w-full px-4 py-2 text-left hover:bg-muted transition-colors ${
-                        currency === curr.code ? 'text-primary font-semibold bg-primary/10' : ''
+                      className={`w-full px-3 py-1.5 text-left hover:bg-muted transition-colors text-sm ${
+                        currency === curr.code ? 'text-primary font-medium bg-primary/5' : ''
                       }`}
                     >
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg font-bold">{curr.symbol}</span>
-                        <span className="text-sm">{curr.code}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-semibold">{curr.symbol}</span>
+                        <span>{curr.code}</span>
                       </div>
                     </button>
                   ))}
@@ -171,13 +172,13 @@ const Layout = ({ children, title }: LayoutProps) => {
             </div>
 
             <div className="text-right hidden sm:block">
-              <div className="text-sm font-medium text-foreground">{user?.username}</div>
+              <div className="text-sm font-medium text-foreground leading-tight">{user?.username}</div>
               <div className="text-xs text-muted-foreground capitalize">{user?.role}</div>
             </div>
             {user?.avatar ? (
-              <img src={user.avatar} alt={user.username} className="h-10 w-10 rounded-full border-2 border-primary object-cover" />
+              <img src={user.avatar} alt={user.username} className="h-9 w-9 rounded-full border-2 border-primary/50 object-cover" />
             ) : (
-              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold shadow-md">
+              <div className="h-9 w-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-sm font-semibold">
                 {user?.username?.charAt(0).toUpperCase()}
               </div>
             )}
@@ -187,11 +188,11 @@ const Layout = ({ children, title }: LayoutProps) => {
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-16 left-0 bottom-0 w-72 bg-card border-r border-border z-40 transition-transform duration-300 ${
+        className={`fixed top-14 left-0 bottom-0 w-64 bg-card border-r border-border/50 z-40 transition-transform duration-300 ${
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } lg:translate-x-0 overflow-y-auto`}
       >
-        <nav className="p-4 space-y-1">
+        <nav className="p-3 space-y-0.5">
           {menuItems.map((item) => {
             const isActive = location.pathname === item.path
             return (
@@ -199,13 +200,13 @@ const Layout = ({ children, title }: LayoutProps) => {
                 key={item.path}
                 to={item.path}
                 onClick={() => setIsSidebarOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-all text-sm ${
                   isActive
-                    ? 'bg-gradient-to-r from-primary to-accent text-white shadow-lg scale-105'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted hover:scale-105'
+                    ? 'bg-gradient-to-r from-primary to-accent text-white'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                 }`}
               >
-                <item.icon className="h-5 w-5" />
+                <item.icon className="h-4 w-4" />
                 {item.label}
               </Link>
             )
@@ -213,9 +214,9 @@ const Layout = ({ children, title }: LayoutProps) => {
 
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-950 transition-all hover:scale-105 mt-4"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 transition-colors mt-2"
           >
-            <LogOut className="h-5 w-5" />
+            <LogOut className="h-4 w-4" />
             {t('nav.logout')}
           </button>
         </nav>
@@ -230,8 +231,8 @@ const Layout = ({ children, title }: LayoutProps) => {
       )}
 
       {/* Main Content */}
-      <main className="pt-16 lg:pl-72 min-h-screen">
-        <div className="p-4 md:p-8">{children}</div>
+      <main className="pt-14 lg:pl-64 min-h-screen">
+        <div className="p-4 md:p-6">{children}</div>
         <Footer />
       </main>
     </div>

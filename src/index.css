@@ -9,13 +9,13 @@
   :root {
     /* KAIRÓS Logo Colors - Light Mode */
     --background: 0 0% 100%;
-    --foreground: 205 60% 15%;
+    --foreground: 205 50% 12%;
     
     --card: 0 0% 100%;
-    --card-foreground: 205 60% 15%;
+    --card-foreground: 205 50% 12%;
     
     --popover: 0 0% 100%;
-    --popover-foreground: 205 60% 15%;
+    --popover-foreground: 205 50% 12%;
     
     /* Primary: Navy Blue (from logo) */
     --primary: 205 60% 18%;
@@ -26,53 +26,53 @@
     --secondary-foreground: 0 0% 100%;
     
     /* Muted */
-    --muted: 205 30% 96%;
-    --muted-foreground: 205 20% 45%;
+    --muted: 205 30% 97%;
+    --muted-foreground: 205 15% 50%;
     
     /* Accent: Gold (from logo) */
     --accent: 40 55% 60%;
     --accent-foreground: 205 60% 15%;
     
-    --destructive: 0 84% 60%;
+    --destructive: 0 70% 55%;
     --destructive-foreground: 0 0% 100%;
     
-    --border: 205 30% 90%;
-    --input: 205 30% 90%;
+    --border: 205 20% 92%;
+    --input: 205 20% 92%;
     --ring: 192 40% 50%;
     --radius: 0.5rem;
   }
 
   html.dark {
     /* KAIRÓS Logo Colors - Dark Mode */
-    --background: 205 60% 8%;
-    --foreground: 205 20% 95%;
+    --background: 205 50% 6%;
+    --foreground: 205 15% 92%;
     
-    --card: 205 55% 12%;
-    --card-foreground: 205 20% 95%;
+    --card: 205 45% 10%;
+    --card-foreground: 205 15% 92%;
     
-    --popover: 205 55% 12%;
-    --popover-foreground: 205 20% 95%;
+    --popover: 205 45% 10%;
+    --popover-foreground: 205 15% 92%;
     
     /* Primary: Teal/Cyan (lighter in dark mode) */
     --primary: 192 40% 50%;
-    --primary-foreground: 205 60% 8%;
+    --primary-foreground: 205 50% 8%;
     
     /* Secondary: Navy (darker in dark mode) */
-    --secondary: 205 50% 25%;
-    --secondary-foreground: 205 20% 95%;
+    --secondary: 205 45% 22%;
+    --secondary-foreground: 205 15% 92%;
     
-    --muted: 205 45% 15%;
-    --muted-foreground: 205 15% 60%;
+    --muted: 205 40% 14%;
+    --muted-foreground: 205 12% 60%;
     
     /* Accent: Gold (adjusted for dark) */
-    --accent: 40 65% 55%;
-    --accent-foreground: 205 60% 8%;
+    --accent: 40 60% 58%;
+    --accent-foreground: 205 50% 8%;
     
-    --destructive: 0 70% 50%;
-    --destructive-foreground: 205 20% 95%;
+    --destructive: 0 65% 52%;
+    --destructive-foreground: 205 15% 92%;
     
-    --border: 205 40% 18%;
-    --input: 205 40% 18%;
+    --border: 205 35% 16%;
+    --input: 205 35% 16%;
     --ring: 192 40% 50%;
   }
 }
@@ -84,11 +84,11 @@
 
   /* Transição suave entre temas */
   html {
-    transition: background-color 0.4s ease, color 0.4s ease;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   body {
-    transition: background-color 0.4s ease, color 0.4s ease;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   
@@ -186,26 +186,26 @@
   /* Refinamento de Sombras para Melhor Profundidade */
   .soft-shadow {
     box-shadow: 
-      0 2px 8px -2px rgba(10, 46, 74, 0.08),
-      0 4px 16px -4px rgba(10, 46, 74, 0.06);
+      0 1px 3px 0 rgba(10, 46, 74, 0.06),
+      0 1px 2px 0 rgba(10, 46, 74, 0.04);
   }
   
   .elevation-1 {
     box-shadow: 
-      0 1px 2px 0 rgba(10, 46, 74, 0.06),
-      0 1px 3px 0 rgba(10, 46, 74, 0.04);
+      0 1px 2px 0 rgba(10, 46, 74, 0.05),
+      0 1px 3px 0 rgba(10, 46, 74, 0.03);
   }
   
   .elevation-2 {
     box-shadow: 
-      0 2px 4px -1px rgba(10, 46, 74, 0.08),
-      0 4px 8px -2px rgba(10, 46, 74, 0.06);
+      0 2px 4px -1px rgba(10, 46, 74, 0.06),
+      0 4px 6px -2px rgba(10, 46, 74, 0.05);
   }
   
   .elevation-3 {
     box-shadow: 
-      0 4px 12px -2px rgba(10, 46, 74, 0.1),
-      0 8px 24px -4px rgba(10, 46, 74, 0.08);
+      0 4px 10px -2px rgba(10, 46, 74, 0.08),
+      0 8px 20px -4px rgba(10, 46, 74, 0.06);
   }
   
   /* Espaçamentos Padronizados */

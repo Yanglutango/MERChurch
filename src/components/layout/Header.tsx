@@ -24,7 +24,6 @@ const Header = () => {
     { label: t('nav.ministries'), href: '#services' },
     { label: t('nav.agenda'), href: '#events' },
     { label: t('nav.sermons'), href: '#sermons' },
-    { label: t('nav.treasury'), href: '#donations' },
     { label: 'Contato', href: '#contact' },
   ]
 
@@ -32,39 +31,37 @@ const Header = () => {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled
-          ? 'bg-background/95 backdrop-blur-md shadow-lg border-b border-border'
+          ? 'bg-background/98 backdrop-blur-lg border-b border-border/50 shadow-sm'
           : 'bg-transparent'
       }`}
     >
       <div className="container-custom">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <a href="#home" className="group">
+          <a href="#home" className="flex-shrink-0">
             <Logo size="md" showText={true} animated={false} />
           </a>
 
           {/* Desktop Menu */}
-          <nav className="hidden lg:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-2">
             {menuItems.map((item) => (
               <a
                 key={item.label}
                 href={item.href}
-                className="px-4 py-2 text-sm font-medium text-foreground/80 hover:text-primary transition-colors relative group"
+                className="px-3 py-1.5 text-sm font-medium text-foreground/70 hover:text-foreground transition-colors rounded-lg hover:bg-muted/50"
               >
                 {item.label}
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-primary group-hover:w-full transition-all duration-300" />
               </a>
             ))}
           </nav>
 
           {/* Right Side Actions */}
-          <div className="flex items-center gap-3">
-            {/* Theme Toggle */}
+          <div className="flex items-center gap-2">
             <ThemeToggle />
 
             {/* CTA Button */}
             <div className="hidden lg:block">
-              <Button className="gradient-primary text-white font-semibold shadow-lg hover:shadow-xl transition-shadow">
+              <Button size="sm" className="gradient-primary text-white font-medium">
                 Seja Membro
               </Button>
             </div>
@@ -72,28 +69,29 @@ const Header = () => {
             {/* Mobile Menu Toggle */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden p-2 text-foreground hover:text-primary transition-colors"
+              className="lg:hidden p-2 hover:bg-muted rounded-lg transition-colors"
+              aria-label="Menu"
             >
-              {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
           </div>
         </div>
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden pb-6 animate-fade-in-up">
-            <nav className="flex flex-col gap-2">
+          <div className="lg:hidden pb-4 border-t border-border/50 mt-2 pt-4">
+            <nav className="flex flex-col gap-1">
               {menuItems.map((item) => (
                 <a
                   key={item.label}
                   href={item.href}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="px-4 py-3 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-muted rounded-lg transition-all"
+                  className="px-3 py-2.5 text-sm font-medium text-foreground/80 hover:text-foreground hover:bg-muted/80 rounded-lg transition-colors"
                 >
                   {item.label}
                 </a>
               ))}
-              <Button className="gradient-primary text-white font-semibold mt-2">
+              <Button size="sm" className="gradient-primary text-white font-medium mt-2">
                 Seja Membro
               </Button>
             </nav>

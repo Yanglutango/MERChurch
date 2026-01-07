@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react'
-import { Heart, Mail, Phone, Send, DollarSign, CreditCard, Building2 } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Heart, DollarSign, CreditCard, Building2 } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog'
 import { Input } from '../ui/input'
@@ -7,13 +7,11 @@ import { Label } from '../ui/label'
 import { Textarea } from '../ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
 import { Card } from '../ui/card'
-import { useAppStore } from '../../stores/appStore'
 import { toast } from 'sonner'
 
 type PaymentMethod = 'iban' | 'mcx'
 
 const Footer = () => {
-  const { t } = useAppStore()
   const [isDevSupportOpen, setIsDevSupportOpen] = useState(false)
   const [showContact, setShowContact] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -21,7 +19,6 @@ const Footer = () => {
   const [supportForm, setSupportForm] = useState({
     name: '',
     email: '',
-    phone: '',
     amount: '',
     message: '',
     method: 'iban' as PaymentMethod,
@@ -65,7 +62,6 @@ const Footer = () => {
     setSupportForm({
       name: '',
       email: '',
-      phone: '',
       amount: '',
       message: '',
       method: 'iban',
@@ -75,17 +71,14 @@ const Footer = () => {
   const confirmSupport = async () => {
     setLoading(true)
     try {
-      // Aqui você integraria com o gateway de pagamento ou backend.
-      // Simulação de delay:
-      await new Promise((res) => setTimeout(res, 700))
-
+      await new Promise((res) => setTimeout(res, 500))
       setIsDevSupportOpen(false)
       setShowContact(false)
       resetForm()
       toast.success('Obrigado pelo seu apoio! 🙏')
     } catch (err) {
       console.error(err)
-      toast.error('Ocorreu um erro ao processar seu apoio. Tente novamente.')
+      toast.error('Erro ao processar. Tente novamente.')
     } finally {
       setLoading(false)
     }
@@ -100,61 +93,55 @@ const Footer = () => {
 
   return (
     <>
-      <footer className="relative mt-5 border-t border-border/30 bg-background/50 backdrop-blur-sm">
+      <footer className="mt-8 border-t border-border/40 bg-background">
         <div className="container-custom py-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-3">
             {/* Left - Copyright */}
             <div className="text-center md:text-left">
               <p className="text-sm text-muted-foreground">
                 © {new Date().getFullYear()}{' '}
                 <span className="font-semibold text-foreground">KAIRÓS</span> - MER
               </p>
-              <p className="text-xs text-muted-foreground/60 mt-1">
-                Desenvolvido com <Heart className="inline h-3 w-3 text-red-900" /> para glorificar a Deus
+              <p className="text-xs text-muted-foreground/70 mt-0.5">
+                Desenvolvido com <Heart className="inline h-3 w-3 text-red-500" /> para glorificar a Deus
               </p>
             </div>
 
             {/* Center/Right - Dev Support */}
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-muted-foreground hidden sm:inline">Gostou da app?</span>
+            <div className="flex items-center gap-2">
 
               <Dialog open={isDevSupportOpen} onOpenChange={setIsDevSupportOpen}>
                 <Button
                   onClick={() => setIsDevSupportOpen(true)}
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
-                  className="group border-2 hover:border-accent hover:bg-accent/10 transition-all font-semibold"
-                  aria-haspopup="dialog"
-                  aria-expanded={isDevSupportOpen}
+                  className="text-muted-foreground hover:text-foreground"
+                  aria-label="Apoiar desenvolvedor"
                 >
-                  <Heart className="h-4 w-4 mr-2 text-accent group-hover:scale-110 transition-transform" />
-                  Apoie o Dev
+                  <Heart className="h-4 w-4 mr-1.5" />
+                  Apoiar Dev
                 </Button>
 
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-w-lg">
                   <DialogHeader>
-                    <DialogTitle className="text-2xl flex items-center gap-2">
-                      <Heart className="h-6 w-6 text-accent" />
+                    <DialogTitle className="text-xl flex items-center gap-2">
+                      <Heart className="h-5 w-5 text-primary" />
                       Apoiar o Desenvolvedor
                     </DialogTitle>
                   </DialogHeader>
 
                   {!showContact ? (
-                    <div className="space-y-6">
-                      <div className="p-6 bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 rounded-2xl border-2 border-primary/20 text-center">
-                        <p className="text-muted-foreground leading-relaxed">
-                          Sua contribuição ajuda a manter e melhorar esta plataforma, permitindo que continuemos a servir a
-                          comunidade MER com excelência. Obrigado pelo seu apoio! 🙏
-                        </p>
-                      </div>
+                    <div className="space-y-4">
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        Sua contribuição ajuda a manter e melhorar esta plataforma. Obrigado pelo seu apoio! 🙏
+                      </p>
 
-                      <div className="space-y-4">
-                        <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <Label htmlFor="dev-name">Nome Completo *</Label>
+                            <Label htmlFor="dev-name" className="text-sm">Nome *</Label>
                             <Input
                               id="dev-name"
-                              aria-label="Nome completo"
                               value={supportForm.name}
                               onChange={(e) => setSupportForm({ ...supportForm, name: e.target.value })}
                               placeholder="Seu nome"
@@ -162,11 +149,10 @@ const Footer = () => {
                           </div>
 
                           <div>
-                            <Label htmlFor="dev-email">Email *</Label>
+                            <Label htmlFor="dev-email" className="text-sm">Email *</Label>
                             <Input
                               id="dev-email"
                               type="email"
-                              aria-label="Email para contato"
                               value={supportForm.email}
                               onChange={(e) => setSupportForm({ ...supportForm, email: e.target.value })}
                               placeholder="seu@email.com"
@@ -174,53 +160,38 @@ const Footer = () => {
                           </div>
                         </div>
 
-                        <div className="grid md:grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor="dev-phone">Telefone</Label>
-                            <Input
-                              id="dev-phone"
-                              type="tel"
-                              aria-label="Telefone"
-                              value={supportForm.phone}
-                              onChange={(e) => setSupportForm({ ...supportForm, phone: e.target.value })}
-                              placeholder="(244) 999-999-999"
-                            />
-                          </div>
-
-                          <div>
-                            <Label htmlFor="dev-amount">Valor (Kz) *</Label>
-                            <Input
-                              id="dev-amount"
-                              type="text"
-                              inputMode="decimal"
-                              aria-label="Valor em kwanzas"
-                              value={supportForm.amount}
-                              onChange={(e) => setSupportForm({ ...supportForm, amount: e.target.value })}
-                              placeholder="5000.00"
-                            />
-                          </div>
+                        <div>
+                          <Label htmlFor="dev-amount" className="text-sm">Valor (Kz) *</Label>
+                          <Input
+                            id="dev-amount"
+                            type="text"
+                            inputMode="decimal"
+                            value={supportForm.amount}
+                            onChange={(e) => setSupportForm({ ...supportForm, amount: e.target.value })}
+                            placeholder="5000.00"
+                          />
                         </div>
 
                         <div>
-                          <Label htmlFor="dev-method">Método de Pagamento *</Label>
+                          <Label htmlFor="dev-method" className="text-sm">Método de Pagamento *</Label>
                           <Select
                             value={supportForm.method}
                             onValueChange={(value: any) => setSupportForm({ ...supportForm, method: value })}
                           >
-                            <SelectTrigger aria-label="Selecionar método de pagamento">
+                            <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="iban">
                                 <div className="flex items-center gap-2">
                                   <Building2 className="h-4 w-4" />
-                                  Transferência Bancária (IBAN)
+                                  IBAN
                                 </div>
                               </SelectItem>
                               <SelectItem value="mcx">
                                 <div className="flex items-center gap-2">
                                   <CreditCard className="h-4 w-4" />
-                                  Multicaixa Express (MCX)
+                                  MCX
                                 </div>
                               </SelectItem>
                             </SelectContent>
@@ -228,81 +199,65 @@ const Footer = () => {
                         </div>
 
                         <div>
-                          <Label htmlFor="dev-message">Mensagem (Opcional)</Label>
+                          <Label htmlFor="dev-message" className="text-sm">Mensagem (Opcional)</Label>
                           <Textarea
                             id="dev-message"
-                            aria-label="Mensagem de apoio"
                             value={supportForm.message}
                             onChange={(e) => setSupportForm({ ...supportForm, message: e.target.value })}
-                            placeholder="Deixe uma mensagem de apoio..."
-                            rows={4}
+                            placeholder="Deixe uma mensagem..."
+                            rows={3}
                           />
                         </div>
 
                         <Button
                           onClick={handleSupport}
-                          className="w-full bg-gradient-to-r from-primary via-accent to-primary text-white font-semibold text-lg py-6 shadow-lg hover:shadow-xl transition-shadow"
-                          size="lg"
-                          aria-label="Continuar para pagamento"
+                          className="w-full gradient-primary text-white font-medium"
                         >
-                          <DollarSign className="h-5 w-5 mr-2" />
-                          Continuar para Pagamento
+                          Continuar
                         </Button>
                       </div>
                     </div>
                   ) : (
-                    <div className="space-y-6">
-                      <Card className="p-6 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-2 border-green-500/20">
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="p-3 bg-green-500 rounded-full">
-                            <Heart className="h-6 w-6 text-white" />
+                    <div className="space-y-4">
+                      <Card className="p-5 border-green-500/30 bg-green-500/5">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="p-2 bg-green-500 rounded-lg">
+                            <Heart className="h-5 w-5 text-white" />
                           </div>
                           <div>
-                            <h3 className="font-bold text-lg text-foreground">Obrigado pelo seu apoio!</h3>
+                            <h3 className="font-semibold text-foreground">Obrigado!</h3>
                             <p className="text-sm text-muted-foreground">
-                              Valor:{' '}
-                              <span className="font-bold text-green-600">
-                                Kz {parseFloat(supportForm.amount || '0').toLocaleString('pt-AO', { minimumFractionDigits: 2 })}
-                              </span>
+                              Kz {parseFloat(supportForm.amount || '0').toLocaleString('pt-AO', { minimumFractionDigits: 2 })}
                             </p>
                           </div>
                         </div>
 
-                        <div className="text-sm text-muted-foreground space-y-2 mb-4">
+                        <div className="text-sm text-muted-foreground space-y-1.5">
                           <p>
-                            Método: <span className="font-medium text-foreground">{supportForm.method === 'iban' ? 'IBAN' : 'MCX'}</span>
+                            <span className="font-medium text-foreground">{supportForm.method === 'iban' ? 'IBAN' : 'MCX'}:</span>{' '}
+                            {supportForm.method === 'iban' ? devContact.iban : devContact.mcxNumber}
                           </p>
-                          {supportForm.method === 'iban' ? (
-                            <p>
-                              IBAN: <span className="font-mono text-sm">{devContact.iban}</span>
-                            </p>
-                          ) : (
-                            <p>
-                              Número MCX: <span className="font-mono text-sm">{devContact.mcxNumber}</span>
-                            </p>
-                          )}
                           <p>
-                            Contato: <a className="underline" href={`mailto:${devContact.email}`}>{devContact.email}</a>
+                            <span className="font-medium text-foreground">Email:</span>{' '}
+                            <a className="underline hover:text-foreground" href={`mailto:${devContact.email}`}>{devContact.email}</a>
                           </p>
                         </div>
 
-                        <div className="flex gap-3">
-                          {/* Botão Voltar */}
+                        <div className="flex gap-2 mt-4">
                           <Button
                             onClick={() => setShowContact(false)}
                             variant="outline"
                             className="flex-1"
-                            aria-label="Voltar para o formulário"
+                            size="sm"
                           >
                             Voltar
                           </Button>
 
-                          {/* Botão Concluir */}
                           <Button
                             onClick={confirmSupport}
-                            className="flex-1 bg-gradient-to-r from-primary to-accent text-white font-semibold hover:opacity-90 transition-opacity"
-                            aria-label="Concluir apoio"
+                            className="flex-1 gradient-primary text-white"
                             disabled={loading}
+                            size="sm"
                           >
                             {loading ? 'Processando...' : 'Concluir'}
                           </Button>
