@@ -8,8 +8,9 @@ import { Label } from '../components/ui/label'
 import { Textarea } from '../components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
+import { LogoHero } from '../components/ui/logo'
 import { supabase } from '../lib/supabase'
-import { Church, MapPin, Phone, Mail, Send, Heart, Users, Globe, BookOpen, Cross } from 'lucide-react'
+import { MapPin, Phone, Mail, Send, Heart, Users, Globe, BookOpen, Cross } from 'lucide-react'
 import { toast } from 'sonner'
 
 const AboutPage = () => {
@@ -94,7 +95,7 @@ const AboutPage = () => {
   return (
     <Layout title={t('nav.about')}>
       <div className="space-y-8">
-        {/* Hero */}
+        {/* Hero with KAIRÓS Logo */}
         <Card className="relative overflow-hidden border-0 shadow-2xl rounded-2xl">
           <div className="absolute inset-0">
             <img
@@ -105,15 +106,9 @@ const AboutPage = () => {
             <div className="absolute inset-0 bg-gradient-to-r from-primary/95 via-blue-900/90 to-indigo-900/95" />
           </div>
 
-          <div className="relative z-10 p-12 md:p-16 text-white text-center">
-            <div className="inline-flex p-6 bg-white/20 backdrop-blur-sm rounded-3xl mb-6">
-              <Church className="h-20 w-20" />
-            </div>
-            <h1 className="text-4xl md:text-6xl font-bold mb-4">{t('brand.fullName')}</h1>
-            <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto mb-4">
-              {t('brand.tagline')}
-            </p>
-            <p className="text-lg text-white/80 italic">
+          <div className="relative z-10 p-8 md:p-16 text-white">
+            <LogoHero />
+            <p className="text-lg md:text-xl text-white/90 italic text-center mt-8 max-w-3xl mx-auto">
               {t('brand.verse')}
             </p>
           </div>

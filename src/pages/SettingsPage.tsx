@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Layout from '../components/layout/Layout'
 import { Card } from '../components/ui/card'
 import { Button } from '../components/ui/button'
@@ -8,7 +8,8 @@ import { useAuth } from '../hooks/useAuth'
 import { useAuthStore } from '../stores/authStore'
 import { useAppStore } from '../stores/appStore'
 import { authService } from '../lib/authService'
-import { Settings as SettingsIcon, User, Palette, Languages, Coins, Sparkles, Shield } from 'lucide-react'
+import { supabase } from '../lib/supabase'
+import { Settings as SettingsIcon, User, Palette, Languages, Coins, Sparkles, Shield, Moon, Sun, Monitor } from 'lucide-react'
 import { toast } from 'sonner'
 
 const SettingsPage = () => {
@@ -20,7 +21,49 @@ const SettingsPage = () => {
     username: user?.username || '',
     phone: user?.phone || '',
   })
-  const [accentColor, setAccentColor] = useState(user?.accentColor || '#4A90A4')
+  const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>('system')
+  const [accentColor, setAccentColor] = useState('#4A90A4')
+
+  useEffect(() => {
+    loadUserPreferences()
+  }, [user])
+
+  const loadUserPreferences = async () => {
+    if (!user) return
+
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('theme_mode, accent_color, preferred_language, preferred_currency')
+        .eq('id', user.id)
+        .single()
+
+      if (error) throw error
+
+      if (data) {
+        setThemeMode(data.theme_mode || 'system')
+        setAccentColor(data.accent_color || '#4A90A4')
+        if (data.preferred_language) setLanguage(data.preferred_language as any)
+        if (data.preferred_currency) setCurrency(data.preferred_currency as any)
+      }
+    } catch (error) {
+      console.error('Error loading preferences:', error)
+    }
+  }
+
+  const applyTheme = (mode: 'light' | 'dark' | 'system') => {
+    const root = document.documentElement
+    root.classList.remove('light', 'dark')
+
+    if (mode === 'system') {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      root.classList.add(prefersDark ? 'dark' : 'light')
+    } else {
+      root.classList.add(mode)
+    }
+
+    localStorage.setItem('theme', mode)
+  }
 
   const languages = [
     { code: 'pt', name: 'Português', nativeName: 'Português', flag: '🇦🇴' },
@@ -50,10 +93,15 @@ const SettingsPage = () => {
   const updateProfile = async () => {
     setLoading(true)
     try {
-      await authService.updateProfile({
-        username: profile.username,
-        phone: profile.phone,
-      })
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({
+          username: profile.username,
+          phone: profile.phone,
+        })
+        .eq('id', user!.id)
+
+      if (error) throw error
 
       updateUser({
         username: profile.username,
@@ -68,19 +116,67 @@ const SettingsPage = () => {
     }
   }
 
+  const updateThemeMode = async (mode: 'light' | 'dark' | 'system') => {
+    setLoading(true)
+    try {
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({ theme_mode: mode })
+        .eq('id', user!.id)
+
+      if (error) throw error
+
+      setThemeMode(mode)
+      applyTheme(mode)
+      toast.success('Tema atualizado!')
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao atualizar tema')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const updateLanguagePreference = async (lang: string) => {
+    try {
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({ preferred_language: lang })
+        .eq('id', user!.id)
+
+      if (error) throw error
+
+      setLanguage(lang as any)
+      toast.success('Idioma atualizado!')
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao atualizar idioma')
+    }
+  }
+
+  const updateCurrencyPreference = async (curr: string) => {
+    try {
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({ preferred_currency: curr })
+        .eq('id', user!.id)
+
+      if (error) throw error
+
+      setCurrency(curr as any)
+      toast.success('Moeda atualizada!')
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao atualizar moeda')
+    }
+  }
+
   const updateAccentColor = async () => {
     setLoading(true)
     try {
-      await authService.updateProfile({
-        accentColor: accentColor,
-      })
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({ accent_color: accentColor })
+        .eq('id', user!.id)
 
-      updateUser({
-        accentColor: accentColor,
-      })
-
-      // Apply accent color to CSS variables
-      document.documentElement.style.setProperty('--accent', accentColor)
+      if (error) throw error
 
       toast.success('Cor de destaque atualizada!')
     } catch (error: any) {
@@ -179,6 +275,63 @@ const SettingsPage = () => {
           </div>
         </Card>
 
+        {/* Theme Mode */}
+        <Card className="p-8 border-2 hover:shadow-2xl transition-shadow elevation-2">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl shadow-lg">
+              <Palette className="h-6 w-6 text-white" />
+            </div>
+            <h2 className="text-3xl font-bold text-foreground">{t('settings.themeMode')}</h2>
+          </div>
+
+          <div className="space-y-4">
+            <Label className="text-base font-semibold mb-3 block">Escolha o modo de exibição</Label>
+            <div className="grid grid-cols-3 gap-4">
+              <button
+                onClick={() => updateThemeMode('light')}
+                className={`p-6 border-2 rounded-xl flex flex-col items-center gap-3 transition-all transform hover:scale-105 ${
+                  themeMode === 'light'
+                    ? 'border-primary bg-primary/10 shadow-lg scale-105'
+                    : 'border-border hover:border-primary/50'
+                }`}
+              >
+                <div className="p-3 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-xl">
+                  <Sun className="h-8 w-8 text-white" />
+                </div>
+                <span className="text-sm font-bold text-foreground">Claro</span>
+              </button>
+
+              <button
+                onClick={() => updateThemeMode('dark')}
+                className={`p-6 border-2 rounded-xl flex flex-col items-center gap-3 transition-all transform hover:scale-105 ${
+                  themeMode === 'dark'
+                    ? 'border-primary bg-primary/10 shadow-lg scale-105'
+                    : 'border-border hover:border-primary/50'
+                }`}
+              >
+                <div className="p-3 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl">
+                  <Moon className="h-8 w-8 text-white" />
+                </div>
+                <span className="text-sm font-bold text-foreground">Escuro</span>
+              </button>
+
+              <button
+                onClick={() => updateThemeMode('system')}
+                className={`p-6 border-2 rounded-xl flex flex-col items-center gap-3 transition-all transform hover:scale-105 ${
+                  themeMode === 'system'
+                    ? 'border-primary bg-primary/10 shadow-lg scale-105'
+                    : 'border-border hover:border-primary/50'
+                }`}
+              >
+                <div className="p-3 bg-gradient-to-br from-gray-500 to-gray-700 rounded-xl">
+                  <Monitor className="h-8 w-8 text-white" />
+                </div>
+                <span className="text-sm font-bold text-foreground">Sistema</span>
+              </button>
+            </div>
+          </div>
+        </Card>
+
         {/* Language & Currency */}
         <Card className="p-8 border-2 hover:shadow-2xl transition-shadow elevation-2">
           <div className="flex items-center gap-3 mb-6">
@@ -196,7 +349,7 @@ const SettingsPage = () => {
                 {languages.map((lang) => (
                   <button
                     key={lang.code}
-                    onClick={() => setLanguage(lang.code as any)}
+                    onClick={() => updateLanguagePreference(lang.code)}
                     className={`p-5 border-2 rounded-xl flex flex-col items-center gap-2 transition-all transform hover:scale-105 ${
                       language === lang.code
                         ? 'border-primary bg-primary/10 shadow-lg scale-105'
@@ -217,7 +370,7 @@ const SettingsPage = () => {
                 {currencies.map((curr) => (
                   <button
                     key={curr.code}
-                    onClick={() => setCurrency(curr.code as any)}
+                    onClick={() => updateCurrencyPreference(curr.code)}
                     className={`p-5 border-2 rounded-xl flex flex-col items-center gap-2 transition-all transform hover:scale-105 ${
                       currency === curr.code
                         ? 'border-primary bg-primary/10 shadow-lg scale-105'
