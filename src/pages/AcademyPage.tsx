@@ -4,19 +4,23 @@ import { Card } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
-import { GraduationCap, Play, BookOpen, Clock, Award, TrendingUp } from 'lucide-react'
+import { GraduationCap, Play, BookOpen, Clock, Award, TrendingUp, Plus, Edit2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Course } from '../types'
 import { PageHeader } from '../components/shared/PageHeader'
 import { StatCard } from '../components/shared/StatCard'
 import { EmptyState } from '../components/shared/EmptyState'
 import { LoadingState } from '../components/shared/LoadingState'
+import { AdminAction } from '../components/shared/AdminAction'
+import { CourseEditor } from '../components/admin/CourseEditor'
 
 const AcademyPage = () => {
   const { user } = useAuth()
   const [courses, setCourses] = useState<Course[]>([])
   const [enrolledCourses, setEnrolledCourses] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
+  const [editorOpen, setEditorOpen] = useState(false)
+  const [editingCourse, setEditingCourse] = useState<Course | null>(null)
 
   useEffect(() => {
     loadCourses()
@@ -25,11 +29,11 @@ const AcademyPage = () => {
 
   const loadCourses = async () => {
     setLoading(true)
-    const { data, error} = await supabase
-      .from('courses')
-      .select('*')
-      .eq('is_published', true)
-      .order('created_at', { ascending: false })
+    const query = user?.role === 'admin'
+      ? supabase.from('courses').select('*')
+      : supabase.from('courses').select('*').eq('is_published', true)
+
+    const { data, error } = await query.order('created_at', { ascending: false })
 
     if (error) {
       console.error('Error loading courses:', error)
@@ -53,6 +57,29 @@ const AcademyPage = () => {
     }
 
     setEnrolledCourses(data.map((e) => e.course_id))
+  }
+
+  const handleEditorSuccess = () => {
+    loadCourses()
+    setEditingCourse(null)
+  }
+
+  const handleEdit = (course: Course) => {
+    setEditingCourse(course)
+    setEditorOpen(true)
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir este curso?')) return
+
+    const { error } = await supabase.from('courses').delete().eq('id', id)
+    if (error) {
+      toast.error('Erro ao excluir curso')
+      return
+    }
+
+    toast.success('Curso excluído com sucesso!')
+    loadCourses()
   }
 
   const enrollCourse = async (courseId: string) => {
@@ -96,6 +123,14 @@ const AcademyPage = () => {
           description="Cresça no conhecimento da Palavra de Deus"
           icon={GraduationCap}
           gradient="from-indigo-500 via-purple-500 to-pink-500"
+          actions={
+            <AdminAction>
+              <Button onClick={() => { setEditingCourse(null); setEditorOpen(true); }} className="gradient-primary text-white">
+                <Plus className="h-4 w-4 mr-2" />
+                Criar Curso
+              </Button>
+            </AdminAction>
+          }
         />
 
         {/* Stats */}
@@ -103,7 +138,7 @@ const AcademyPage = () => {
           <StatCard
             icon={BookOpen}
             label="Cursos Disponíveis"
-            value={courses.length}
+            value={courses.filter(c => c.isPublished || user?.role === 'admin').length}
             gradient="from-blue-500 to-cyan-500"
           />
           <StatCard
@@ -135,7 +170,7 @@ const AcademyPage = () => {
                   return (
                     <Card
                       key={course.id}
-                      className="overflow-hidden border-2 hover:border-primary/50 transition-all hover:shadow-xl cursor-pointer"
+                      className="group overflow-hidden border-2 hover:border-primary/50 transition-all hover:shadow-xl cursor-pointer"
                     >
                       <div className="relative h-48 bg-muted">
                         <img
@@ -190,7 +225,7 @@ const AcademyPage = () => {
               return (
                 <Card
                   key={course.id}
-                  className="overflow-hidden border-2 hover:border-primary/50 transition-all hover:shadow-xl"
+                  className="group overflow-hidden border-2 hover:border-primary/50 transition-all hover:shadow-xl"
                 >
                   <div className="relative h-48 bg-muted">
                     <img
@@ -203,6 +238,21 @@ const AcademyPage = () => {
                         {badge.label}
                       </div>
                     </div>
+                    {!course.isPublished && user?.role === 'admin' && (
+                      <div className="absolute top-3 left-3 px-3 py-1 bg-orange-500 text-white text-xs font-semibold rounded-full">
+                        Rascunho
+                      </div>
+                    )}
+                    <AdminAction>
+                      <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button size="sm" variant="secondary" onClick={() => handleEdit(course)} className="h-8 w-8 p-0">
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="destructive" onClick={() => handleDelete(course.id)} className="h-8 w-8 p-0">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </AdminAction>
                   </div>
 
                   <div className="p-4">
@@ -246,6 +296,13 @@ const AcademyPage = () => {
           />
         )}
       </div>
+
+      <CourseEditor
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        course={editingCourse}
+        onSuccess={handleEditorSuccess}
+      />
     </Layout>
   )
 }

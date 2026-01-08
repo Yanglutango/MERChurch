@@ -5,12 +5,14 @@ import { Input } from '../components/ui/input'
 import { Button } from '../components/ui/button'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
-import { Play, Search, Eye, BookOpen, Plus } from 'lucide-react'
+import { Play, Search, Eye, BookOpen, Plus, Edit2, Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
 import type { Sermon } from '../types'
 import { PageHeader } from '../components/shared/PageHeader'
 import { EmptyState } from '../components/shared/EmptyState'
 import { LoadingState } from '../components/shared/LoadingState'
 import { AdminAction } from '../components/shared/AdminAction'
+import { SermonEditor } from '../components/admin/SermonEditor'
 
 const SermonsPage = () => {
   const { user } = useAuth()
@@ -18,6 +20,8 @@ const SermonsPage = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [loading, setLoading] = useState(true)
+  const [editorOpen, setEditorOpen] = useState(false)
+  const [editingSermon, setEditingSermon] = useState<Sermon | null>(null)
 
   useEffect(() => {
     loadSermons()
@@ -38,6 +42,29 @@ const SermonsPage = () => {
 
     setSermons(data)
     setLoading(false)
+  }
+
+  const handleEditorSuccess = () => {
+    loadSermons()
+    setEditingSermon(null)
+  }
+
+  const handleEdit = (sermon: Sermon) => {
+    setEditingSermon(sermon)
+    setEditorOpen(true)
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir este sermão?')) return
+
+    const { error } = await supabase.from('sermons').delete().eq('id', id)
+    if (error) {
+      toast.error('Erro ao excluir sermão')
+      return
+    }
+
+    toast.success('Sermão excluído com sucesso!')
+    loadSermons()
   }
 
   const filteredSermons = sermons.filter((sermon) => {
@@ -68,7 +95,7 @@ const SermonsPage = () => {
           gradient="from-blue-500 via-cyan-500 to-teal-500"
           actions={
             <AdminAction>
-              <Button className="gradient-primary text-white">
+              <Button onClick={() => { setEditingSermon(null); setEditorOpen(true); }} className="gradient-primary text-white">
                 <Plus className="h-4 w-4 mr-2" />
                 Adicionar Sermão
               </Button>
@@ -76,7 +103,7 @@ const SermonsPage = () => {
           }
         />
         
-        {/* Header */}
+        {/* Search & Filter */}
         <Card className="p-6 border-2">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
@@ -89,13 +116,14 @@ const SermonsPage = () => {
               />
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               {categories.map((cat) => (
                 <Button
                   key={cat}
                   variant={selectedCategory === cat ? 'default' : 'outline'}
                   onClick={() => setSelectedCategory(cat)}
                   className="capitalize"
+                  size="sm"
                 >
                   {cat === 'all' ? 'Todos' : cat}
                 </Button>
@@ -129,10 +157,18 @@ const SermonsPage = () => {
                   year: 'numeric',
                 })}
               </p>
-              <Button size="lg" className="bg-white text-primary hover:bg-white/90 font-semibold">
-                <Play className="mr-2 h-5 w-5" />
-                Assistir Agora
-              </Button>
+              <div className="flex gap-3">
+                <Button size="lg" className="bg-white text-primary hover:bg-white/90 font-semibold">
+                  <Play className="mr-2 h-5 w-5" />
+                  Assistir Agora
+                </Button>
+                <AdminAction>
+                  <Button size="lg" variant="outline" onClick={() => handleEdit(filteredSermons[0])} className="bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white/20">
+                    <Edit2 className="h-4 w-4 mr-2" />
+                    Editar
+                  </Button>
+                </AdminAction>
+              </div>
             </div>
           </Card>
         )}
@@ -140,14 +176,14 @@ const SermonsPage = () => {
         {/* Sermons Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredSermons.slice(1).map((sermon) => (
-            <Card key={sermon.id} className="group overflow-hidden border-2 hover:border-primary/50 transition-all hover:shadow-xl cursor-pointer">
+            <Card key={sermon.id} className="group overflow-hidden border-2 hover:border-primary/50 transition-all hover:shadow-xl">
               <div className="relative h-48 overflow-hidden bg-muted">
                 <img
                   src={sermon.thumbnailUrl || 'https://images.unsplash.com/photo-1507692049790-de58290a4334?w=600&h=400&fit=crop'}
                   alt={sermon.title}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                 />
-                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors flex items-center justify-center cursor-pointer">
                   <div className="p-4 bg-white/20 backdrop-blur-sm rounded-full group-hover:scale-110 transition-transform">
                     <Play className="h-8 w-8 text-white" />
                   </div>
@@ -156,6 +192,16 @@ const SermonsPage = () => {
                   <Eye className="h-3 w-3" />
                   {sermon.views}
                 </div>
+                <AdminAction>
+                  <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button size="sm" variant="secondary" onClick={() => handleEdit(sermon)} className="h-8 w-8 p-0">
+                      <Edit2 className="h-4 w-4" />
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={() => handleDelete(sermon.id)} className="h-8 w-8 p-0">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </AdminAction>
               </div>
 
               <div className="p-4">
@@ -183,6 +229,13 @@ const SermonsPage = () => {
           />
         )}
       </div>
+
+      <SermonEditor
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        sermon={editingSermon}
+        onSuccess={handleEditorSuccess}
+      />
     </Layout>
   )
 }

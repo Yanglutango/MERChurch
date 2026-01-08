@@ -4,18 +4,22 @@ import { Card } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
-import { Calendar, Clock, MapPin, Users, Plus } from 'lucide-react'
+import { Calendar, Clock, MapPin, Plus, Edit2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Event } from '../types'
 import { PageHeader } from '../components/shared/PageHeader'
 import { EmptyState } from '../components/shared/EmptyState'
 import { LoadingState } from '../components/shared/LoadingState'
+import { AdminAction } from '../components/shared/AdminAction'
+import { EventEditor } from '../components/admin/EventEditor'
 
 const AgendaPage = () => {
   const { user } = useAuth()
   const [events, setEvents] = useState<Event[]>([])
   const [registeredEvents, setRegisteredEvents] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
+  const [editorOpen, setEditorOpen] = useState(false)
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null)
 
   useEffect(() => {
     loadEvents()
@@ -52,6 +56,29 @@ const AgendaPage = () => {
     }
 
     setRegisteredEvents(data.map((r) => r.event_id))
+  }
+
+  const handleEditorSuccess = () => {
+    loadEvents()
+    setEditingEvent(null)
+  }
+
+  const handleEdit = (event: Event) => {
+    setEditingEvent(event)
+    setEditorOpen(true)
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir este evento?')) return
+
+    const { error } = await supabase.from('events').delete().eq('id', id)
+    if (error) {
+      toast.error('Erro ao excluir evento')
+      return
+    }
+
+    toast.success('Evento excluído com sucesso!')
+    loadEvents()
   }
 
   const toggleRegistration = async (eventId: string) => {
@@ -103,6 +130,14 @@ const AgendaPage = () => {
           description="Participe dos nossos eventos e faça parte da família MER"
           icon={Calendar}
           gradient="from-purple-500 via-pink-500 to-rose-500"
+          actions={
+            <AdminAction>
+              <Button onClick={() => { setEditingEvent(null); setEditorOpen(true); }} className="gradient-primary text-white">
+                <Plus className="h-4 w-4 mr-2" />
+                Criar Evento
+              </Button>
+            </AdminAction>
+          }
         />
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -110,7 +145,7 @@ const AgendaPage = () => {
             const isRegistered = registeredEvents.includes(event.id)
 
             return (
-              <Card key={event.id} className="overflow-hidden border-2 hover:border-primary/50 transition-all hover:shadow-xl">
+              <Card key={event.id} className="group overflow-hidden border-2 hover:border-primary/50 transition-all hover:shadow-xl">
                 <div className="relative h-48">
                   <img
                     src={event.imageUrl || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=600&h=400&fit=crop'}
@@ -123,6 +158,16 @@ const AgendaPage = () => {
                       {event.category}
                     </div>
                   )}
+                  <AdminAction>
+                    <div className="absolute top-3 left-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button size="sm" variant="secondary" onClick={() => handleEdit(event)} className="h-8 w-8 p-0">
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => handleDelete(event.id)} className="h-8 w-8 p-0">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </AdminAction>
                 </div>
 
                 <div className="p-6 space-y-4">
@@ -173,6 +218,13 @@ const AgendaPage = () => {
           />
         )}
       </div>
+
+      <EventEditor
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        event={editingEvent}
+        onSuccess={handleEditorSuccess}
+      />
     </Layout>
   )
 }

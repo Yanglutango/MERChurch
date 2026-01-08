@@ -11,6 +11,8 @@ import {
   DollarSign,
   TrendingUp,
   Activity,
+  UserCheck,
+  UserPlus,
 } from 'lucide-react'
 import { PageHeader } from '../components/shared/PageHeader'
 import { StatCard } from '../components/shared/StatCard'
@@ -20,12 +22,13 @@ const DashboardPage = () => {
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({
     totalUsers: 0,
+    totalMembers: 0,
+    totalGuests: 0,
     totalSermons: 0,
     totalEvents: 0,
     totalPrayers: 0,
     totalTransactions: 0,
     totalRevenue: 0,
-    totalMinistries: 0,
     totalCourses: 0,
   })
 
@@ -36,27 +39,29 @@ const DashboardPage = () => {
   const loadStats = async () => {
     setLoading(true)
     try {
-      const [users, sermons, events, prayers, transactions, ministries, courses] = await Promise.all([
+      const [users, members, guests, sermons, events, prayers, transactions, courses] = await Promise.all([
         supabase.from('user_profiles').select('id', { count: 'exact', head: true }),
+        supabase.from('user_profiles').select('id', { count: 'exact', head: true }).eq('role', 'member'),
+        supabase.from('user_profiles').select('id', { count: 'exact', head: true }).eq('role', 'guest'),
         supabase.from('sermons').select('id', { count: 'exact', head: true }),
         supabase.from('events').select('id', { count: 'exact', head: true }),
         supabase.from('prayer_requests').select('id', { count: 'exact', head: true }),
         supabase.from('transactions').select('amount, status'),
-        supabase.from('ministries').select('id', { count: 'exact', head: true }),
         supabase.from('courses').select('id', { count: 'exact', head: true }),
       ])
 
       const completedTransactions = transactions.data?.filter((t) => t.status === 'completed') || []
-      const totalRevenue = completedTransactions.reduce((sum, t) => sum + t.amount, 0)
+      const totalRevenue = completedTransactions.reduce((sum, t) => sum + parseFloat(t.amount), 0)
 
       setStats({
         totalUsers: users.count || 0,
+        totalMembers: members.count || 0,
+        totalGuests: guests.count || 0,
         totalSermons: sermons.count || 0,
         totalEvents: events.count || 0,
         totalPrayers: prayers.count || 0,
         totalTransactions: transactions.data?.length || 0,
         totalRevenue,
-        totalMinistries: ministries.count || 0,
         totalCourses: courses.count || 0,
       })
     } catch (error) {
@@ -69,21 +74,33 @@ const DashboardPage = () => {
   const statsCards = [
     {
       icon: Users,
-      label: 'Total de Membros',
+      label: 'Total de Usuários',
       value: stats.totalUsers,
       color: 'from-blue-500 to-cyan-500',
     },
     {
+      icon: UserCheck,
+      label: 'Membros',
+      value: stats.totalMembers,
+      color: 'from-green-500 to-emerald-500',
+    },
+    {
+      icon: UserPlus,
+      label: 'Convidados',
+      value: stats.totalGuests,
+      color: 'from-yellow-500 to-orange-500',
+    },
+    {
       icon: BookOpen,
-      label: 'Sermões Publicados',
+      label: 'Sermões',
       value: stats.totalSermons,
       color: 'from-purple-500 to-pink-500',
     },
     {
       icon: Calendar,
-      label: 'Eventos Programados',
+      label: 'Eventos',
       value: stats.totalEvents,
-      color: 'from-green-500 to-emerald-500',
+      color: 'from-indigo-500 to-purple-500',
     },
     {
       icon: Heart,
@@ -94,24 +111,12 @@ const DashboardPage = () => {
     {
       icon: DollarSign,
       label: 'Receita Total',
-      value: `R$ ${stats.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-      color: 'from-green-500 to-emerald-500',
-    },
-    {
-      icon: TrendingUp,
-      label: 'Transações',
-      value: stats.totalTransactions,
-      color: 'from-yellow-500 to-orange-500',
-    },
-    {
-      icon: Users,
-      label: 'Ministérios Ativos',
-      value: stats.totalMinistries,
-      color: 'from-indigo-500 to-purple-500',
+      value: `Kz ${stats.totalRevenue.toLocaleString('pt-AO', { minimumFractionDigits: 2 })}`,
+      color: 'from-green-500 to-teal-500',
     },
     {
       icon: Activity,
-      label: 'Cursos Disponíveis',
+      label: 'Cursos',
       value: stats.totalCourses,
       color: 'from-pink-500 to-rose-500',
     },
@@ -131,7 +136,7 @@ const DashboardPage = () => {
         {/* Header */}
         <PageHeader
           title="Dashboard Administrativo"
-          description="Visão geral da plataforma MER"
+          description="Visão geral da plataforma KAIRÓS - MER"
           icon={LayoutDashboard}
           gradient="from-amber-500 via-orange-500 to-red-500"
         />
@@ -152,7 +157,10 @@ const DashboardPage = () => {
         {/* Quick Actions */}
         <div className="grid md:grid-cols-2 gap-6">
           <Card className="p-6 border-2">
-            <h2 className="text-xl font-bold text-foreground mb-4">Ações Rápidas</h2>
+            <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              Ações Rápidas
+            </h2>
             <div className="space-y-3">
               <a
                 href="/sermons"
@@ -194,7 +202,10 @@ const DashboardPage = () => {
           </Card>
 
           <Card className="p-6 border-2">
-            <h2 className="text-xl font-bold text-foreground mb-4">Atividades Recentes</h2>
+            <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+              <Activity className="h-5 w-5 text-primary" />
+              Atividades Recentes
+            </h2>
             <div className="space-y-3 text-sm">
               <div className="p-3 bg-muted/50 rounded-lg">
                 <div className="font-semibold text-foreground">Novo membro cadastrado</div>
@@ -226,7 +237,7 @@ const DashboardPage = () => {
             </div>
             <div>
               <div className="text-muted-foreground mb-1">Última Atualização</div>
-              <div className="font-semibold text-foreground">22/12/2024</div>
+              <div className="font-semibold text-foreground">{new Date().toLocaleDateString('pt-BR')}</div>
             </div>
             <div>
               <div className="text-muted-foreground mb-1">Status do Sistema</div>
