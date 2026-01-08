@@ -4,13 +4,16 @@ import { Card } from '../components/ui/card'
 import { Input } from '../components/ui/input'
 import { Button } from '../components/ui/button'
 import { supabase } from '../lib/supabase'
-import { Play, Search, Filter, Eye, BookOpen } from 'lucide-react'
+import { useAuth } from '../hooks/useAuth'
+import { Play, Search, Eye, BookOpen, Plus } from 'lucide-react'
 import type { Sermon } from '../types'
 import { PageHeader } from '../components/shared/PageHeader'
 import { EmptyState } from '../components/shared/EmptyState'
 import { LoadingState } from '../components/shared/LoadingState'
+import { AdminAction } from '../components/shared/AdminAction'
 
 const SermonsPage = () => {
+  const { user } = useAuth()
   const [sermons, setSermons] = useState<Sermon[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
@@ -63,7 +66,16 @@ const SermonsPage = () => {
           description="Assista e reviva momentos poderosos da Palavra"
           icon={BookOpen}
           gradient="from-blue-500 via-cyan-500 to-teal-500"
+          actions={
+            <AdminAction>
+              <Button className="gradient-primary text-white">
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar Sermão
+              </Button>
+            </AdminAction>
+          }
         />
+        
         {/* Header */}
         <Card className="p-6 border-2">
           <div className="flex flex-col md:flex-row gap-4">
