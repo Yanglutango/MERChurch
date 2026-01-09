@@ -183,29 +183,38 @@
     @apply border border-primary/20 hover:border-primary/40 transition-colors;
   }
   
-  /* Refinamento de Sombras para Melhor Profundidade */
+  /* Refined Shadow System - Better for Light & Dark */
   .soft-shadow {
     box-shadow: 
-      0 1px 3px 0 rgba(10, 46, 74, 0.06),
-      0 1px 2px 0 rgba(10, 46, 74, 0.04);
+      0 1px 3px 0 hsl(var(--primary) / 0.08),
+      0 1px 2px 0 hsl(var(--primary) / 0.05);
   }
   
   .elevation-1 {
     box-shadow: 
-      0 1px 2px 0 rgba(10, 46, 74, 0.05),
-      0 1px 3px 0 rgba(10, 46, 74, 0.03);
+      0 1px 2px 0 hsl(var(--foreground) / 0.04),
+      0 1px 3px 0 hsl(var(--foreground) / 0.03);
   }
   
   .elevation-2 {
     box-shadow: 
-      0 2px 4px -1px rgba(10, 46, 74, 0.06),
-      0 4px 6px -2px rgba(10, 46, 74, 0.05);
+      0 2px 4px -1px hsl(var(--foreground) / 0.06),
+      0 4px 6px -2px hsl(var(--foreground) / 0.05);
   }
   
   .elevation-3 {
     box-shadow: 
-      0 4px 10px -2px rgba(10, 46, 74, 0.08),
-      0 8px 20px -4px rgba(10, 46, 74, 0.06);
+      0 4px 10px -2px hsl(var(--foreground) / 0.09),
+      0 8px 20px -4px hsl(var(--foreground) / 0.07);
+  }
+
+  html.dark .soft-shadow,
+  html.dark .elevation-1,
+  html.dark .elevation-2,
+  html.dark .elevation-3 {
+    box-shadow: 
+      0 4px 12px -2px hsl(0 0% 0% / 0.25),
+      0 2px 6px -1px hsl(0 0% 0% / 0.15);
   }
   
   /* Espaçamentos Padronizados */
@@ -241,6 +250,23 @@
   
   .btn-sm {
     @apply btn-base px-4 py-2 text-sm;
+  }
+
+  /* Consistent Spacing Scale */
+  .space-section {
+    @apply space-y-6 md:space-y-8;
+  }
+
+  .space-content {
+    @apply space-y-4 md:space-y-5;
+  }
+
+  .space-items {
+    @apply space-y-3 md:space-y-4;
+  }
+
+  .space-tight {
+    @apply space-y-2 md:space-y-3;
   }
 }
 

@@ -4,9 +4,11 @@ import { Card } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
-import { Bell, Check, Trash2, Filter } from 'lucide-react'
+import { Bell, Check, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Notification } from '../types'
+import { PageHeader } from '../components/shared/PageHeader'
+import { EmptyState } from '../components/shared/EmptyState'
 
 const NotificationsPage = () => {
   const { user } = useAuth()
@@ -93,74 +95,77 @@ const NotificationsPage = () => {
 
   return (
     <Layout title="Notificações">
-      <div className="space-y-6">
+      <div className="space-section max-w-4xl mx-auto">
         {/* Header */}
-        <Card className="p-6 border-2">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <h2 className="text-2xl font-bold text-foreground mb-1">Notificações</h2>
-              <p className="text-muted-foreground">
-                {notifications.filter((n) => !n.isRead).length} não lidas
-              </p>
-            </div>
-
+        <PageHeader
+          title="Notificações"
+          description={`${notifications.filter((n) => !n.isRead).length} não lidas`}
+          icon={Bell}
+          gradient="from-purple-500 via-indigo-500 to-blue-500"
+          actions={
             <div className="flex gap-2">
               <Button
                 variant={filter === 'all' ? 'default' : 'outline'}
                 onClick={() => setFilter('all')}
+                size="sm"
               >
                 Todas
               </Button>
               <Button
                 variant={filter === 'unread' ? 'default' : 'outline'}
                 onClick={() => setFilter('unread')}
+                size="sm"
               >
                 Não Lidas
               </Button>
-              <Button variant="outline" onClick={markAllAsRead}>
+              <Button variant="outline" onClick={markAllAsRead} size="sm">
                 <Check className="h-4 w-4 mr-2" />
                 Marcar Todas
               </Button>
             </div>
-          </div>
-        </Card>
+          }
+        />
 
         {/* Notifications List */}
-        <div className="space-y-3">
+        <div className="space-items">
           {filteredNotifications.map((notification) => (
             <Card
               key={notification.id}
-              className={`p-6 border-2 transition-all hover:shadow-lg ${
-                !notification.isRead ? 'border-primary/50 bg-primary/5' : ''
+              className={`p-5 md:p-6 border-2 transition-all hover:shadow-lg elevation-1 ${
+                !notification.isRead ? 'border-primary/40 bg-primary/5' : ''
               }`}
             >
               <div className="flex gap-4">
-                <div className="text-3xl">{getIcon(notification.type)}</div>
+                <div className="text-4xl flex-shrink-0">{getIcon(notification.type)}</div>
 
-                <div className="flex-1">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h3 className="font-bold text-foreground">{notification.title}</h3>
-                      <p className="text-sm text-muted-foreground mt-1">
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-start gap-4 mb-2">
+                    <div className="flex-1">
+                      <h3 className="font-bold text-base md:text-lg text-foreground leading-snug mb-1">
+                        {notification.title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
                         {notification.message}
                       </p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-1 flex-shrink-0">
                       {!notification.isRead && (
                         <Button
-                          size="sm"
+                          size="icon"
                           variant="ghost"
                           onClick={() => markAsRead(notification.id)}
+                          className="h-8 w-8"
                         >
                           <Check className="h-4 w-4" />
                         </Button>
                       )}
                       <Button
-                        size="sm"
+                        size="icon"
                         variant="ghost"
                         onClick={() => deleteNotification(notification.id)}
+                        className="h-8 w-8 hover:text-red-500"
                       >
-                        <Trash2 className="h-4 w-4 text-red-500" />
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
@@ -181,14 +186,11 @@ const NotificationsPage = () => {
         </div>
 
         {filteredNotifications.length === 0 && (
-          <Card className="p-12 text-center border-2">
-            <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">
-              {filter === 'unread'
-                ? 'Nenhuma notificação não lida'
-                : 'Nenhuma notificação'}
-            </p>
-          </Card>
+          <EmptyState
+            icon={Bell}
+            title={filter === 'unread' ? 'Nenhuma notificação não lida' : 'Nenhuma notificação'}
+            description={filter === 'unread' ? 'Você está em dia!' : 'Novas notificações aparecerão aqui'}
+          />
         )}
       </div>
     </Layout>

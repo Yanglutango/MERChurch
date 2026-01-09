@@ -93,32 +93,32 @@ const Footer = () => {
 
   return (
     <>
-      <footer className="mt-8 border-t border-border/40 bg-background">
-        <div className="container-custom py-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-3">
+      <footer className="mt-12 border-t border-border/50 bg-muted/20">
+        <div className="container-custom py-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             {/* Left - Copyright */}
-            <div className="text-center md:text-left">
-              <p className="text-sm text-muted-foreground">
+            <div className="text-center md:text-left space-y-1">
+              <p className="text-sm font-medium text-foreground">
                 © {new Date().getFullYear()}{' '}
-                <span className="font-semibold text-foreground">KAIRÓS</span> - MER
+                <span className="font-bold text-gradient">KAIRÓS</span>
+                <span className="text-muted-foreground"> • MER</span>
               </p>
-              <p className="text-xs text-muted-foreground/70 mt-0.5">
-                Desenvolvido com <Heart className="inline h-3 w-3 text-red-500" /> para glorificar a Deus
+              <p className="text-xs text-muted-foreground/80">
+                Desenvolvido com <Heart className="inline h-3 w-3 text-red-500 animate-pulse" /> para glorificar a Deus
               </p>
             </div>
 
             {/* Center/Right - Dev Support */}
             <div className="flex items-center gap-2">
-
               <Dialog open={isDevSupportOpen} onOpenChange={setIsDevSupportOpen}>
                 <Button
                   onClick={() => setIsDevSupportOpen(true)}
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
-                  className="text-muted-foreground hover:text-foreground"
+                  className="text-muted-foreground hover:text-foreground hover:bg-primary/5 border-border/60"
                   aria-label="Apoiar desenvolvedor"
                 >
-                  <Heart className="h-4 w-4 mr-1.5" />
+                  <Heart className="h-4 w-4 mr-2" />
                   Apoiar Dev
                 </Button>
 

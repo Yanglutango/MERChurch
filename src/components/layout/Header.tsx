@@ -31,24 +31,24 @@ const Header = () => {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled
-          ? 'bg-background/98 backdrop-blur-lg border-b border-border/50 shadow-sm'
-          : 'bg-transparent'
+          ? 'bg-background/95 backdrop-blur-xl border-b border-border shadow-sm elevation-2'
+          : 'bg-background/0'
       }`}
     >
       <div className="container-custom">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-18 md:h-20">
           {/* Logo */}
-          <a href="#home" className="flex-shrink-0">
+          <a href="#home" className="flex-shrink-0 transition-opacity hover:opacity-80">
             <Logo size="md" showText={true} animated={false} />
           </a>
 
           {/* Desktop Menu */}
-          <nav className="hidden lg:flex items-center gap-2">
+          <nav className="hidden lg:flex items-center gap-1">
             {menuItems.map((item) => (
               <a
                 key={item.label}
                 href={item.href}
-                className="px-3 py-1.5 text-sm font-medium text-foreground/70 hover:text-foreground transition-colors rounded-lg hover:bg-muted/50"
+                className="px-4 py-2 text-sm font-semibold text-foreground/75 hover:text-foreground transition-colors rounded-lg hover:bg-muted/60"
               >
                 {item.label}
               </a>
@@ -56,12 +56,12 @@ const Header = () => {
           </nav>
 
           {/* Right Side Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <ThemeToggle />
 
             {/* CTA Button */}
             <div className="hidden lg:block">
-              <Button size="sm" className="gradient-primary text-white font-medium">
+              <Button size="default" className="gradient-primary text-white font-semibold shadow-md hover:shadow-lg">
                 Seja Membro
               </Button>
             </div>
