@@ -9,10 +9,10 @@ interface LogoProps {
 }
 
 const sizeMap = {
-  sm: { container: 'w-8 h-8', text: 'text-sm', subtitle: 'text-[8px]' },
-  md: { container: 'w-12 h-12', text: 'text-lg', subtitle: 'text-[10px]' },
-  lg: { container: 'w-20 h-20', text: 'text-2xl', subtitle: 'text-xs' },
-  xl: { container: 'w-32 h-32', text: 'text-4xl', subtitle: 'text-sm' },
+  sm: { container: 'w-10 h-10', text: 'text-base', subtitle: 'text-[9px]' },
+  md: { container: 'w-16 h-16', text: 'text-xl', subtitle: 'text-xs' },
+  lg: { container: 'w-24 h-24', text: 'text-3xl', subtitle: 'text-sm' },
+  xl: { container: 'w-40 h-40', text: 'text-5xl', subtitle: 'text-base' },
 }
 
 export const Logo = ({ size = 'md', showText = true, className = '', animated = false, iconOnly = false }: LogoProps) => {
