@@ -139,5 +139,3 @@ export default function HomePage() {
     </Layout>
   )
 }
-
-export default HomePage
