@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/layout/Layout'
-import { Button } from '../components/ui/Button'
-import { Card } from '../components/ui/Card'
+import { Button } from '../components/ui/button'
+import { Card } from '../components/ui/card'
 import { useUser } from '../contexts/UserContext'
 import {
   Play,
