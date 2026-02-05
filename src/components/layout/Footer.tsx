@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Heart, DollarSign, CreditCard, Building2 } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog'
@@ -7,11 +8,15 @@ import { Label } from '../ui/label'
 import { Textarea } from '../ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
 import { Card } from '../ui/card'
+import { Logo } from '../ui/logo'
+import { useAppStore } from '../../stores/appStore'
 import { toast } from 'sonner'
 
 type PaymentMethod = 'iban' | 'mcx'
 
 const Footer = () => {
+  const navigate = useNavigate()
+  const { t } = useAppStore()
   const [isDevSupportOpen, setIsDevSupportOpen] = useState(false)
   const [showContact, setShowContact] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -25,7 +30,6 @@ const Footer = () => {
   })
 
   useEffect(() => {
-    // Reset form when dialog closes
     if (!isDevSupportOpen) {
       setShowContact(false)
       resetForm()
@@ -37,7 +41,6 @@ const Footer = () => {
   }
 
   const handleSupport = () => {
-    // Validações básicas
     if (!supportForm.name.trim() || !supportForm.email.trim() || !supportForm.amount.trim()) {
       toast.error('Preencha todos os campos obrigatórios')
       return
@@ -54,7 +57,6 @@ const Footer = () => {
       return
     }
 
-    // Se tudo ok, mostra a tela de contato/resumo
     setShowContact(true)
   }
 
@@ -87,39 +89,126 @@ const Footer = () => {
   const devContact = {
     whatsapp: '+244 939 226 005',
     email: 'lutangoyanivo1234@gmail.com',
-    iban: 'AO06 0055 0000 XXXX XXXX XXXX X', // Fictício para exemplo
+    iban: 'AO06 0055 0000 XXXX XXXX XXXX X',
     mcxNumber: '939 226 005',
   }
 
   return (
     <>
-      <footer className="mt-12 border-t border-border/50 bg-muted/20">
-        <div className="container-custom py-8">
+      <footer className="mt-16 border-t-2 border-border/50 bg-gradient-to-b from-muted/20 via-muted/10 to-background">
+        <div className="container-custom py-10 md:py-14">
+          {/* Top Section - Logo and Mission */}
+          <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-8 md:gap-12 mb-10 md:mb-12 pb-10 md:pb-12 border-b border-border/50">
+            {/* Logo and Mission */}
+            <div className="flex flex-col items-center md:items-start gap-4 max-w-md text-center md:text-left">
+              <Logo size="lg" showText={true} />
+              <p className="text-sm md:text-base text-muted-foreground leading-relaxed italic">
+                "Somos o Povo da Fé e a Geração dos Poderosos"
+              </p>
+              <p className="text-xs text-muted-foreground/80 leading-relaxed">
+                Missão Evangélica da Reconciliação — Transformando vidas através de Cristo desde 1989.
+              </p>
+            </div>
+
+            {/* Navigation Columns */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-8 md:gap-10 text-center md:text-left">
+              {/* Institucional */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-bold text-foreground tracking-wide">INSTITUCIONAL</h4>
+                <nav className="flex flex-col gap-2">
+                  <button
+                    onClick={() => navigate('/about')}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Sobre a MER
+                  </button>
+                  <button
+                    onClick={() => navigate('/ministries')}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Ministérios
+                  </button>
+                  <button
+                    onClick={() => navigate('/agenda')}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Agenda
+                  </button>
+                </nav>
+              </div>
+
+              {/* Espiritual */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-bold text-foreground tracking-wide">ESPIRITUAL</h4>
+                <nav className="flex flex-col gap-2">
+                  <button
+                    onClick={() => navigate('/live')}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Ao Vivo
+                  </button>
+                  <button
+                    onClick={() => navigate('/sermons')}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Sermões
+                  </button>
+                  <button
+                    onClick={() => navigate('/prayer')}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Oração
+                  </button>
+                </nav>
+              </div>
+
+              {/* Plataforma */}
+              <div className="space-y-3 col-span-2 md:col-span-1">
+                <h4 className="text-sm font-bold text-foreground tracking-wide">PLATAFORMA</h4>
+                <nav className="flex flex-col gap-2">
+                  <button
+                    onClick={() => navigate('/settings')}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Configurações
+                  </button>
+                  <button
+                    onClick={() => navigate('/community')}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Comunidade
+                  </button>
+                </nav>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Section */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            {/* Left - Copyright */}
+            {/* Copyright */}
             <div className="text-center md:text-left space-y-1">
               <p className="text-sm font-medium text-foreground">
                 © {new Date().getFullYear()}{' '}
                 <span className="font-bold text-gradient">KAIRÓS</span>
                 <span className="text-muted-foreground"> • MER</span>
               </p>
-              <p className="text-xs text-muted-foreground/80">
+              <p className="text-xs text-muted-foreground/70">
                 Desenvolvido com <Heart className="inline h-3 w-3 text-red-500 animate-pulse" /> para glorificar a Deus
               </p>
             </div>
 
-            {/* Center/Right - Dev Support */}
+            {/* Developer Support */}
             <div className="flex items-center gap-2">
               <Dialog open={isDevSupportOpen} onOpenChange={setIsDevSupportOpen}>
                 <Button
                   onClick={() => setIsDevSupportOpen(true)}
                   variant="outline"
                   size="sm"
-                  className="text-muted-foreground hover:text-foreground hover:bg-primary/5 border-border/60"
+                  className="text-muted-foreground hover:text-foreground hover:bg-primary/5 border-border/60 font-medium"
                   aria-label="Apoiar desenvolvedor"
                 >
                   <Heart className="h-4 w-4 mr-2" />
-                  Apoiar Dev
+                  Apoiar Desenvolvedor
                 </Button>
 
                 <DialogContent className="max-w-lg">
