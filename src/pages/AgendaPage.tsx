@@ -1,25 +1,34 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Layout from '../components/layout/Layout'
 import { Card } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
-import { Calendar, Clock, MapPin, Plus, Edit2, Trash2 } from 'lucide-react'
+import { useAppStore } from '../stores/appStore'
+import { Calendar, Clock, MapPin, Plus, Edit2, Trash2, Users, CheckCircle2, Circle, Flame, TrendingUp, Shield, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Event } from '../types'
 import { PageHeader } from '../components/shared/PageHeader'
 import { EmptyState } from '../components/shared/EmptyState'
 import { LoadingState } from '../components/shared/LoadingState'
 import { AdminAction } from '../components/shared/AdminAction'
+import { GuestPrompt } from '../components/shared/GuestPrompt'
 import { EventEditor } from '../components/admin/EventEditor'
 
 const AgendaPage = () => {
+  const navigate = useNavigate()
   const { user } = useAuth()
+  const { t } = useAppStore()
   const [events, setEvents] = useState<Event[]>([])
   const [registeredEvents, setRegisteredEvents] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [editorOpen, setEditorOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<Event | null>(null)
+  
+  const isGuest = user?.role === 'guest'
+  const isMember = user?.role === 'member'
+  const isAdmin = user?.role === 'admin'
 
   useEffect(() => {
     loadEvents()
@@ -122,99 +131,354 @@ const AgendaPage = () => {
     )
   }
 
+  // Próximo evento (destaque)
+  const nextEvent = events[0]
+  
   return (
     <Layout title="Agenda">
       <div className="space-y-6">
-        <PageHeader
-          title="Agenda de Eventos"
-          description="Participe dos nossos eventos e faça parte da família MER"
-          icon={Calendar}
-          gradient="from-purple-500 via-pink-500 to-rose-500"
-          actions={
-            <AdminAction>
-              <Button onClick={() => { setEditingEvent(null); setEditorOpen(true); }} className="gradient-primary text-white">
-                <Plus className="h-4 w-4 mr-2" />
-                Criar Evento
-              </Button>
-            </AdminAction>
-          }
-        />
+        {/* Hero Contextual */}
+        <Card className="relative overflow-hidden border-0 shadow-2xl rounded-2xl elevation-3">
+          <div className="absolute inset-0">
+            <img
+              src="https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=1920&h=600&fit=crop&q=80"
+              alt="Church Event"
+              className="w-full h-full object-cover opacity-90"
+            />
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-600/95 via-pink-600/93 to-rose-600/91" />
+          </div>
+          
+          <div className="relative z-10 p-6 md:p-10 lg:p-14 text-white">
+            <div className="max-w-4xl space-y-5 md:space-y-7">
+              <div className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-white/20 backdrop-blur-md rounded-full border border-white/30 shadow-lg">
+                <Calendar className="h-4 w-4 md:h-5 md:w-5" />
+                <span className="text-sm md:text-base font-bold tracking-wide">{isAdmin ? 'GESTÃO DE EVENTOS' : 'AGENDA MER'}</span>
+              </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {events.map((event) => {
-            const isRegistered = registeredEvents.includes(event.id)
+              <div className="space-y-4">
+                {isGuest && (
+                  <>
+                    <h1 className="text-3xl md:text-5xl lg:text-6xl font-black leading-[1.15] tracking-tight">
+                      Próximos{' '}
+                      <span className="bg-gradient-to-r from-white via-yellow-200 to-white bg-clip-text text-transparent">
+                        Encontros
+                      </span>
+                    </h1>
+                    <p className="text-lg md:text-xl lg:text-2xl text-white/90 font-medium leading-relaxed max-w-2xl">
+                      Junte-se à nossa comunidade em momentos de celebração, adoração e crescimento espiritual.
+                    </p>
+                  </>
+                )}
+                
+                {isMember && (
+                  <>
+                    <h1 className="text-3xl md:text-5xl lg:text-6xl font-black leading-[1.15] tracking-tight">
+                      Sua Agenda Espiritual
+                    </h1>
+                    <p className="text-lg md:text-xl lg:text-2xl text-white/90 font-medium leading-relaxed max-w-2xl">
+                      Conecte-se com sua família espiritual. Confirme presença e não perca nenhum momento importante.
+                    </p>
+                  </>
+                )}
+                
+                {isAdmin && (
+                  <>
+                    <h1 className="text-3xl md:text-5xl lg:text-6xl font-black leading-[1.15] tracking-tight flex items-center gap-3 md:gap-4 flex-wrap">
+                      <Shield className="h-10 w-10 md:h-14 md:w-14 text-yellow-300" />
+                      Gerenciar Agenda
+                    </h1>
+                    <p className="text-lg md:text-xl lg:text-2xl text-white/90 font-medium leading-relaxed max-w-2xl">
+                      Crie, edite e organize os eventos da casa. Acompanhe confirmações e engajamento da comunidade.
+                    </p>
+                  </>
+                )}
+              </div>
 
-            return (
-              <Card key={event.id} className="group overflow-hidden border-2 hover:border-primary/50 transition-all hover:shadow-xl">
-                <div className="relative h-48">
-                  <img
-                    src={event.imageUrl || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=600&h=400&fit=crop'}
-                    alt={event.title}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                  {event.category && (
-                    <div className="absolute top-3 right-3 px-3 py-1 bg-primary rounded-full text-white text-sm font-semibold">
-                      {event.category}
-                    </div>
-                  )}
+              <div className="flex flex-col sm:flex-row gap-3">
+                {isAdmin && (
                   <AdminAction>
-                    <div className="absolute top-3 left-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button size="sm" variant="secondary" onClick={() => handleEdit(event)} className="h-8 w-8 p-0">
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      <Button size="sm" variant="destructive" onClick={() => handleDelete(event.id)} className="h-8 w-8 p-0">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    <Button
+                      onClick={() => { setEditingEvent(null); setEditorOpen(true); }}
+                      size="lg"
+                      className="bg-white text-purple-600 hover:bg-white/95 font-bold px-7 py-6 rounded-full shadow-2xl transform hover:scale-105 transition-all"
+                    >
+                      <Plus className="mr-2 h-5 w-5" />
+                      Criar Novo Evento
+                    </Button>
                   </AdminAction>
+                )}
+                {!isGuest && events.length > 0 && (
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="border-2 border-white/80 text-white hover:bg-white/10 backdrop-blur-sm font-bold px-7 py-6 rounded-full"
+                  >
+                    <TrendingUp className="mr-2 h-5 w-5" />
+                    {registeredEvents.length} Confirmados
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-yellow-400/20 to-transparent rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-white/10 to-transparent rounded-full blur-3xl" />
+        </Card>
+
+        {/* Próximo Evento em Destaque */}
+        {nextEvent && (
+          <Card className="p-6 md:p-8 border-2 border-primary/40 bg-gradient-to-br from-primary/10 via-secondary/5 to-background shadow-xl elevation-3">
+            <div className="flex flex-col md:flex-row gap-5 md:gap-6">
+              <div className="relative w-full md:w-48 h-48 rounded-xl overflow-hidden flex-shrink-0 shadow-lg">
+                <img
+                  src={nextEvent.imageUrl || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=400&h=400&fit=crop'}
+                  alt={nextEvent.title}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <div className="absolute top-3 right-3 px-3 py-1.5 bg-red-600 rounded-full text-white text-xs font-bold shadow-lg">
+                  <Flame className="inline h-3 w-3 mr-1" />
+                  PRÓXIMO
                 </div>
-
-                <div className="p-6 space-y-4">
-                  <h3 className="text-xl font-bold text-foreground">{event.title}</h3>
-                  
-                  {event.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-2">{event.description}</p>
-                  )}
-
-                  <div className="space-y-2 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-primary" />
-                      {new Date(event.date).toLocaleDateString('pt-BR', {
-                        day: '2-digit',
-                        month: 'long',
-                        year: 'numeric',
-                      })}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-primary" />
-                      {new Date(event.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                    </div>
-                    {event.location && (
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-primary" />
-                        {event.location}
-                      </div>
+              </div>
+              
+              <div className="flex-1 space-y-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    {nextEvent.category && (
+                      <span className="px-3 py-1 bg-primary/20 text-primary text-xs font-bold rounded-full">
+                        {nextEvent.category}
+                      </span>
                     )}
                   </div>
-
-                  <Button
-                    onClick={() => toggleRegistration(event.id)}
-                    className={`w-full ${isRegistered ? 'bg-green-500 hover:bg-green-600' : ''}`}
-                  >
-                    {isRegistered ? 'Inscrito ✓' : 'Participar'}
-                  </Button>
+                  <h3 className="text-2xl md:text-3xl font-black text-foreground mb-2">{nextEvent.title}</h3>
+                  {nextEvent.description && (
+                    <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+                      {nextEvent.description}
+                    </p>
+                  )}
                 </div>
-              </Card>
-            )
-          })}
-        </div>
 
+                <div className="grid sm:grid-cols-3 gap-3">
+                  <div className="flex items-center gap-2.5 text-foreground">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <Calendar className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="text-sm">
+                      <div className="font-bold">
+                        {new Date(nextEvent.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2.5 text-foreground">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <Clock className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="text-sm">
+                      <div className="font-bold">
+                        {new Date(nextEvent.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {nextEvent.location && (
+                    <div className="flex items-center gap-2.5 text-foreground">
+                      <div className="p-2 bg-primary/10 rounded-lg">
+                        <MapPin className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="text-sm font-bold truncate">{nextEvent.location}</div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-2">
+                  {!isGuest ? (
+                    <Button
+                      onClick={() => toggleRegistration(nextEvent.id)}
+                      className={`font-bold ${
+                        registeredEvents.includes(nextEvent.id)
+                          ? 'bg-green-600 hover:bg-green-700 text-white'
+                          : 'gradient-primary text-white'
+                      }`}
+                      size="lg"
+                    >
+                      {registeredEvents.includes(nextEvent.id) ? (
+                        <>
+                          <CheckCircle2 className="mr-2 h-5 w-5" />
+                          Confirmado
+                        </>
+                      ) : (
+                        <>
+                          <Circle className="mr-2 h-5 w-5" />
+                          Confirmar Presença
+                        </>
+                      )}
+                    </Button>
+                  ) : (
+                    <Button onClick={() => navigate('/about')} className="gradient-primary text-white font-bold" size="lg">
+                      <UserPlus className="mr-2 h-5 w-5" />
+                      Participar
+                    </Button>
+                  )}
+                  
+                  {isAdmin && (
+                    <AdminAction>
+                      <Button variant="outline" onClick={() => handleEdit(nextEvent)} size="lg">
+                        <Edit2 className="mr-2 h-4 w-4" />
+                        Editar
+                      </Button>
+                    </AdminAction>
+                  )}
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Todos os Eventos */}
+        {events.length > 0 && (
+          <div className="space-y-5">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground flex items-center gap-3">
+                <div className="p-2.5 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl shadow-md">
+                  <Calendar className="h-6 w-6 text-white" />
+                </div>
+                {isAdmin ? 'Todos os Eventos' : isGuest ? 'Próximos Encontros' : 'Agenda Completa'}
+              </h2>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {events.slice(nextEvent ? 1 : 0).map((event) => {
+                const isRegistered = registeredEvents.includes(event.id)
+
+                return (
+                  <Card key={event.id} className="group overflow-hidden border-2 hover:border-primary/50 transition-all hover:shadow-xl elevation-1">
+                    <div className="relative h-48">
+                      <img
+                        src={event.imageUrl || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=600&h=400&fit=crop'}
+                        alt={event.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                      {event.category && (
+                        <div className="absolute top-3 right-3 px-3 py-1.5 bg-primary/90 backdrop-blur-sm rounded-full text-white text-xs font-bold shadow-lg">
+                          {event.category}
+                        </div>
+                      )}
+                      {isAdmin && (
+                        <AdminAction>
+                          <div className="absolute top-3 left-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button size="sm" variant="secondary" onClick={() => handleEdit(event)} className="h-8 w-8 p-0 backdrop-blur-md">
+                              <Edit2 className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button size="sm" variant="destructive" onClick={() => handleDelete(event.id)} className="h-8 w-8 p-0">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </AdminAction>
+                      )}
+                    </div>
+
+                    <div className="p-5 md:p-6 space-y-4">
+                      <h3 className="text-lg md:text-xl font-bold text-foreground line-clamp-2 leading-tight">{event.title}</h3>
+                      
+                      {event.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">{event.description}</p>
+                      )}
+
+                      <div className="space-y-2.5 text-sm">
+                        <div className="flex items-center gap-2.5 text-foreground">
+                          <div className="p-1.5 bg-primary/10 rounded-lg">
+                            <Calendar className="h-4 w-4 text-primary" />
+                          </div>
+                          <span className="font-semibold">
+                            {new Date(event.date).toLocaleDateString('pt-BR', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric',
+                            })}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2.5 text-foreground">
+                          <div className="p-1.5 bg-primary/10 rounded-lg">
+                            <Clock className="h-4 w-4 text-primary" />
+                          </div>
+                          <span className="font-semibold">
+                            {new Date(event.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        {event.location && (
+                          <div className="flex items-center gap-2.5 text-foreground">
+                            <div className="p-1.5 bg-primary/10 rounded-lg">
+                              <MapPin className="h-4 w-4 text-primary" />
+                            </div>
+                            <span className="font-semibold truncate">{event.location}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {!isGuest ? (
+                        <Button
+                          onClick={() => toggleRegistration(event.id)}
+                          className={`w-full font-semibold ${
+                            isRegistered
+                              ? 'bg-green-600 hover:bg-green-700 text-white'
+                              : 'gradient-primary text-white'
+                          }`}
+                        >
+                          {isRegistered ? (
+                            <>
+                              <CheckCircle2 className="mr-2 h-4 w-4" />
+                              Confirmado
+                            </>
+                          ) : (
+                            <>
+                              <Circle className="mr-2 h-4 w-4" />
+                              Confirmar Presença
+                            </>
+                          )}
+                        </Button>
+                      ) : (
+                        <Button onClick={() => navigate('/about')} className="w-full gradient-primary text-white font-semibold">
+                          <UserPlus className="mr-2 h-4 w-4" />
+                          Participar
+                        </Button>
+                      )}
+                    </div>
+                  </Card>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Guest Prompt */}
+        {isGuest && events.length > 0 && (
+          <GuestPrompt
+            title="Conecte-se com a comunidade"
+            description="Membros podem confirmar presença nos eventos, receber lembretes e acompanhar toda a agenda da casa."
+            actionLabel="Tornar-se Membro"
+            onAction={() => navigate('/about')}
+          />
+        )}
+
+        {/* Empty State */}
         {events.length === 0 && (
           <EmptyState
             icon={Calendar}
-            title="Nenhum evento programado"
-            description="Novos eventos serão anunciados em breve"
+            title={isAdmin ? 'Nenhum evento criado' : 'Nenhum evento programado'}
+            description={isAdmin ? 'Crie o primeiro evento da agenda' : 'Novos encontros serão anunciados em breve'}
+            action={
+              isAdmin ? (
+                <AdminAction>
+                  <Button onClick={() => { setEditingEvent(null); setEditorOpen(true); }} className="gradient-primary text-white">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Criar Primeiro Evento
+                  </Button>
+                </AdminAction>
+              ) : undefined
+            }
           />
         )}
       </div>

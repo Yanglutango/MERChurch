@@ -1,19 +1,28 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Layout from '../components/layout/Layout'
 import { Card } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
-import { Bell, Check, Trash2 } from 'lucide-react'
+import { useAppStore } from '../stores/appStore'
+import { Bell, Check, Trash2, BookOpen, Calendar, Heart, MessageCircle, Shield, UserPlus, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Notification } from '../types'
 import { PageHeader } from '../components/shared/PageHeader'
 import { EmptyState } from '../components/shared/EmptyState'
+import { AdminAction } from '../components/shared/AdminAction'
 
 const NotificationsPage = () => {
+  const navigate = useNavigate()
   const { user } = useAuth()
+  const { t } = useAppStore()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [filter, setFilter] = useState<'all' | 'unread'>('all')
+  
+  const isGuest = user?.role === 'guest'
+  const isMember = user?.role === 'member'
+  const isAdmin = user?.role === 'admin'
 
   useEffect(() => {
     loadNotifications()
@@ -83,114 +92,241 @@ const NotificationsPage = () => {
       : notifications.filter((n) => !n.isRead)
 
   const getIcon = (type: string) => {
-    const icons: Record<string, string> = {
-      sermon: '📖',
-      event: '📅',
-      announcement: '📢',
-      prayer: '🙏',
-      counseling: '💬',
+    const iconMap: Record<string, { icon: any; gradient: string }> = {
+      sermon: { icon: BookOpen, gradient: 'from-blue-500 to-cyan-500' },
+      event: { icon: Calendar, gradient: 'from-purple-500 to-pink-500' },
+      announcement: { icon: Bell, gradient: 'from-amber-500 to-orange-500' },
+      prayer: { icon: Heart, gradient: 'from-rose-500 to-pink-500' },
+      counseling: { icon: MessageCircle, gradient: 'from-green-500 to-emerald-500' },
+      admin: { icon: Shield, gradient: 'from-red-500 to-rose-500' },
     }
-    return icons[type] || '🔔'
+    return iconMap[type] || { icon: Bell, gradient: 'from-primary to-secondary' }
+  }
+
+  const getPriorityBadge = (type: string) => {
+    if (type === 'admin') return 'URGENTE'
+    return null
+  }
+
+  // Redirect guests
+  if (isGuest) {
+    return (
+      <Layout title="Notificações">
+        <div className="max-w-2xl mx-auto py-12 md:py-20">
+          <Card className="p-10 md:p-14 text-center border-2 shadow-xl elevation-2">
+            <div className="max-w-md mx-auto space-y-6">
+              <div className="inline-flex p-6 bg-primary/10 rounded-full">
+                <Bell className="h-16 w-16 text-primary" />
+              </div>
+              <div className="space-y-3">
+                <h2 className="text-3xl md:text-4xl font-black text-foreground">Área Exclusiva para Membros</h2>
+                <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
+                  Faça parte da família MER para receber notificações sobre novos cultos, sermões, eventos e muito mais.
+                </p>
+              </div>
+              <Button onClick={() => navigate('/about')} size="lg" className="gradient-primary text-white font-bold">
+                <UserPlus className="mr-2 h-5 w-5" />
+                Tornar-se Membro
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </Layout>
+    )
   }
 
   return (
     <Layout title="Notificações">
-      <div className="space-section max-w-4xl mx-auto">
-        {/* Header */}
-        <PageHeader
-          title="Notificações"
-          description={`${notifications.filter((n) => !n.isRead).length} não lidas`}
-          icon={Bell}
-          gradient="from-purple-500 via-indigo-500 to-blue-500"
-          actions={
-            <div className="flex gap-2">
-              <Button
-                variant={filter === 'all' ? 'default' : 'outline'}
-                onClick={() => setFilter('all')}
-                size="sm"
-              >
-                Todas
-              </Button>
-              <Button
-                variant={filter === 'unread' ? 'default' : 'outline'}
-                onClick={() => setFilter('unread')}
-                size="sm"
-              >
-                Não Lidas
-              </Button>
-              <Button variant="outline" onClick={markAllAsRead} size="sm">
-                <Check className="h-4 w-4 mr-2" />
-                Marcar Todas
-              </Button>
+      <div className="space-y-6 max-w-4xl mx-auto">
+        {/* Hero Contextual */}
+        <Card className="relative overflow-hidden border-0 shadow-2xl rounded-2xl elevation-3">
+          <div className="absolute inset-0">
+            <img
+              src="https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1920&h=600&fit=crop&q=80"
+              alt="Notifications"
+              className="w-full h-full object-cover opacity-90"
+            />
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/95 via-purple-600/93 to-pink-600/91" />
+          </div>
+          
+          <div className="relative z-10 p-6 md:p-10 lg:p-12 text-white">
+            <div className="max-w-3xl space-y-5">
+              <div className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-white/20 backdrop-blur-md rounded-full border border-white/30 shadow-lg">
+                <Bell className="h-4 w-4 md:h-5 md:w-5" />
+                <span className="text-sm md:text-base font-bold tracking-wide">
+                  {notifications.filter((n) => !n.isRead).length} NÃO LIDAS
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                <h1 className="text-3xl md:text-5xl font-black leading-tight tracking-tight">
+                  {isAdmin && <Shield className="inline h-10 w-10 md:h-12 md:w-12 mr-3 align-middle" />}
+                  Suas Notificações
+                </h1>
+                <p className="text-lg md:text-xl text-white/90 font-medium leading-relaxed">
+                  {isAdmin 
+                    ? 'Acompanhe atualizações importantes, conteúdo pendente e atividades críticas da casa.'
+                    : 'Fique conectado com novidades, eventos e movimentos da sua comunidade espiritual.'}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2 md:gap-3">
+                <Button
+                  variant={filter === 'all' ? 'secondary' : 'outline'}
+                  onClick={() => setFilter('all')}
+                  className={`font-semibold ${
+                    filter === 'all' 
+                      ? 'bg-white text-purple-600 hover:bg-white/95' 
+                      : 'border-white/80 text-white hover:bg-white/10 backdrop-blur-sm'
+                  }`}
+                >
+                  Todas ({notifications.length})
+                </Button>
+                <Button
+                  variant={filter === 'unread' ? 'secondary' : 'outline'}
+                  onClick={() => setFilter('unread')}
+                  className={`font-semibold ${
+                    filter === 'unread' 
+                      ? 'bg-white text-purple-600 hover:bg-white/95' 
+                      : 'border-white/80 text-white hover:bg-white/10 backdrop-blur-sm'
+                  }`}
+                >
+                  Não Lidas ({notifications.filter((n) => !n.isRead).length})
+                </Button>
+                {notifications.filter((n) => !n.isRead).length > 0 && (
+                  <Button 
+                    variant="outline" 
+                    onClick={markAllAsRead}
+                    className="border-white/80 text-white hover:bg-white/10 backdrop-blur-sm font-semibold"
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    Marcar Todas como Lidas
+                  </Button>
+                )}
+              </div>
             </div>
-          }
-        />
+          </div>
+
+          <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-yellow-400/20 to-transparent rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-white/10 to-transparent rounded-full blur-3xl" />
+        </Card>
 
         {/* Notifications List */}
-        <div className="space-items">
-          {filteredNotifications.map((notification) => (
-            <Card
-              key={notification.id}
-              className={`p-5 md:p-6 border-2 transition-all hover:shadow-lg elevation-1 ${
-                !notification.isRead ? 'border-primary/40 bg-primary/5' : ''
-              }`}
-            >
-              <div className="flex gap-4">
-                <div className="text-4xl flex-shrink-0">{getIcon(notification.type)}</div>
+        <div className="space-y-4">
+          {filteredNotifications.map((notification) => {
+            const { icon: Icon, gradient } = getIcon(notification.type)
+            const priority = getPriorityBadge(notification.type)
+            const isUnread = !notification.isRead
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-start gap-4 mb-2">
-                    <div className="flex-1">
-                      <h3 className="font-bold text-base md:text-lg text-foreground leading-snug mb-1">
-                        {notification.title}
-                      </h3>
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        {notification.message}
-                      </p>
-                    </div>
-                    <div className="flex gap-1 flex-shrink-0">
-                      {!notification.isRead && (
+            return (
+              <Card
+                key={notification.id}
+                className={`group p-5 md:p-6 border-2 transition-all hover:shadow-xl cursor-pointer elevation-1 ${
+                  isUnread 
+                    ? 'border-primary/50 bg-gradient-to-br from-primary/10 via-background to-background shadow-lg' 
+                    : 'hover:border-primary/30'
+                }`}
+              >
+                <div className="flex gap-4 md:gap-5">
+                  <div className={`flex-shrink-0 p-3 md:p-4 bg-gradient-to-br ${gradient} rounded-2xl shadow-lg group-hover:scale-110 transition-transform`}>
+                    <Icon className="h-6 w-6 md:h-7 md:w-7 text-white" />
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start gap-4 mb-3">
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-bold text-base md:text-lg text-foreground leading-snug">
+                            {notification.title}
+                          </h3>
+                          {isUnread && (
+                            <div className="px-2 py-0.5 bg-primary rounded-full">
+                              <span className="text-xs font-bold text-primary-foreground">NOVA</span>
+                            </div>
+                          )}
+                          {priority && isAdmin && (
+                            <div className="px-2 py-0.5 bg-red-600 rounded-full">
+                              <span className="text-xs font-bold text-white">{priority}</span>
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-sm md:text-base text-foreground/90 leading-relaxed">
+                          {notification.message}
+                        </p>
+                      </div>
+                      
+                      <div className="flex gap-1 flex-shrink-0">
+                        {isUnread && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              markAsRead(notification.id)
+                            }}
+                            className="h-9 w-9 hover:bg-primary/10"
+                            title="Marcar como lida"
+                          >
+                            <Check className="h-4 w-4 text-primary" />
+                          </Button>
+                        )}
                         <Button
                           size="icon"
                           variant="ghost"
-                          onClick={() => markAsRead(notification.id)}
-                          className="h-8 w-8"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            deleteNotification(notification.id)
+                          }}
+                          className="h-9 w-9 hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-600"
+                          title="Excluir notificação"
                         >
-                          <Check className="h-4 w-4" />
+                          <Trash2 className="h-4 w-4" />
                         </Button>
-                      )}
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => deleteNotification(notification.id)}
-                        className="h-8 w-8 hover:text-red-500"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Calendar className="h-3 w-3" />
+                      <span>
+                        {new Date(notification.createdAt).toLocaleDateString('pt-BR', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
                     </div>
                   </div>
-
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(notification.createdAt).toLocaleDateString('pt-BR', {
-                      day: '2-digit',
-                      month: 'long',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </p>
                 </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            )
+          })}
         </div>
 
+        {/* Empty State */}
         {filteredNotifications.length === 0 && (
-          <EmptyState
-            icon={Bell}
-            title={filter === 'unread' ? 'Nenhuma notificação não lida' : 'Nenhuma notificação'}
-            description={filter === 'unread' ? 'Você está em dia!' : 'Novas notificações aparecerão aqui'}
-          />
+          <Card className="p-12 md:p-16 text-center border-2 border-dashed bg-muted/20 elevation-1">
+            <div className="max-w-md mx-auto space-y-5">
+              <div className="inline-flex p-5 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-3xl">
+                {filter === 'unread' ? (
+                  <CheckCircle2 className="h-16 w-16 text-green-600 dark:text-green-400" />
+                ) : (
+                  <Bell className="h-16 w-16 text-muted-foreground/60" />
+                )}
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-2xl md:text-3xl font-bold text-foreground">
+                  {filter === 'unread' ? 'Você está em dia!' : 'Nenhuma notificação'}
+                </h3>
+                <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+                  {filter === 'unread' 
+                    ? 'Todas as notificações foram lidas. Continue acompanhando as novidades da MER.'
+                    : 'Novas atualizações e movimentos da comunidade aparecerão aqui.'}
+                </p>
+              </div>
+            </div>
+          </Card>
         )}
       </div>
     </Layout>
