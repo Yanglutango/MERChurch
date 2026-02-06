@@ -72,27 +72,27 @@ const Header = () => {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled
-          ? 'bg-background/98 backdrop-blur-xl border-b border-border shadow-lg elevation-2'
-          : 'bg-background/0'
+          ? 'bg-background/98 backdrop-blur-xl border-b border-border shadow-md elevation-1'
+          : 'bg-background/95 backdrop-blur-sm border-b border-border/30'
       }`}
     >
       <div className="container-custom">
-        <div className="flex items-center justify-between h-16 md:h-18">
+        <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <button onClick={() => navigate('/home')} className="flex-shrink-0 transition-opacity hover:opacity-80">
             <Logo size="md" showText={true} animated={false} />
           </button>
 
           {/* Desktop Menu */}
-          <nav className="hidden lg:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-0.5">
             {menuItems.map((item) => (
               <button
                 key={item.label}
                 onClick={() => navigate(item.path)}
-                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
+                className={`px-3.5 py-2 text-sm font-semibold transition-all rounded-lg ${
                   isActive(item.path)
                     ? 'text-primary bg-primary/10'
-                    : 'text-foreground/75 hover:text-foreground hover:bg-muted/80'
+                    : 'text-foreground/70 hover:text-foreground hover:bg-muted/70'
                 }`}
               >
                 {item.label}
@@ -101,25 +101,16 @@ const Header = () => {
           </nav>
 
           {/* Right Side Actions */}
-          <div className="flex items-center gap-2 md:gap-3">
+          <div className="flex items-center gap-2">
             <ThemeToggle />
 
             {/* Guest CTAs */}
             {isGuest && (
               <>
                 <Button 
-                  onClick={() => navigate('/about')} 
-                  size="sm" 
-                  variant="outline"
-                  className="hidden sm:flex border-2 font-semibold"
-                >
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Junte-se à Família
-                </Button>
-                <Button 
                   onClick={() => navigate('/auth')} 
                   size="sm" 
-                  className="gradient-primary text-white font-semibold shadow-md hover:shadow-lg"
+                  className="gradient-primary text-white font-semibold"
                 >
                   Entrar
                 </Button>
@@ -129,27 +120,14 @@ const Header = () => {
             {/* Member/Admin Actions */}
             {(isMember || isAdmin) && (
               <>
-                {/* Dashboard (Admin only) */}
-                {isAdmin && (
-                  <Button
-                    onClick={() => navigate('/dashboard')}
-                    size="sm"
-                    variant="outline"
-                    className="hidden md:flex border-2 border-accent/50 text-accent hover:bg-accent/10 font-semibold"
-                  >
-                    <Shield className="h-4 w-4 mr-2" />
-                    Dashboard
-                  </Button>
-                )}
-
                 {/* Notifications */}
                 <button
                   onClick={() => navigate('/notifications')}
-                  className="relative p-2 hover:bg-muted rounded-lg transition-colors"
+                  className="relative p-2 hover:bg-muted/70 rounded-lg transition-colors"
                   title="Notificações"
                 >
-                  <Bell className="h-5 w-5 text-foreground/75" />
-                  <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full" />
+                  <Bell className="h-5 w-5 text-foreground/70" />
+                  <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full shadow-sm" />
                 </button>
 
                 {/* User Menu */}
@@ -179,29 +157,47 @@ const Header = () => {
 
                   {/* User Dropdown */}
                   {isUserMenuOpen && (
-                    <div className="absolute top-full right-0 mt-2 w-56 bg-card border-2 border-border rounded-xl shadow-2xl py-2 z-50 elevation-3">
-                      <div className="px-4 py-3 border-b border-border">
-                        <div className="font-bold text-foreground">{user?.username}</div>
-                        <div className="text-sm text-muted-foreground">{user?.email}</div>
-                        <div className="text-xs text-primary capitalize mt-1 font-semibold">{user?.role}</div>
+                    <div className="absolute top-full right-0 mt-2 w-52 bg-card border border-border rounded-xl shadow-xl py-1.5 z-50 elevation-2">
+                      <div className="px-3.5 py-2.5 border-b border-border/60">
+                        <div className="font-semibold text-sm text-foreground truncate">{user?.username}</div>
+                        <div className="text-xs text-muted-foreground truncate">{user?.email}</div>
+                        {isAdmin && (
+                          <div className="flex items-center gap-1.5 mt-1.5">
+                            <Shield className="h-3 w-3 text-accent" />
+                            <span className="text-xs text-accent font-semibold">Administrador</span>
+                          </div>
+                        )}
                       </div>
+
+                      {isAdmin && (
+                        <button
+                          onClick={() => {
+                            navigate('/dashboard')
+                            setIsUserMenuOpen(false)
+                          }}
+                          className="w-full px-3.5 py-2 text-left hover:bg-muted/70 transition-colors flex items-center gap-2.5 text-sm font-medium text-foreground"
+                        >
+                          <Shield className="h-4 w-4 text-accent" />
+                          Dashboard
+                        </button>
+                      )}
 
                       <button
                         onClick={() => {
                           navigate('/settings')
                           setIsUserMenuOpen(false)
                         }}
-                        className="w-full px-4 py-2.5 text-left hover:bg-muted transition-colors flex items-center gap-3 text-sm font-medium text-foreground"
+                        className="w-full px-3.5 py-2 text-left hover:bg-muted/70 transition-colors flex items-center gap-2.5 text-sm font-medium text-foreground"
                       >
                         <SettingsIcon className="h-4 w-4 text-muted-foreground" />
                         {t('nav.settings')}
                       </button>
 
-                      <div className="border-t border-border my-1" />
+                      <div className="border-t border-border/60 my-1" />
 
                       <button
                         onClick={handleLogout}
-                        className="w-full px-4 py-2.5 text-left hover:bg-red-50 dark:hover:bg-red-950/50 transition-colors flex items-center gap-3 text-sm font-medium text-red-600 dark:text-red-400"
+                        className="w-full px-3.5 py-2 text-left hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors flex items-center gap-2.5 text-sm font-medium text-red-600 dark:text-red-400"
                       >
                         <LogOut className="h-4 w-4" />
                         {t('nav.logout')}

@@ -283,6 +283,8 @@
   .animate-fade-in { animation: fade-in 0.6s ease-out; }
   .animate-slide-up { animation: slide-up 0.6s ease-out; }
   .animate-gentle-float { animation: gentle-float 6s ease-in-out infinite; }
+  .animate-spin-slow { animation: spin-slow 3s linear infinite; }
+  .animate-pulse-soft { animation: pulse-soft 2s ease-in-out infinite; }
   
   .subtle-glow { box-shadow: 0 0 20px rgba(74, 144, 164, 0.15); }
 }
@@ -300,4 +302,14 @@
 @keyframes gentle-float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-8px); }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
