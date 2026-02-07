@@ -10,7 +10,7 @@ import { Textarea } from '../components/ui/textarea'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useAppStore } from '../stores/appStore'
-import { Users, UserPlus, UserMinus, Plus, Edit2, Trash2, Shield, User2, HandHeart, TrendingUp } from 'lucide-react'
+import { Users, UserPlus, UserMinus, Plus, Edit2, Trash2, Shield, HandHeart, TrendingUp, Heart } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Ministry } from '../types'
 import { StatCard } from '../components/shared/StatCard'
@@ -25,6 +25,7 @@ const MinistriesPage = () => {
   const { t } = useAppStore()
   const [ministries, setMinistries] = useState<Ministry[]>([])
   const [joinedMinistries, setJoinedMinistries] = useState<string[]>([])
+  const [memberCounts, setMemberCounts] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
   const [editorOpen, setEditorOpen] = useState(false)
   const [editingMinistry, setEditingMinistry] = useState<Ministry | null>(null)
@@ -59,6 +60,17 @@ const MinistriesPage = () => {
     }
 
     setMinistries(data)
+    
+    // Load member counts for each ministry
+    const counts: Record<string, number> = {}
+    for (const ministry of data) {
+      const { count } = await supabase
+        .from('ministry_members')
+        .select('*', { count: 'exact', head: true })
+        .eq('ministry_id', ministry.id)
+      counts[ministry.id] = count || 0
+    }
+    setMemberCounts(counts)
     setLoading(false)
   }
 
@@ -175,7 +187,10 @@ const MinistriesPage = () => {
       setJoinedMinistries([...joinedMinistries, ministryId])
       toast.success('Bem-vindo ao ministério!')
     }
+    loadMinistries()
   }
+
+  const totalParticipants = Object.values(memberCounts).reduce((sum, count) => sum + count, 0)
 
   if (loading) {
     return (
@@ -188,7 +203,7 @@ const MinistriesPage = () => {
   return (
     <Layout title="Ministérios">
       <div className="space-y-6">
-        {/* Hero Banner - Contextual */}
+        {/* Hero Banner - Contextual por Papel */}
         <Card className="relative overflow-hidden border-0 shadow-2xl rounded-2xl elevation-3">
           <div className="absolute inset-0">
             <img
@@ -204,7 +219,7 @@ const MinistriesPage = () => {
               <div className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-white/20 backdrop-blur-md rounded-full border border-white/30 shadow-lg">
                 <Users className="h-4 w-4 md:h-5 md:w-5" />
                 <span className="text-sm md:text-base font-bold tracking-wide">
-                  {isAdmin ? 'GESTÃO DE MINISTÉRIOS' : 'MINISTÉRIOS MER'}
+                  {isAdmin ? 'GESTÃO DE MINISTÉRIOS' : isGuest ? 'MINISTÉRIOS MER' : 'SERVIÇO NO CORPO'}
                 </span>
               </div>
 
@@ -218,7 +233,7 @@ const MinistriesPage = () => {
                       </span>
                     </h1>
                     <p className="text-lg md:text-xl lg:text-2xl text-white/90 font-medium leading-relaxed max-w-2xl">
-                      Conheça nossos ministérios e descubra onde Deus está chamando você para fazer diferença.
+                      Conheça nossos ministérios e descubra onde Deus está chamando você para fazer diferença no corpo de Cristo.
                     </p>
                   </>
                 )}
@@ -226,10 +241,13 @@ const MinistriesPage = () => {
                 {isMember && (
                   <>
                     <h1 className="text-3xl md:text-5xl lg:text-6xl font-black leading-[1.15] tracking-tight">
-                      Seu Lugar no Corpo
+                      Seu Lugar no{' '}
+                      <span className="bg-gradient-to-r from-white via-yellow-200 to-white bg-clip-text text-transparent">
+                        Corpo
+                      </span>
                     </h1>
                     <p className="text-lg md:text-xl lg:text-2xl text-white/90 font-medium leading-relaxed max-w-2xl">
-                      Participe, sirva e cresça junto com o corpo de Cristo. Cada membro é essencial.
+                      Participe, sirva e cresça junto com o corpo de Cristo. Cada membro é essencial para a obra.
                     </p>
                   </>
                 )}
@@ -241,7 +259,7 @@ const MinistriesPage = () => {
                       Gerenciar Ministérios
                     </h1>
                     <p className="text-lg md:text-xl lg:text-2xl text-white/90 font-medium leading-relaxed max-w-2xl">
-                      Organize, equipe e acompanhe os ministérios da casa. Governo pastoral equilibrado.
+                      Organize, equipe e acompanhe os ministérios da casa. Governo pastoral equilibrado e funcional.
                     </p>
                   </>
                 )}
@@ -263,11 +281,11 @@ const MinistriesPage = () => {
                 {isGuest && (
                   <Button
                     size="lg"
-                    onClick={() => navigate('/about')}
+                    onClick={() => navigate('/auth')}
                     className="bg-white text-green-700 hover:bg-white/95 font-bold px-7 py-6 rounded-full shadow-2xl transform hover:scale-105 transition-all"
                   >
                     <UserPlus className="mr-2 h-5 w-5" />
-                    Tornar-se Membro
+                    Criar Conta para Servir
                   </Button>
                 )}
                 {!isGuest && (
@@ -276,8 +294,8 @@ const MinistriesPage = () => {
                     variant="outline"
                     className="border-2 border-white/80 text-white hover:bg-white/10 backdrop-blur-sm font-bold px-7 py-6 rounded-full"
                   >
-                    <TrendingUp className="mr-2 h-5 w-5" />
-                    {joinedMinistries.length} Ministérios
+                    <Heart className="mr-2 h-5 w-5" />
+                    {joinedMinistries.length} {joinedMinistries.length === 1 ? 'Ministério' : 'Ministérios'}
                   </Button>
                 )}
               </div>
@@ -300,13 +318,13 @@ const MinistriesPage = () => {
             <StatCard
               icon={HandHeart}
               label={isAdmin ? 'Total de Participantes' : 'Seus Ministérios'}
-              value={isAdmin ? 248 : joinedMinistries.length}
+              value={isAdmin ? totalParticipants : joinedMinistries.length}
               gradient="from-blue-600 to-cyan-600"
             />
             <StatCard
-              icon={User2}
-              label={isAdmin ? 'Líderes Ativos' : 'Chamados Ativos'}
-              value={isAdmin ? ministries.length : ministries.length}
+              icon={TrendingUp}
+              label={isAdmin ? 'Líderes Ativos' : 'Chamados Disponíveis'}
+              value={ministries.length}
               gradient="from-purple-600 to-pink-600"
             />
           </div>
@@ -327,6 +345,7 @@ const MinistriesPage = () => {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
               {ministries.map((ministry) => {
                 const isJoined = joinedMinistries.includes(ministry.id)
+                const participantCount = memberCounts[ministry.id] || 0
 
                 return (
                   <Card
@@ -373,18 +392,25 @@ const MinistriesPage = () => {
                     </h3>
 
                     {ministry.description && (
-                      <p className="text-sm md:text-base text-muted-foreground mb-5 line-clamp-3 leading-relaxed">
+                      <p className="text-sm md:text-base text-muted-foreground mb-4 line-clamp-3 leading-relaxed">
                         {ministry.description}
                       </p>
                     )}
 
+                    {!isGuest && (
+                      <div className="mb-4 text-sm text-muted-foreground flex items-center gap-2">
+                        <HandHeart className="h-4 w-4" />
+                        {participantCount} {participantCount === 1 ? 'participante' : 'participantes'}
+                      </div>
+                    )}
+
                     {isGuest ? (
                       <Button
-                        onClick={() => navigate('/about')}
+                        onClick={() => navigate('/auth')}
                         className="w-full gradient-primary text-white font-semibold"
                       >
                         <UserPlus className="h-4 w-4 mr-2" />
-                        Tornar-se Membro
+                        Criar Conta para Servir
                       </Button>
                     ) : (
                       <Button
@@ -421,9 +447,9 @@ const MinistriesPage = () => {
         {isGuest && ministries.length > 0 && (
           <GuestPrompt
             title="Faça parte do corpo de Cristo"
-            description="Membros podem participar de ministérios, servir ativamente e fazer diferença na vida de outros."
-            actionLabel="Tornar-se Membro"
-            onAction={() => navigate('/about')}
+            description="Membros podem participar de ministérios, servir ativamente e fazer diferença na vida de outros irmãos."
+            actionLabel="Criar Conta"
+            onAction={() => navigate('/auth')}
           />
         )}
 
@@ -467,7 +493,7 @@ const MinistriesPage = () => {
               />
             </div>
             <div>
-              <Label htmlFor="description">Descrição</Label>
+              <Label htmlFor="description">Descrição / Propósito</Label>
               <Textarea
                 id="description"
                 value={newMinistry.description}
