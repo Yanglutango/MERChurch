@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Layout from '../components/layout/Layout'
+import { useAuth } from '../hooks/useAuth'
 import { useAppStore } from '../stores/appStore'
 import { Card } from '../components/ui/card'
 import { Input } from '../components/ui/input'
@@ -12,18 +14,19 @@ import {
   Heart, 
   Lightbulb,
   Cross,
-  FileText,
-  Mic,
   PlusCircle,
-  MoreVertical,
   Trash2,
-  Edit,
+  Bookmark,
+  BookmarkCheck,
+  UserPlus,
 } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface Message {
   role: 'user' | 'assistant'
   content: string
   timestamp: Date
+  saved?: boolean
 }
 
 interface Chat {
@@ -34,6 +37,8 @@ interface Chat {
 }
 
 const LogosAIPage = () => {
+  const navigate = useNavigate()
+  const { user } = useAuth()
   const { t } = useAppStore()
   const [chats, setChats] = useState<Chat[]>([
     {
@@ -49,6 +54,10 @@ const LogosAIPage = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [showSidebar, setShowSidebar] = useState(true)
 
+  const isGuest = user?.role === 'guest'
+  const isMember = user?.role === 'member'
+  const isAdmin = user?.role === 'admin'
+
   const currentChat = chats.find((c) => c.id === currentChatId)!
 
   const scrollToBottom = () => {
@@ -60,10 +69,26 @@ const LogosAIPage = () => {
   }, [currentChat.messages])
 
   const suggestions = [
-    { icon: BookOpen, text: 'Explique João 3:16 em contexto histórico', color: 'from-blue-500 to-cyan-500' },
-    { icon: Heart, text: 'Como fortalecer minha vida de oração?', color: 'from-pink-500 to-rose-500' },
-    { icon: Lightbulb, text: 'Versículos sobre esperança e fé', color: 'from-yellow-500 to-orange-500' },
-    { icon: Cross, text: 'O que significa viver em santidade?', color: 'from-purple-500 to-indigo-500' },
+    { 
+      icon: BookOpen, 
+      text: 'Explique João 3:16 em contexto histórico', 
+      color: 'from-blue-500 to-cyan-500' 
+    },
+    { 
+      icon: Heart, 
+      text: 'Como fortalecer minha vida de oração?', 
+      color: 'from-pink-500 to-rose-500' 
+    },
+    { 
+      icon: Lightbulb, 
+      text: 'Versículos sobre esperança em tempos difíceis', 
+      color: 'from-yellow-500 to-orange-500' 
+    },
+    { 
+      icon: Cross, 
+      text: 'O que significa viver em santidade hoje?', 
+      color: 'from-purple-500 to-indigo-500' 
+    },
   ]
 
   const createNewChat = () => {
@@ -89,6 +114,25 @@ const LogosAIPage = () => {
   const updateChatTitle = (chatId: string, firstMessage: string) => {
     const title = firstMessage.slice(0, 30) + (firstMessage.length > 30 ? '...' : '')
     setChats(chats.map((c) => (c.id === chatId ? { ...c, title } : c)))
+  }
+
+  const toggleSaveMessage = (messageIndex: number) => {
+    const updatedMessages = [...currentChat.messages]
+    updatedMessages[messageIndex].saved = !updatedMessages[messageIndex].saved
+    
+    setChats(
+      chats.map((c) =>
+        c.id === currentChatId
+          ? { ...c, messages: updatedMessages }
+          : c
+      )
+    )
+
+    toast.success(
+      updatedMessages[messageIndex].saved 
+        ? 'Resposta salva!' 
+        : 'Resposta removida dos salvos'
+    )
   }
 
   const handleSend = async () => {
@@ -121,7 +165,7 @@ const LogosAIPage = () => {
     setTimeout(() => {
       const aiMessage: Message = {
         role: 'assistant',
-        content: `🙏 Como LOGOS AI, estou aqui para ajudá-lo em sua jornada espiritual!\n\nSobre sua pergunta "${userMessage.content}":\n\nA Palavra de Deus nos ensina profundas verdades sobre este tema. Permita-me compartilhar alguns insights bíblicos:\n\n📖 **Contexto Bíblico**: A Escritura nos mostra que...\n\n💡 **Aplicação Prática**: Na sua vida diária, isso significa...\n\n🔥 **Reflexão Espiritual**: Deus deseja que você compreenda...\n\nGostaria de explorar mais algum aspecto específico desta questão?\n\n*Lembre-se: "Toda a Escritura é inspirada por Deus e útil para o ensino, para a repreensão, para a correção e para a instrução na justiça." - 2 Timóteo 3:16*`,
+        content: generateBiblicalResponse(userMessage.content),
         timestamp: new Date(),
       }
 
@@ -136,8 +180,138 @@ const LogosAIPage = () => {
     }, 1500)
   }
 
+  const generateBiblicalResponse = (question: string) => {
+    return `🙏 **Caminhando na Palavra de Deus**
+
+Obrigado por sua pergunta: *"${question}"*
+
+A Escritura nos ensina profundas verdades sobre este tema.
+
+📖 **O que a Bíblia diz:**
+A Palavra de Deus nos mostra claramente que devemos buscar sabedoria e orientação em Sua presença. "Confia no Senhor de todo o teu coração e não te estribes no teu próprio entendimento" (Provérbios 3:5).
+
+💡 **Aplicação Prática:**
+Em sua vida diária, isso significa colocar Deus em primeiro lugar em todas as decisões. A fé não é apenas crer, mas viver de acordo com a verdade revelada nas Escrituras.
+
+🔥 **Reflexão Espiritual:**
+Deus deseja que você cresça em conhecimento bíblico e maturidade espiritual. Cada pergunta é uma oportunidade de aprofundar seu relacionamento com Ele através da Palavra.
+
+✨ **Próximos Passos:**
+- Medite nas Escrituras relacionadas
+- Ore pedindo sabedoria
+- Busque comunhão com outros irmãos
+- Aplique o que aprendeu
+
+*"Toda a Escritura é inspirada por Deus e útil para o ensino, para a repreensão, para a correção e para a instrução na justiça." - 2 Timóteo 3:16*
+
+Gostaria de explorar mais algum aspecto específico desta questão? 📖`
+  }
+
   const handleSuggestion = (text: string) => {
+    if (isGuest) {
+      toast.error('Crie uma conta para conversar com a Logos')
+      navigate('/auth')
+      return
+    }
     setInput(text)
+  }
+
+  if (isGuest) {
+    return (
+      <Layout title={t('logosAI.title')}>
+        <div className="space-y-6">
+          {/* Hero Banner - Guest */}
+          <Card className="relative overflow-hidden border-0 shadow-2xl rounded-2xl elevation-3">
+            <div className="absolute inset-0">
+              <img
+                src="https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=1920&h=600&fit=crop&q=80"
+                alt="Logos AI"
+                className="w-full h-full object-cover opacity-90"
+              />
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-800/96 via-purple-800/94 to-pink-800/92" />
+            </div>
+            
+            <div className="relative z-10 p-6 md:p-10 lg:p-14 text-white">
+              <div className="max-w-4xl space-y-5 md:space-y-7">
+                <div className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-white/20 backdrop-blur-md rounded-full border border-white/30 shadow-lg">
+                  <Sparkles className="h-4 w-4 md:h-5 md:w-5" />
+                  <span className="text-sm md:text-base font-bold tracking-wide">
+                    LOGOS — IA CRISTÃ
+                  </span>
+                </div>
+
+                <div className="space-y-4">
+                  <h1 className="text-3xl md:text-5xl lg:text-6xl font-black leading-[1.15] tracking-tight">
+                    Sua Companheira de{' '}
+                    <span className="bg-gradient-to-r from-white via-yellow-200 to-white bg-clip-text text-transparent">
+                      Caminhada Bíblica
+                    </span>
+                  </h1>
+                  <p className="text-lg md:text-xl lg:text-2xl text-white/90 font-medium leading-relaxed max-w-2xl">
+                    Pergunte, explore e cresça na Palavra. A Logos responde baseada exclusivamente nas Escrituras Sagradas.
+                  </p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button
+                    size="lg"
+                    onClick={() => navigate('/auth')}
+                    className="bg-white text-indigo-700 hover:bg-white/95 font-bold px-7 py-6 rounded-full shadow-2xl transform hover:scale-105 transition-all"
+                  >
+                    <UserPlus className="mr-2 h-5 w-5" />
+                    Criar Conta para Conversar
+                  </Button>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-3 pt-4">
+                  {suggestions.map((suggestion, index) => (
+                    <div
+                      key={index}
+                      className="p-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl"
+                    >
+                      <div className="flex items-center gap-3">
+                        <suggestion.icon className="h-5 w-5 text-white/90" />
+                        <p className="text-sm text-white/90">{suggestion.text}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-yellow-400/20 to-transparent rounded-full blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-white/10 to-transparent rounded-full blur-3xl" />
+          </Card>
+
+          {/* Features - Guest */}
+          <div className="grid md:grid-cols-3 gap-5">
+            <Card className="p-6 border-2 hover:shadow-xl transition-all">
+              <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl inline-flex mb-4">
+                <BookOpen className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground mb-2">Fundamentada na Bíblia</h3>
+              <p className="text-muted-foreground">Todas as respostas baseadas exclusivamente nas Escrituras Sagradas.</p>
+            </Card>
+
+            <Card className="p-6 border-2 hover:shadow-xl transition-all">
+              <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl inline-flex mb-4">
+                <Heart className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground mb-2">Acolhedora e Clara</h3>
+              <p className="text-muted-foreground">Interface simples e linguagem pastoral, não técnica.</p>
+            </Card>
+
+            <Card className="p-6 border-2 hover:shadow-xl transition-all">
+              <div className="p-3 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl inline-flex mb-4">
+                <Cross className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground mb-2">Ortodoxa e Responsável</h3>
+              <p className="text-muted-foreground">Sem revelações extras, apenas a verdade bíblica histórica.</p>
+            </Card>
+          </div>
+        </div>
+      </Layout>
+    )
   }
 
   return (
@@ -206,8 +380,8 @@ const LogosAIPage = () => {
                 <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-card" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-foreground">{t('logosAI.title')}</h2>
-                <p className="text-sm text-muted-foreground">{t('logosAI.subtitle')}</p>
+                <h2 className="text-2xl font-bold text-foreground">Logos — IA Cristã</h2>
+                <p className="text-sm text-muted-foreground">Sua companheira de caminhada bíblica</p>
               </div>
             </div>
           </div>
@@ -220,10 +394,10 @@ const LogosAIPage = () => {
                   <Sparkles className="h-20 w-20 text-primary" />
                 </div>
                 <h2 className="text-3xl font-bold text-foreground mb-3">
-                  {t('logosAI.howCanHelp')}
+                  Como posso ajudá-lo hoje?
                 </h2>
                 <p className="text-muted-foreground mb-12 max-w-2xl text-lg">
-                  {t('logosAI.askQuestions')}
+                  Faça perguntas sobre a Bíblia, busque orientação espiritual ou explore a Palavra de Deus.
                 </p>
 
                 {/* Suggestions */}
@@ -264,11 +438,27 @@ const LogosAIPage = () => {
                         message.role === 'user'
                           ? 'bg-gradient-to-r from-primary to-accent text-white rounded-2xl rounded-tr-sm'
                           : 'bg-muted text-foreground rounded-2xl rounded-tl-sm'
-                      } p-5 shadow-md`}
+                      } p-5 shadow-md relative group`}
                     >
-                      <p className="text-sm leading-relaxed whitespace-pre-line">{message.content}</p>
-                      <div className={`text-xs mt-2 ${message.role === 'user' ? 'text-white/70' : 'text-muted-foreground'}`}>
-                        {message.timestamp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                      <div className="prose prose-sm dark:prose-invert max-w-none">
+                        <p className="leading-relaxed whitespace-pre-line">{message.content}</p>
+                      </div>
+                      <div className={`flex items-center justify-between mt-3 pt-2 border-t ${message.role === 'user' ? 'border-white/20' : 'border-border/50'}`}>
+                        <div className={`text-xs ${message.role === 'user' ? 'text-white/70' : 'text-muted-foreground'}`}>
+                          {message.timestamp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                        {message.role === 'assistant' && (
+                          <button
+                            onClick={() => toggleSaveMessage(index)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-primary/10 rounded"
+                          >
+                            {message.saved ? (
+                              <BookmarkCheck className="h-4 w-4 text-primary" />
+                            ) : (
+                              <Bookmark className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </button>
+                        )}
                       </div>
                     </div>
 
@@ -276,7 +466,7 @@ const LogosAIPage = () => {
                       <div className="flex-shrink-0">
                         <div className="p-2 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-md">
                           <span className="h-6 w-6 flex items-center justify-center text-white font-bold text-sm">
-                            U
+                            {user?.username?.charAt(0).toUpperCase() || 'U'}
                           </span>
                         </div>
                       </div>
@@ -310,7 +500,7 @@ const LogosAIPage = () => {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-                  placeholder={t('logosAI.placeholder')}
+                  placeholder="Faça sua pergunta bíblica..."
                   className="min-h-[48px] text-base resize-none"
                   disabled={loading}
                 />
@@ -332,7 +522,7 @@ const LogosAIPage = () => {
             {/* Info */}
             <div className="mt-3 text-center">
               <p className="text-xs text-muted-foreground">
-                💡 {t('logosAI.powered')}
+                📖 Todas as respostas baseadas exclusivamente nas Escrituras Sagradas
               </p>
             </div>
           </div>

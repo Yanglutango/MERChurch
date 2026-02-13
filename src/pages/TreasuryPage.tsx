@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useAppStore } from '../stores/appStore'
-import { DollarSign, CreditCard, QrCode, Building2, Filter, TrendingUp, UserPlus, Shield, PieChart } from 'lucide-react'
+import { DollarSign, CreditCard, QrCode, Building2, Filter, TrendingUp, UserPlus, Shield, PieChart, CheckCircle, Clock, Copy, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Transaction } from '../types'
 import { StatCard } from '../components/shared/StatCard'
@@ -26,16 +26,19 @@ const TreasuryPage = () => {
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([])
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [processingPayment, setProcessingPayment] = useState(false)
+  const [paymentReference, setPaymentReference] = useState<string | null>(null)
   const [filters, setFilters] = useState({
     type: 'all',
+    status: 'all',
     dateFrom: '',
     dateTo: '',
   })
   const [newTransaction, setNewTransaction] = useState({
     amount: '',
     type: 'tithe' as 'tithe' | 'offering' | 'donation' | 'project',
-    method: 'pix' as 'credit_card' | 'debit_card' | 'pix' | 'transfer',
     description: '',
   })
 
@@ -45,6 +48,13 @@ const TreasuryPage = () => {
 
   useEffect(() => {
     loadTransactions()
+    
+    // Poll for transaction updates every 10 seconds
+    const interval = setInterval(() => {
+      if (!isGuest) loadTransactions()
+    }, 10000)
+
+    return () => clearInterval(interval)
   }, [])
 
   useEffect(() => {
@@ -55,7 +65,6 @@ const TreasuryPage = () => {
     setLoading(true)
     
     if (isAdmin) {
-      // Admin vê TODAS as transações
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
@@ -69,7 +78,6 @@ const TreasuryPage = () => {
     }
 
     if (!isGuest) {
-      // Member/Admin vê suas próprias transações
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
@@ -94,6 +102,10 @@ const TreasuryPage = () => {
       filtered = filtered.filter((t) => t.type === filters.type)
     }
 
+    if (filters.status !== 'all') {
+      filtered = filtered.filter((t) => t.status === filters.status)
+    }
+
     if (filters.dateFrom) {
       filtered = filtered.filter((t) => new Date(t.createdAt) >= new Date(filters.dateFrom))
     }
@@ -105,41 +117,59 @@ const TreasuryPage = () => {
     setFilteredTransactions(filtered)
   }
 
-  const createTransaction = async () => {
+  const generatePaymentReference = async () => {
     if (!newTransaction.amount || parseFloat(newTransaction.amount) <= 0) {
       toast.error('Valor inválido')
       return
     }
 
-    const { error } = await supabase.from('transactions').insert({
-      user_id: user!.id,
-      amount: parseFloat(newTransaction.amount),
-      type: newTransaction.type,
-      method: newTransaction.method,
-      status: 'completed',
-      description: newTransaction.description,
-    })
+    setProcessingPayment(true)
+    try {
+      const { data, error } = await supabase.functions.invoke('multicaixa-payment/generate', {
+        body: {
+          userId: user!.id,
+          amount: parseFloat(newTransaction.amount),
+          type: newTransaction.type,
+          description: newTransaction.description,
+        },
+      })
 
-    if (error) {
-      toast.error('Erro ao processar contribuição')
-      return
+      if (error) throw error
+
+      setPaymentReference(data.reference)
+      setIsDialogOpen(false)
+      setIsPaymentDialogOpen(true)
+      toast.success('Referência de pagamento gerada!')
+      
+      loadTransactions()
+    } catch (error: any) {
+      console.error('Payment generation error:', error)
+      toast.error('Erro ao gerar referência de pagamento')
+    } finally {
+      setProcessingPayment(false)
     }
-
-    toast.success('Contribuição registrada com sucesso!')
-    setIsDialogOpen(false)
-    setNewTransaction({
-      amount: '',
-      type: 'tithe',
-      method: 'pix',
-      description: '',
-    })
-    loadTransactions()
   }
 
-  const totalAmount = filteredTransactions.reduce((sum, t) => sum + t.amount, 0)
-  const totalTithes = filteredTransactions.filter(t => t.type === 'tithe').reduce((sum, t) => sum + t.amount, 0)
-  const totalOfferings = filteredTransactions.filter(t => t.type === 'offering').reduce((sum, t) => sum + t.amount, 0)
-  const totalDonations = filteredTransactions.filter(t => t.type === 'donation').reduce((sum, t) => sum + t.amount, 0)
+  const copyReference = () => {
+    if (paymentReference) {
+      navigator.clipboard.writeText(paymentReference)
+      toast.success('Referência copiada!')
+    }
+  }
+
+  const totalAmount = filteredTransactions
+    .filter(t => t.status === 'completed')
+    .reduce((sum, t) => sum + t.amount, 0)
+  const totalTithes = filteredTransactions
+    .filter(t => t.type === 'tithe' && t.status === 'completed')
+    .reduce((sum, t) => sum + t.amount, 0)
+  const totalOfferings = filteredTransactions
+    .filter(t => t.type === 'offering' && t.status === 'completed')
+    .reduce((sum, t) => sum + t.amount, 0)
+  const totalDonations = filteredTransactions
+    .filter(t => t.type === 'donation' && t.status === 'completed')
+    .reduce((sum, t) => sum + t.amount, 0)
+  const pendingCount = filteredTransactions.filter(t => t.status === 'pending').length
 
   const getTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
@@ -151,14 +181,25 @@ const TreasuryPage = () => {
     return labels[type] || type
   }
 
-  const getMethodIcon = (method: string) => {
-    const icons: Record<string, any> = {
-      credit_card: CreditCard,
-      debit_card: CreditCard,
-      pix: QrCode,
-      transfer: Building2,
+  const getStatusBadge = (status: string) => {
+    const badges: Record<string, { color: string; label: string; icon: any }> = {
+      pending: { 
+        color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300', 
+        label: 'Pendente',
+        icon: Clock
+      },
+      completed: { 
+        color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300', 
+        label: 'Confirmado',
+        icon: CheckCircle
+      },
+      failed: { 
+        color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300', 
+        label: 'Falhou',
+        icon: AlertCircle
+      },
     }
-    return icons[method] || DollarSign
+    return badges[status] || badges.pending
   }
 
   if (loading) {
@@ -188,7 +229,7 @@ const TreasuryPage = () => {
               <div className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-white/20 backdrop-blur-md rounded-full border border-white/30 shadow-lg">
                 <DollarSign className="h-4 w-4 md:h-5 md:w-5" />
                 <span className="text-sm md:text-base font-bold tracking-wide">
-                  {isAdmin ? 'GESTÃO FINANCEIRA' : isGuest ? 'TESOURARIA MER' : 'GENEROSIDADE'}
+                  {isAdmin ? 'GESTÃO FINANCEIRA REAL' : isGuest ? 'TESOURARIA MER' : 'GENEROSIDADE'}
                 </span>
               </div>
 
@@ -202,7 +243,7 @@ const TreasuryPage = () => {
                       </span>
                     </h1>
                     <p className="text-lg md:text-xl lg:text-2xl text-white/90 font-medium leading-relaxed max-w-2xl">
-                      A MER administra contribuições com integridade e transparência. Faça parte da obra.
+                      A MER administra contribuições com integridade absoluta. Veja nossos números reais e faça parte da obra.
                     </p>
                   </>
                 )}
@@ -216,7 +257,7 @@ const TreasuryPage = () => {
                       </span>
                     </h1>
                     <p className="text-lg md:text-xl lg:text-2xl text-white/90 font-medium leading-relaxed max-w-2xl">
-                      Suas contribuições sustentam a obra e transformam vidas. Doe com responsabilidade e fé.
+                      Suas contribuições via Multicaixa Express sustentam a obra e transformam vidas. Seguro, rápido e confirmado automaticamente.
                     </p>
                   </>
                 )}
@@ -225,10 +266,10 @@ const TreasuryPage = () => {
                   <>
                     <h1 className="text-3xl md:text-5xl lg:text-6xl font-black leading-[1.15] tracking-tight flex items-center gap-3 md:gap-4 flex-wrap">
                       <Shield className="h-10 w-10 md:h-14 md:w-14 text-yellow-300" />
-                      Dashboard Financeiro
+                      Dashboard Financeiro Real
                     </h1>
                     <p className="text-lg md:text-xl lg:text-2xl text-white/90 font-medium leading-relaxed max-w-2xl">
-                      Visão completa de entradas, distribuição e métricas em tempo real. Governo com clareza e integridade.
+                      Visão completa de entradas, confirmações automáticas e métricas atualizadas em tempo real. Governo com clareza e integridade.
                     </p>
                   </>
                 )}
@@ -242,8 +283,8 @@ const TreasuryPage = () => {
                         size="lg"
                         className="bg-white text-green-800 hover:bg-white/95 font-bold px-7 py-6 rounded-full shadow-2xl transform hover:scale-105 transition-all"
                       >
-                        <DollarSign className="mr-2 h-5 w-5" />
-                        Nova Contribuição
+                        <QrCode className="mr-2 h-5 w-5" />
+                        Nova Contribuição (Multicaixa)
                       </Button>
                     </DialogTrigger>
                   </Dialog>
@@ -259,6 +300,16 @@ const TreasuryPage = () => {
                   </Button>
                 )}
               </div>
+
+              {isGuest && (
+                <div className="p-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl">
+                  <p className="text-sm text-white/90">
+                    ✓ Pagamentos processados via <strong>Multicaixa Express</strong> (oficial Angola)<br/>
+                    ✓ Confirmação automática em tempo real<br/>
+                    ✓ Transparência total com dados verificáveis
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -267,34 +318,32 @@ const TreasuryPage = () => {
         </Card>
 
         {/* Stats - Contextual por Papel */}
-        {!isGuest && (
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
-            <StatCard
-              icon={DollarSign}
-              label={isAdmin ? "Total Geral" : "Suas Contribuições"}
-              value={`Kz ${totalAmount.toLocaleString('pt-AO', { minimumFractionDigits: 2 })}`}
-              gradient="from-green-600 to-emerald-600"
-            />
-            <StatCard
-              icon={TrendingUp}
-              label="Dízimos"
-              value={`Kz ${totalTithes.toLocaleString('pt-AO', { minimumFractionDigits: 2 })}`}
-              gradient="from-blue-600 to-cyan-600"
-            />
-            <StatCard
-              icon={PieChart}
-              label="Ofertas"
-              value={`Kz ${totalOfferings.toLocaleString('pt-AO', { minimumFractionDigits: 2 })}`}
-              gradient="from-purple-600 to-pink-600"
-            />
-            <StatCard
-              icon={Building2}
-              label="Doações"
-              value={`Kz ${totalDonations.toLocaleString('pt-AO', { minimumFractionDigits: 2 })}`}
-              gradient="from-orange-600 to-red-600"
-            />
-          </div>
-        )}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+          <StatCard
+            icon={DollarSign}
+            label={isAdmin ? "Total Confirmado" : isGuest ? "Total do Mês" : "Suas Contribuições"}
+            value={`Kz ${totalAmount.toLocaleString('pt-AO', { minimumFractionDigits: 2 })}`}
+            gradient="from-green-600 to-emerald-600"
+          />
+          <StatCard
+            icon={TrendingUp}
+            label="Dízimos"
+            value={`Kz ${totalTithes.toLocaleString('pt-AO', { minimumFractionDigits: 2 })}`}
+            gradient="from-blue-600 to-cyan-600"
+          />
+          <StatCard
+            icon={PieChart}
+            label="Ofertas"
+            value={`Kz ${totalOfferings.toLocaleString('pt-AO', { minimumFractionDigits: 2 })}`}
+            gradient="from-purple-600 to-pink-600"
+          />
+          <StatCard
+            icon={Building2}
+            label={isGuest ? "Projetos Apoiados" : "Doações"}
+            value={isGuest ? "3 Ativos" : `Kz ${totalDonations.toLocaleString('pt-AO', { minimumFractionDigits: 2 })}`}
+            gradient="from-orange-600 to-red-600"
+          />
+        </div>
 
         {/* Filters - Apenas para Member/Admin */}
         {!isGuest && (
@@ -304,7 +353,7 @@ const TreasuryPage = () => {
               <h3 className="font-bold text-foreground text-lg">Filtros</h3>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid md:grid-cols-4 gap-4">
               <div>
                 <Label>Tipo</Label>
                 <Select value={filters.type} onValueChange={(value) => setFilters({ ...filters, type: value })}>
@@ -317,6 +366,21 @@ const TreasuryPage = () => {
                     <SelectItem value="offering">Oferta</SelectItem>
                     <SelectItem value="donation">Doação</SelectItem>
                     <SelectItem value="project">Projeto</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Status</Label>
+                <Select value={filters.status} onValueChange={(value) => setFilters({ ...filters, status: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="pending">Pendente</SelectItem>
+                    <SelectItem value="completed">Confirmado</SelectItem>
+                    <SelectItem value="failed">Falhou</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -339,6 +403,15 @@ const TreasuryPage = () => {
                 />
               </div>
             </div>
+
+            {pendingCount > 0 && (
+              <div className="mt-4 p-3 bg-yellow-100 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700 rounded-lg flex items-center gap-2">
+                <Clock className="h-5 w-5 text-yellow-700 dark:text-yellow-300" />
+                <span className="text-sm text-yellow-700 dark:text-yellow-300 font-medium">
+                  {pendingCount} {pendingCount === 1 ? 'pagamento pendente' : 'pagamentos pendentes'} de confirmação
+                </span>
+              </div>
+            )}
           </Card>
         )}
 
@@ -354,7 +427,8 @@ const TreasuryPage = () => {
 
             <div className="space-y-3">
               {filteredTransactions.map((transaction) => {
-                const MethodIcon = getMethodIcon(transaction.method)
+                const badge = getStatusBadge(transaction.status)
+                const StatusIcon = badge.icon
                 
                 return (
                   <div
@@ -362,8 +436,20 @@ const TreasuryPage = () => {
                     className="flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors border-2 border-transparent hover:border-primary/20"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="p-3 bg-primary/10 rounded-xl">
-                        <MethodIcon className="h-5 w-5 text-primary" />
+                      <div className={`p-3 rounded-xl ${
+                        transaction.status === 'completed' 
+                          ? 'bg-green-100 dark:bg-green-900/20' 
+                          : transaction.status === 'pending'
+                          ? 'bg-yellow-100 dark:bg-yellow-900/20'
+                          : 'bg-red-100 dark:bg-red-900/20'
+                      }`}>
+                        <QrCode className={`h-5 w-5 ${
+                          transaction.status === 'completed'
+                            ? 'text-green-600 dark:text-green-400'
+                            : transaction.status === 'pending'
+                            ? 'text-yellow-600 dark:text-yellow-400'
+                            : 'text-red-600 dark:text-red-400'
+                        }`} />
                       </div>
                       <div>
                         <div className="font-semibold text-foreground">{getTypeLabel(transaction.type)}</div>
@@ -375,7 +461,12 @@ const TreasuryPage = () => {
                           })}
                         </div>
                         {transaction.description && (
-                          <div className="text-xs text-muted-foreground">{transaction.description}</div>
+                          <div className="text-xs text-muted-foreground mt-0.5">{transaction.description}</div>
+                        )}
+                        {transaction.paymentReference && (
+                          <div className="text-xs text-muted-foreground mt-1 font-mono">
+                            Ref: {transaction.paymentReference}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -384,14 +475,9 @@ const TreasuryPage = () => {
                       <div className="font-bold text-lg text-green-600 dark:text-green-400">
                         Kz {transaction.amount.toLocaleString('pt-AO', { minimumFractionDigits: 2 })}
                       </div>
-                      <div className={`text-xs px-2 py-1 rounded-full inline-block ${
-                        transaction.status === 'completed'
-                          ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
-                          : transaction.status === 'pending'
-                          ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
-                          : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
-                      }`}>
-                        {transaction.status === 'completed' ? 'Concluído' : transaction.status === 'pending' ? 'Pendente' : 'Falhou'}
+                      <div className={`text-xs px-2 py-1 rounded-full inline-flex items-center gap-1 ${badge.color}`}>
+                        <StatusIcon className="h-3 w-3" />
+                        {badge.label}
                       </div>
                     </div>
                   </div>
@@ -405,7 +491,7 @@ const TreasuryPage = () => {
         {isGuest && (
           <GuestPrompt
             title="Faça parte da obra"
-            description="Membros podem contribuir com dízimos, ofertas e doações de forma segura e transparente."
+            description="Membros podem contribuir com dízimos, ofertas e doações de forma segura via Multicaixa Express com confirmação automática."
             actionLabel="Criar Conta"
             onAction={() => navigate('/auth')}
           />
@@ -419,7 +505,7 @@ const TreasuryPage = () => {
             description={filters.type !== 'all' || filters.dateFrom || filters.dateTo ? 'Tente ajustar os filtros' : 'Faça sua primeira contribuição'}
             action={
               <Button onClick={() => setIsDialogOpen(true)} className="gradient-primary text-white">
-                <DollarSign className="mr-2 h-4 w-4" />
+                <QrCode className="mr-2 h-4 w-4" />
                 Nova Contribuição
               </Button>
             }
@@ -431,9 +517,15 @@ const TreasuryPage = () => {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nova Contribuição</DialogTitle>
+            <DialogTitle>Nova Contribuição via Multicaixa Express</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <p className="text-sm text-blue-700 dark:text-blue-300">
+                💳 Pagamento seguro processado pela <strong>Multicaixa Express</strong> (Angola)
+              </p>
+            </div>
+
             <div>
               <Label htmlFor="amount">Valor (Kz) *</Label>
               <Input
@@ -442,7 +534,7 @@ const TreasuryPage = () => {
                 step="0.01"
                 value={newTransaction.amount}
                 onChange={(e) => setNewTransaction({ ...newTransaction, amount: e.target.value })}
-                placeholder="0,00"
+                placeholder="5000.00"
               />
             </div>
 
@@ -465,24 +557,6 @@ const TreasuryPage = () => {
             </div>
 
             <div>
-              <Label htmlFor="method">Forma de Pagamento *</Label>
-              <Select
-                value={newTransaction.method}
-                onValueChange={(value: any) => setNewTransaction({ ...newTransaction, method: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pix">PIX</SelectItem>
-                  <SelectItem value="credit_card">Cartão de Crédito</SelectItem>
-                  <SelectItem value="debit_card">Cartão de Débito</SelectItem>
-                  <SelectItem value="transfer">Transferência</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
               <Label htmlFor="description">Descrição (Opcional)</Label>
               <Input
                 id="description"
@@ -492,8 +566,69 @@ const TreasuryPage = () => {
               />
             </div>
 
-            <Button onClick={createTransaction} className="w-full gradient-primary text-white">
-              Confirmar Contribuição
+            <Button 
+              onClick={generatePaymentReference} 
+              disabled={processingPayment}
+              className="w-full gradient-primary text-white"
+            >
+              {processingPayment ? 'Gerando referência...' : 'Gerar Referência de Pagamento'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Payment Reference Dialog */}
+      <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Referência de Pagamento Gerada</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-5 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-200 dark:border-green-800 rounded-xl">
+              <div className="text-center space-y-3">
+                <CheckCircle className="h-12 w-12 text-green-600 dark:text-green-400 mx-auto" />
+                <h3 className="text-xl font-bold text-green-700 dark:text-green-300">Referência Gerada!</h3>
+                
+                <div className="p-4 bg-white dark:bg-gray-900 rounded-lg border border-green-200 dark:border-green-800">
+                  <p className="text-xs text-muted-foreground mb-1">REFERÊNCIA MULTICAIXA</p>
+                  <p className="text-2xl font-bold text-foreground font-mono tracking-wider">
+                    {paymentReference}
+                  </p>
+                  <Button
+                    onClick={copyReference}
+                    variant="ghost"
+                    size="sm"
+                    className="mt-2 w-full"
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copiar Referência
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2 text-sm text-muted-foreground">
+              <h4 className="font-semibold text-foreground">Como Pagar:</h4>
+              <ol className="list-decimal list-inside space-y-1">
+                <li>Acesse sua app <strong>Multicaixa Express</strong></li>
+                <li>Selecione <strong>Pagamentos</strong></li>
+                <li>Insira a referência acima</li>
+                <li>Confirme o pagamento</li>
+              </ol>
+              <p className="text-xs pt-2 text-green-600 dark:text-green-400">
+                ✓ Sua contribuição será confirmada automaticamente após o pagamento
+              </p>
+            </div>
+
+            <Button
+              onClick={() => {
+                setIsPaymentDialogOpen(false)
+                setPaymentReference(null)
+                setNewTransaction({ amount: '', type: 'tithe', description: '' })
+              }}
+              className="w-full"
+            >
+              Entendido
             </Button>
           </div>
         </DialogContent>
