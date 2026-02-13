@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import Layout from '../components/layout/Layout'
 import { useAuth } from '../hooks/useAuth'
 import { useAppStore } from '../stores/appStore'
+import { supabase } from '../lib/supabase'
 import { Card } from '../components/ui/card'
 import { Input } from '../components/ui/input'
 import { Button } from '../components/ui/button'
@@ -19,8 +20,11 @@ import {
   Bookmark,
   BookmarkCheck,
   UserPlus,
+  Copy,
+  Check,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { FunctionsHttpError } from '@supabase/supabase-js'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -51,6 +55,7 @@ const LogosAIPage = () => {
   const [currentChatId, setCurrentChatId] = useState('1')
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [showSidebar, setShowSidebar] = useState(true)
 
@@ -135,6 +140,17 @@ const LogosAIPage = () => {
     )
   }
 
+  const copyToClipboard = async (text: string, index: number) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedIndex(index)
+      toast.success('Texto copiado!')
+      setTimeout(() => setCopiedIndex(null), 2000)
+    } catch (error) {
+      toast.error('Erro ao copiar texto')
+    }
+  }
+
   const handleSend = async () => {
     if (!input.trim() || loading) return
 
@@ -161,11 +177,39 @@ const LogosAIPage = () => {
     setInput('')
     setLoading(true)
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      // Call Logos AI Edge Function
+      const { data, error } = await supabase.functions.invoke('logos-ai', {
+        body: {
+          messages: updatedMessages.map(m => ({
+            role: m.role,
+            content: m.content,
+          })),
+          userId: user!.id,
+        },
+      })
+
+      if (error) {
+        let errorMessage = error.message
+        if (error instanceof FunctionsHttpError) {
+          try {
+            const statusCode = error.context?.status ?? 500
+            const textContent = await error.context?.text()
+            errorMessage = `[Code: ${statusCode}] ${textContent || error.message || 'Unknown error'}`
+          } catch {
+            errorMessage = `${error.message || 'Failed to read response'}`
+          }
+        }
+        throw new Error(errorMessage)
+      }
+
+      if (!data?.message) {
+        throw new Error('Resposta vazia da API')
+      }
+
       const aiMessage: Message = {
         role: 'assistant',
-        content: generateBiblicalResponse(userMessage.content),
+        content: data.message,
         timestamp: new Date(),
       }
 
@@ -176,35 +220,21 @@ const LogosAIPage = () => {
             : c
         )
       )
+    } catch (error: any) {
+      console.error('Logos AI error:', error)
+      toast.error(error.message || 'Erro ao processar sua pergunta')
+      
+      // Remove user message on error
+      setChats(
+        chats.map((c) =>
+          c.id === currentChatId
+            ? { ...c, messages: c.messages.slice(0, -1) }
+            : c
+        )
+      )
+    } finally {
       setLoading(false)
-    }, 1500)
-  }
-
-  const generateBiblicalResponse = (question: string) => {
-    return `🙏 **Caminhando na Palavra de Deus**
-
-Obrigado por sua pergunta: *"${question}"*
-
-A Escritura nos ensina profundas verdades sobre este tema.
-
-📖 **O que a Bíblia diz:**
-A Palavra de Deus nos mostra claramente que devemos buscar sabedoria e orientação em Sua presença. "Confia no Senhor de todo o teu coração e não te estribes no teu próprio entendimento" (Provérbios 3:5).
-
-💡 **Aplicação Prática:**
-Em sua vida diária, isso significa colocar Deus em primeiro lugar em todas as decisões. A fé não é apenas crer, mas viver de acordo com a verdade revelada nas Escrituras.
-
-🔥 **Reflexão Espiritual:**
-Deus deseja que você cresça em conhecimento bíblico e maturidade espiritual. Cada pergunta é uma oportunidade de aprofundar seu relacionamento com Ele através da Palavra.
-
-✨ **Próximos Passos:**
-- Medite nas Escrituras relacionadas
-- Ore pedindo sabedoria
-- Busque comunhão com outros irmãos
-- Aplique o que aprendeu
-
-*"Toda a Escritura é inspirada por Deus e útil para o ensino, para a repreensão, para a correção e para a instrução na justiça." - 2 Timóteo 3:16*
-
-Gostaria de explorar mais algum aspecto específico desta questão? 📖`
+    }
   }
 
   const handleSuggestion = (text: string) => {
@@ -447,18 +477,34 @@ Gostaria de explorar mais algum aspecto específico desta questão? 📖`
                         <div className={`text-xs ${message.role === 'user' ? 'text-white/70' : 'text-muted-foreground'}`}>
                           {message.timestamp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                         </div>
-                        {message.role === 'assistant' && (
-                          <button
-                            onClick={() => toggleSaveMessage(index)}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-primary/10 rounded"
-                          >
-                            {message.saved ? (
-                              <BookmarkCheck className="h-4 w-4 text-primary" />
-                            ) : (
-                              <Bookmark className="h-4 w-4 text-muted-foreground" />
-                            )}
-                          </button>
-                        )}
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {message.role === 'assistant' && (
+                            <>
+                              <button
+                                onClick={() => copyToClipboard(message.content, index)}
+                                className="p-1 hover:bg-primary/10 rounded"
+                                title="Copiar texto"
+                              >
+                                {copiedIndex === index ? (
+                                  <Check className="h-4 w-4 text-green-500" />
+                                ) : (
+                                  <Copy className="h-4 w-4 text-muted-foreground" />
+                                )}
+                              </button>
+                              <button
+                                onClick={() => toggleSaveMessage(index)}
+                                className="p-1 hover:bg-primary/10 rounded"
+                                title={message.saved ? 'Remover dos salvos' : 'Salvar resposta'}
+                              >
+                                {message.saved ? (
+                                  <BookmarkCheck className="h-4 w-4 text-primary" />
+                                ) : (
+                                  <Bookmark className="h-4 w-4 text-muted-foreground" />
+                                )}
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
 
