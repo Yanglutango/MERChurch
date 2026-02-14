@@ -193,11 +193,11 @@ const LogosAIPage = () => {
         let errorMessage = error.message
         if (error instanceof FunctionsHttpError) {
           try {
-            const statusCode = error.context?.status ?? 500
             const textContent = await error.context?.text()
-            errorMessage = `[Code: ${statusCode}] ${textContent || error.message || 'Unknown error'}`
+            const errorData = JSON.parse(textContent)
+            errorMessage = errorData.error || error.message
           } catch {
-            errorMessage = `${error.message || 'Failed to read response'}`
+            errorMessage = error.message || 'Erro ao conectar com a Logos AI'
           }
         }
         throw new Error(errorMessage)
@@ -222,7 +222,17 @@ const LogosAIPage = () => {
       )
     } catch (error: any) {
       console.error('Logos AI error:', error)
-      toast.error(error.message || 'Erro ao processar sua pergunta')
+      
+      // Show user-friendly error message
+      const errorMsg = error.message || 'Erro ao processar sua pergunta'
+      
+      if (errorMsg.includes('Limite de uso excedido')) {
+        toast.error(errorMsg, { duration: 8000 })
+      } else if (errorMsg.includes('Chave API inválida')) {
+        toast.error('Configuração da API inválida. Contate o administrador.', { duration: 6000 })
+      } else {
+        toast.error(errorMsg, { duration: 5000 })
+      }
       
       // Remove user message on error
       setChats(

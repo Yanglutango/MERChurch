@@ -102,8 +102,18 @@ Deno.serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('[Logos AI] OpenAI API error:', errorText)
-      throw new Error(`OpenAI API error: ${response.status}`)
+      console.error('[Logos AI] OpenAI API error:', response.status, errorText)
+      
+      // Handle specific error codes
+      if (response.status === 429) {
+        throw new Error('OpenAI: Limite de uso excedido. Por favor, verifique sua quota/créditos em platform.openai.com ou aguarde alguns minutos.')
+      } else if (response.status === 401) {
+        throw new Error('OpenAI: Chave API inválida ou expirada.')
+      } else if (response.status === 500 || response.status === 503) {
+        throw new Error('OpenAI: Serviço temporariamente indisponível. Tente novamente em alguns instantes.')
+      } else {
+        throw new Error(`OpenAI API error: ${response.status} - ${errorText}`)
+      }
     }
 
     const data = await response.json()
@@ -125,10 +135,14 @@ Deno.serve(async (req) => {
     )
   } catch (error) {
     console.error('[Logos AI] Error:', error)
+    
+    // Return user-friendly error message
+    const errorMessage = error.message || 'Erro ao processar sua pergunta. Por favor, tente novamente.'
+    
     return new Response(
       JSON.stringify({ 
-        error: 'Erro ao processar sua pergunta. Por favor, tente novamente.',
-        details: error.message 
+        error: errorMessage,
+        timestamp: new Date().toISOString()
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
