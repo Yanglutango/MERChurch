@@ -549,21 +549,23 @@ const LogosAIPage = () => {
                             </div>
                           </div>
                           
-                          <Card className="flex-1 border-2 shadow-lg hover:shadow-xl transition-shadow rounded-2xl overflow-hidden group">
-                            <div className="p-6 space-y-4">
+                          <Card className="flex-1 border-2 shadow-lg hover:shadow-xl transition-all rounded-2xl overflow-hidden group animate-in fade-in slide-in-from-bottom-2 duration-500">
+                            <div className="p-7 space-y-5">
                               {/* Main Response */}
                               <div className="prose prose-sm dark:prose-invert max-w-none">
-                                <p className="text-foreground leading-relaxed whitespace-pre-line">
+                                <p className="text-foreground leading-[1.75] whitespace-pre-line text-[15px]">
                                   {message.content}
                                 </p>
                               </div>
 
                               {/* Biblical Foundation Badge */}
-                              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-full">
-                                <BookOpen className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                                <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">
-                                  Baseado nas Escrituras
-                                </span>
+                              <div className="pt-4 border-t border-border/50">
+                                <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-orange-900/30 border-2 border-amber-200 dark:border-amber-800 rounded-xl shadow-sm">
+                                  <BookOpen className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                  <span className="text-xs font-bold text-amber-700 dark:text-amber-300 tracking-wide">
+                                    📖 Baseado nas Escrituras Sagradas
+                                  </span>
+                                </div>
                               </div>
 
                               {/* Actions Footer */}
@@ -611,23 +613,27 @@ const LogosAIPage = () => {
                   ))}
                   
                   {loading && (
-                    <div className="flex gap-4 mb-8 animate-in fade-in duration-500">
+                    <div className="flex gap-4 mb-8 animate-in fade-in duration-700">
                       <div className="flex-shrink-0">
-                        <div className="h-10 w-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl shadow-md flex items-center justify-center">
-                          <Flame className="h-5 w-5 text-white animate-pulse" />
+                        <div className="h-10 w-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl shadow-md flex items-center justify-center animate-pulse">
+                          <Flame className="h-5 w-5 text-white" />
                         </div>
                       </div>
                       
-                      <Card className="flex-1 border-2 shadow-lg rounded-2xl p-6">
-                        <div className="flex items-center gap-3">
-                          <div className="flex gap-1.5">
-                            <div className="w-2 h-2 bg-amber-500 rounded-full animate-bounce" />
-                            <div className="w-2 h-2 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }} />
-                            <div className="w-2 h-2 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }} />
+                      <Card className="flex-1 border-2 shadow-lg rounded-2xl p-7 bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-950/30 dark:to-orange-950/30">
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-3">
+                            <div className="flex gap-1.5">
+                              <div className="w-2.5 h-2.5 bg-amber-500 rounded-full animate-bounce" />
+                              <div className="w-2.5 h-2.5 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }} />
+                              <div className="w-2.5 h-2.5 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }} />
+                            </div>
+                            <span className="text-sm font-medium text-amber-700 dark:text-amber-300">
+                              Logos está refletindo nas Escrituras...
+                            </span>
                           </div>
-                          <span className="text-sm text-muted-foreground italic">
-                            Logos está refletindo nas Escrituras...
-                          </span>
+                          {/* Cursor piscando */}
+                          <div className="h-5 w-0.5 bg-amber-500 animate-pulse" />
                         </div>
                       </Card>
                     </div>
@@ -672,15 +678,15 @@ const LogosAIPage = () => {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-                  placeholder="Pergunte algo sobre fé, Bíblia ou vida cristã..."
-                  className="w-full h-14 text-base pl-5 pr-14 rounded-2xl border-2 focus:border-amber-500 shadow-sm"
+                  placeholder="Faça uma pergunta sobre fé, Bíblia ou vida cristã..."
+                  className="w-full h-16 text-base pl-6 pr-16 rounded-3xl border-2 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20 shadow-lg transition-all"
                   disabled={loading || (usageStats?.remaining === 0)}
                 />
                 <Button
                   onClick={handleSend}
                   disabled={loading || !input.trim() || (usageStats?.remaining === 0)}
                   size="icon"
-                  className="absolute right-1.5 top-1.5 h-11 w-11 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 rounded-xl shadow-md"
+                  className="absolute right-2 top-2 h-12 w-12 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
                 >
                   {loading ? (
                     <Loader2 className="h-5 w-5 animate-spin text-white" />

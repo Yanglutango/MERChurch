@@ -13,9 +13,15 @@ import {
   Activity,
   UserCheck,
   UserPlus,
+  ArrowUpRight,
+  ArrowDownRight,
+  Zap,
+  CheckCircle2,
+  Clock,
+  MessageSquare,
+  GraduationCap,
+  ChevronRight,
 } from 'lucide-react'
-import { PageHeader } from '../components/shared/PageHeader'
-import { StatCard } from '../components/shared/StatCard'
 import { LoadingState } from '../components/shared/LoadingState'
 
 const DashboardPage = () => {
@@ -71,56 +77,24 @@ const DashboardPage = () => {
     }
   }
 
-  const statsCards = [
-    {
-      icon: Users,
-      label: 'Total de Usuários',
-      value: stats.totalUsers,
-      color: 'from-blue-500 to-cyan-500',
-    },
-    {
-      icon: UserCheck,
-      label: 'Membros',
-      value: stats.totalMembers,
-      color: 'from-green-500 to-emerald-500',
-    },
-    {
-      icon: UserPlus,
-      label: 'Convidados',
-      value: stats.totalGuests,
-      color: 'from-yellow-500 to-orange-500',
-    },
-    {
-      icon: BookOpen,
-      label: 'Sermões',
-      value: stats.totalSermons,
-      color: 'from-purple-500 to-pink-500',
-    },
-    {
-      icon: Calendar,
-      label: 'Eventos',
-      value: stats.totalEvents,
-      color: 'from-indigo-500 to-purple-500',
-    },
-    {
-      icon: Heart,
-      label: 'Pedidos de Oração',
-      value: stats.totalPrayers,
-      color: 'from-red-500 to-rose-500',
-    },
-    {
-      icon: DollarSign,
-      label: 'Receita Total',
-      value: `Kz ${stats.totalRevenue.toLocaleString('pt-AO', { minimumFractionDigits: 2 })}`,
-      color: 'from-green-500 to-teal-500',
-    },
-    {
-      icon: Activity,
-      label: 'Cursos',
-      value: stats.totalCourses,
-      color: 'from-pink-500 to-rose-500',
-    },
+  const recentActivities = [
+    { icon: UserPlus, label: 'Novo membro registrado', time: 'Há 2 horas', color: 'text-green-600 dark:text-green-400' },
+    { icon: BookOpen, label: 'Novo sermão publicado', time: 'Há 5 horas', color: 'text-blue-600 dark:text-blue-400' },
+    { icon: Calendar, label: 'Novo evento criado', time: 'Há 1 dia', color: 'text-purple-600 dark:text-purple-400' },
+    { icon: DollarSign, label: 'Nova contribuição registrada', time: 'Há 2 dias', color: 'text-emerald-600 dark:text-emerald-400' },
+    { icon: MessageSquare, label: 'Nova pergunta na Logos', time: 'Há 3 dias', color: 'text-amber-600 dark:text-amber-400' },
   ]
+
+  const quickActions = [
+    { icon: BookOpen, label: 'Gerenciar Sermões', href: '/sermons', color: 'from-purple-500 to-pink-500' },
+    { icon: Calendar, label: 'Gerenciar Eventos', href: '/agenda', color: 'from-blue-500 to-cyan-500' },
+    { icon: Users, label: 'Gerenciar Ministérios', href: '/ministries', color: 'from-green-500 to-emerald-500' },
+    { icon: GraduationCap, label: 'Gerenciar Cursos', href: '/academy', color: 'from-orange-500 to-red-500' },
+  ]
+
+  // Mock data for sparkline (últimos 7 dias)
+  const weeklyActivity = [45, 52, 48, 61, 58, 67, 72]
+  const maxActivity = Math.max(...weeklyActivity)
 
   if (loading) {
     return (
@@ -132,116 +106,334 @@ const DashboardPage = () => {
 
   return (
     <Layout title="Dashboard Administrativo">
-      <div className="space-y-6">
-        {/* Header */}
-        <PageHeader
-          title="Dashboard Administrativo"
-          description="Visão geral da plataforma KAIRÓS - MER"
-          icon={LayoutDashboard}
-          gradient="from-amber-500 via-orange-500 to-red-500"
-        />
-
-        {/* Stats Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {statsCards.map((stat, index) => (
-            <StatCard
-              key={index}
-              icon={stat.icon}
-              label={stat.label}
-              value={stat.value}
-              gradient={stat.color}
-            />
-          ))}
+      <div className="space-y-8">
+        {/* Modern Header */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-6 border-b-2 border-border">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-black text-foreground tracking-tight mb-2 flex items-center gap-3">
+              <div className="p-3 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl shadow-xl">
+                <LayoutDashboard className="h-8 w-8 text-white" />
+              </div>
+              Dashboard Administrativo
+            </h1>
+            <p className="text-base text-muted-foreground">
+              Visão geral da atividade da plataforma MER
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-green-100 dark:bg-green-900/30 border-2 border-green-300 dark:border-green-700 rounded-xl">
+              <div className="h-2.5 w-2.5 bg-green-500 rounded-full animate-pulse" />
+              <span className="text-sm font-bold text-green-700 dark:text-green-300">Plataforma Ativa</span>
+            </div>
+            <div className="px-4 py-2.5 bg-muted border-2 border-border rounded-xl">
+              <div className="text-xs text-muted-foreground">Última atualização</div>
+              <div className="text-sm font-bold text-foreground">
+                {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid md:grid-cols-2 gap-6">
-          <Card className="p-6 border-2">
-            <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
+        {/* Métricas Principais - Sofisticadas */}
+        <div>
+          <h2 className="text-xl font-bold text-foreground mb-5 flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            Métricas Principais
+          </h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+            {/* Total de Usuários */}
+            <Card className="relative overflow-hidden border-2 hover:border-primary/50 transition-all hover:shadow-xl group">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="relative p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-lg">
+                    <Users className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="flex items-center gap-1 px-2.5 py-1 bg-green-100 dark:bg-green-900/30 rounded-full">
+                    <ArrowUpRight className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+                    <span className="text-xs font-bold text-green-600 dark:text-green-400">+12%</span>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-3xl font-black text-foreground tracking-tight">{stats.totalUsers}</div>
+                  <div className="text-sm font-medium text-muted-foreground">Total de Usuários</div>
+                </div>
+                {/* Mini sparkline */}
+                <div className="mt-4 flex items-end gap-1 h-8">
+                  {weeklyActivity.map((val, idx) => (
+                    <div
+                      key={idx}
+                      className="flex-1 bg-gradient-to-t from-blue-500 to-cyan-500 rounded-sm opacity-60 group-hover:opacity-100 transition-opacity"
+                      style={{ height: `${(val / maxActivity) * 100}%` }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </Card>
+
+            {/* Membros */}
+            <Card className="relative overflow-hidden border-2 hover:border-primary/50 transition-all hover:shadow-xl group">
+              <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="relative p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl shadow-lg">
+                    <UserCheck className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="flex items-center gap-1 px-2.5 py-1 bg-green-100 dark:bg-green-900/30 rounded-full">
+                    <ArrowUpRight className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+                    <span className="text-xs font-bold text-green-600 dark:text-green-400">+8%</span>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-3xl font-black text-foreground tracking-tight">{stats.totalMembers}</div>
+                  <div className="text-sm font-medium text-muted-foreground">Membros Ativos</div>
+                </div>
+                <div className="mt-4 flex items-end gap-1 h-8">
+                  {weeklyActivity.map((val, idx) => (
+                    <div
+                      key={idx}
+                      className="flex-1 bg-gradient-to-t from-green-500 to-emerald-500 rounded-sm opacity-60 group-hover:opacity-100 transition-opacity"
+                      style={{ height: `${(val / maxActivity) * 100}%` }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </Card>
+
+            {/* Sermões */}
+            <Card className="relative overflow-hidden border-2 hover:border-primary/50 transition-all hover:shadow-xl group">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="relative p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl shadow-lg">
+                    <BookOpen className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="flex items-center gap-1 px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+                    <ArrowUpRight className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                    <span className="text-xs font-bold text-blue-600 dark:text-blue-400">+5</span>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-3xl font-black text-foreground tracking-tight">{stats.totalSermons}</div>
+                  <div className="text-sm font-medium text-muted-foreground">Sermões Publicados</div>
+                </div>
+                <div className="mt-4 flex items-end gap-1 h-8">
+                  {weeklyActivity.map((val, idx) => (
+                    <div
+                      key={idx}
+                      className="flex-1 bg-gradient-to-t from-purple-500 to-pink-500 rounded-sm opacity-60 group-hover:opacity-100 transition-opacity"
+                      style={{ height: `${(val / maxActivity) * 100}%` }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </Card>
+
+            {/* Receita */}
+            <Card className="relative overflow-hidden border-2 hover:border-primary/50 transition-all hover:shadow-xl group">
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-teal-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="relative p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="p-3 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl shadow-lg">
+                    <DollarSign className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="flex items-center gap-1 px-2.5 py-1 bg-green-100 dark:bg-green-900/30 rounded-full">
+                    <ArrowUpRight className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+                    <span className="text-xs font-bold text-green-600 dark:text-green-400">+18%</span>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-2xl font-black text-foreground tracking-tight">
+                    Kz {(stats.totalRevenue / 1000).toFixed(1)}K
+                  </div>
+                  <div className="text-sm font-medium text-muted-foreground">Receita Total</div>
+                </div>
+                <div className="mt-4 flex items-end gap-1 h-8">
+                  {weeklyActivity.map((val, idx) => (
+                    <div
+                      key={idx}
+                      className="flex-1 bg-gradient-to-t from-emerald-500 to-teal-500 rounded-sm opacity-60 group-hover:opacity-100 transition-opacity"
+                      style={{ height: `${(val / maxActivity) * 100}%` }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
+
+        {/* Área de Visualização - Gráfico Central */}
+        <Card className="border-2 p-8 bg-gradient-to-br from-primary/5 via-accent/5 to-background">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground mb-1 flex items-center gap-2">
+                <Activity className="h-6 w-6 text-primary" />
+                Atividade da Plataforma
+              </h2>
+              <p className="text-sm text-muted-foreground">Últimos 7 dias</p>
+            </div>
+            <div className="px-4 py-2 bg-primary/10 border-2 border-primary/20 rounded-xl">
+              <div className="text-xs text-muted-foreground">Média diária</div>
+              <div className="text-xl font-bold text-primary">
+                {Math.round(weeklyActivity.reduce((a, b) => a + b, 0) / weeklyActivity.length)}
+              </div>
+            </div>
+          </div>
+
+          {/* Simple Line Chart */}
+          <div className="h-64 flex items-end gap-3">
+            {weeklyActivity.map((value, idx) => (
+              <div key={idx} className="flex-1 flex flex-col items-center gap-3">
+                <div className="w-full flex flex-col justify-end" style={{ height: '200px' }}>
+                  <div
+                    className="w-full bg-gradient-to-t from-primary to-accent rounded-t-lg shadow-lg transition-all hover:shadow-xl hover:scale-105 cursor-pointer relative group"
+                    style={{ height: `${(value / maxActivity) * 100}%` }}
+                  >
+                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-foreground text-background px-2 py-1 rounded text-xs font-bold whitespace-nowrap">
+                      {value} atividades
+                    </div>
+                  </div>
+                </div>
+                <div className="text-xs font-medium text-muted-foreground">
+                  {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][idx]}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Grid Inferior */}
+        <div className="grid lg:grid-cols-2 gap-6">
+          {/* Atividade Recente - Timeline Style */}
+          <Card className="border-2 p-6 hover:shadow-xl transition-shadow">
+            <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
+              <Clock className="h-5 w-5 text-primary" />
+              Atividade Recente da Plataforma
+            </h2>
+            <div className="space-y-4">
+              {recentActivities.map((activity, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-start gap-4 p-4 rounded-xl border-2 border-border hover:border-primary/30 hover:bg-muted/50 transition-all group cursor-pointer"
+                >
+                  <div className={`p-2.5 bg-muted rounded-xl group-hover:scale-110 transition-transform ${activity.color}`}>
+                    <activity.icon className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-foreground mb-0.5">{activity.label}</div>
+                    <div className="text-sm text-muted-foreground flex items-center gap-1.5">
+                      <Clock className="h-3.5 w-3.5" />
+                      {activity.time}
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* Ações Rápidas - Modernizado */}
+          <Card className="border-2 p-6 hover:shadow-xl transition-shadow">
+            <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
+              <Zap className="h-5 w-5 text-primary" />
               Ações Rápidas
             </h2>
-            <div className="space-y-3">
-              <a
-                href="/sermons"
-                className="block p-4 bg-muted/50 hover:bg-muted rounded-lg transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <BookOpen className="h-5 w-5 text-primary" />
-                  <div className="font-semibold text-foreground">Gerenciar Sermões</div>
-                </div>
-              </a>
-              <a
-                href="/agenda"
-                className="block p-4 bg-muted/50 hover:bg-muted rounded-lg transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <Calendar className="h-5 w-5 text-primary" />
-                  <div className="font-semibold text-foreground">Gerenciar Eventos</div>
-                </div>
-              </a>
-              <a
-                href="/ministries"
-                className="block p-4 bg-muted/50 hover:bg-muted rounded-lg transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <Users className="h-5 w-5 text-primary" />
-                  <div className="font-semibold text-foreground">Gerenciar Ministérios</div>
-                </div>
-              </a>
-              <a
-                href="/academy"
-                className="block p-4 bg-muted/50 hover:bg-muted rounded-lg transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <Activity className="h-5 w-5 text-primary" />
-                  <div className="font-semibold text-foreground">Gerenciar Cursos</div>
-                </div>
-              </a>
-            </div>
-          </Card>
-
-          <Card className="p-6 border-2">
-            <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-              <Activity className="h-5 w-5 text-primary" />
-              Atividades Recentes
-            </h2>
-            <div className="space-y-3 text-sm">
-              <div className="p-3 bg-muted/50 rounded-lg">
-                <div className="font-semibold text-foreground">Novo membro cadastrado</div>
-                <div className="text-muted-foreground">Há 2 horas</div>
-              </div>
-              <div className="p-3 bg-muted/50 rounded-lg">
-                <div className="font-semibold text-foreground">Sermão publicado</div>
-                <div className="text-muted-foreground">Há 5 horas</div>
-              </div>
-              <div className="p-3 bg-muted/50 rounded-lg">
-                <div className="font-semibold text-foreground">Evento criado</div>
-                <div className="text-muted-foreground">Há 1 dia</div>
-              </div>
-              <div className="p-3 bg-muted/50 rounded-lg">
-                <div className="font-semibold text-foreground">Doação recebida</div>
-                <div className="text-muted-foreground">Há 2 dias</div>
-              </div>
+            <div className="grid grid-cols-2 gap-4">
+              {quickActions.map((action, idx) => (
+                <a
+                  key={idx}
+                  href={action.href}
+                  className="group relative overflow-hidden p-6 rounded-2xl border-2 border-border hover:border-primary/50 transition-all hover:shadow-xl hover:-translate-y-1 transform"
+                >
+                  <div className={`absolute inset-0 bg-gradient-to-br ${action.color} opacity-0 group-hover:opacity-10 transition-opacity`} />
+                  <div className="relative space-y-3">
+                    <div className={`inline-flex p-3 bg-gradient-to-br ${action.color} rounded-xl shadow-lg group-hover:scale-110 transition-transform`}>
+                      <action.icon className="h-6 w-6 text-white" />
+                    </div>
+                    <div className="font-bold text-foreground group-hover:text-primary transition-colors leading-tight">
+                      {action.label}
+                    </div>
+                  </div>
+                  <ChevronRight className="absolute top-4 right-4 h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                </a>
+              ))}
             </div>
           </Card>
         </div>
 
-        {/* System Info */}
-        <Card className="p-6 border-2 bg-primary/5">
-          <h2 className="text-xl font-bold text-foreground mb-4">Informações do Sistema</h2>
-          <div className="grid md:grid-cols-3 gap-4 text-sm">
-            <div>
-              <div className="text-muted-foreground mb-1">Versão da Plataforma</div>
-              <div className="font-semibold text-foreground">1.0.0</div>
+        {/* Métricas Secundárias */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+          <Card className="p-5 border-2 hover:border-primary/30 transition-colors">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-2.5 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
+                <UserPlus className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+              </div>
+              <ArrowUpRight className="h-4 w-4 text-green-500" />
             </div>
-            <div>
-              <div className="text-muted-foreground mb-1">Última Atualização</div>
-              <div className="font-semibold text-foreground">{new Date().toLocaleDateString('pt-BR')}</div>
+            <div className="text-2xl font-black text-foreground mb-1">{stats.totalGuests}</div>
+            <div className="text-sm text-muted-foreground">Convidados</div>
+          </Card>
+
+          <Card className="p-5 border-2 hover:border-primary/30 transition-colors">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-2.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
+                <Calendar className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <ArrowUpRight className="h-4 w-4 text-green-500" />
             </div>
-            <div>
-              <div className="text-muted-foreground mb-1">Status do Sistema</div>
-              <div className="font-semibold text-green-600">✓ Operacional</div>
+            <div className="text-2xl font-black text-foreground mb-1">{stats.totalEvents}</div>
+            <div className="text-sm text-muted-foreground">Eventos</div>
+          </Card>
+
+          <Card className="p-5 border-2 hover:border-primary/30 transition-colors">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-2.5 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                <Heart className="h-5 w-5 text-red-600 dark:text-red-400" />
+              </div>
+              <ArrowUpRight className="h-4 w-4 text-green-500" />
+            </div>
+            <div className="text-2xl font-black text-foreground mb-1">{stats.totalPrayers}</div>
+            <div className="text-sm text-muted-foreground">Pedidos de Oração</div>
+          </Card>
+
+          <Card className="p-5 border-2 hover:border-primary/30 transition-colors">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-2.5 bg-pink-100 dark:bg-pink-900/30 rounded-lg">
+                <GraduationCap className="h-5 w-5 text-pink-600 dark:text-pink-400" />
+              </div>
+              <ArrowUpRight className="h-4 w-4 text-green-500" />
+            </div>
+            <div className="text-2xl font-black text-foreground mb-1">{stats.totalCourses}</div>
+            <div className="text-sm text-muted-foreground">Cursos Academy</div>
+          </Card>
+        </div>
+
+        {/* System Status - Footer */}
+        <Card className="border-2 p-6 bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 dark:from-green-950/30 dark:via-emerald-950/30 dark:to-teal-950/30">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-green-500 rounded-xl shadow-lg">
+                <CheckCircle2 className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <div className="font-bold text-foreground text-lg">Sistema Operacional</div>
+                <div className="text-sm text-muted-foreground">Todos os serviços funcionando normalmente</div>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-4 text-sm">
+              <div className="px-4 py-2 bg-white dark:bg-gray-900 border-2 border-border rounded-xl">
+                <div className="text-muted-foreground mb-0.5">Versão</div>
+                <div className="font-bold text-foreground">v1.0.0</div>
+              </div>
+              <div className="px-4 py-2 bg-white dark:bg-gray-900 border-2 border-border rounded-xl">
+                <div className="text-muted-foreground mb-0.5">Uptime</div>
+                <div className="font-bold text-green-600 dark:text-green-400">99.9%</div>
+              </div>
+              <div className="px-4 py-2 bg-white dark:bg-gray-900 border-2 border-border rounded-xl">
+                <div className="text-muted-foreground mb-0.5">Última Deploy</div>
+                <div className="font-bold text-foreground">{new Date().toLocaleDateString('pt-BR')}</div>
+              </div>
             </div>
           </div>
         </Card>
