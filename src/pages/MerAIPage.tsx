@@ -22,12 +22,12 @@ import {
   UserPlus,
   Copy,
   Check,
-  BarChart3,
-  AlertCircle,
+  Share2,
+  ChevronRight,
+  Flame,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { FunctionsHttpError } from '@supabase/supabase-js'
-import { StatCard } from '../components/shared/StatCard'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -68,11 +68,8 @@ const LogosAIPage = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [showSidebar, setShowSidebar] = useState(true)
   const [usageStats, setUsageStats] = useState<UsageStats | null>(null)
-  const [adminMetrics, setAdminMetrics] = useState<any>(null)
 
   const isGuest = user?.role === 'guest'
-  const isMember = user?.role === 'member'
-  const isAdmin = user?.role === 'admin'
 
   const currentChat = chats.find((c) => c.id === currentChatId)!
 
@@ -87,9 +84,6 @@ const LogosAIPage = () => {
   useEffect(() => {
     if (!isGuest) {
       loadUsageStats()
-    }
-    if (isAdmin) {
-      loadAdminMetrics()
     }
   }, [])
 
@@ -114,57 +108,11 @@ const LogosAIPage = () => {
     }
   }
 
-  const loadAdminMetrics = async () => {
-    try {
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-
-      const { count: todayCount } = await supabase
-        .from('logos_usage')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', today.toISOString())
-
-      const { count: totalCount } = await supabase
-        .from('logos_usage')
-        .select('*', { count: 'exact', head: true })
-
-      const { data: topicsData } = await supabase
-        .from('logos_usage')
-        .select('topic')
-        .gte('created_at', today.toISOString())
-        .limit(100)
-
-      setAdminMetrics({
-        todayUsage: todayCount || 0,
-        totalUsage: totalCount || 0,
-        topTopics: topicsData?.slice(0, 5) || [],
-      })
-    } catch (error) {
-      console.error('Error loading admin metrics:', error)
-    }
-  }
-
   const suggestions = [
-    { 
-      icon: BookOpen, 
-      text: 'Explique João 3:16 em contexto histórico', 
-      color: 'from-blue-500 to-cyan-500' 
-    },
-    { 
-      icon: Heart, 
-      text: 'Como fortalecer minha vida de oração?', 
-      color: 'from-pink-500 to-rose-500' 
-    },
-    { 
-      icon: Lightbulb, 
-      text: 'Versículos sobre esperança em tempos difíceis', 
-      color: 'from-yellow-500 to-orange-500' 
-    },
-    { 
-      icon: Cross, 
-      text: 'O que significa viver em santidade hoje?', 
-      color: 'from-purple-500 to-indigo-500' 
-    },
+    { icon: BookOpen, text: 'O que significa graça na Bíblia?', category: 'Doutrina' },
+    { icon: Heart, text: 'Como vencer a ansiedade segundo as Escrituras?', category: 'Vida Cristã' },
+    { icon: Lightbulb, text: 'Como discernir a vontade de Deus?', category: 'Discernimento' },
+    { icon: Cross, text: 'Explique a salvação pela graça', category: 'Evangelho' },
   ]
 
   const createNewChat = () => {
@@ -198,16 +146,12 @@ const LogosAIPage = () => {
     
     setChats(
       chats.map((c) =>
-        c.id === currentChatId
-          ? { ...c, messages: updatedMessages }
-          : c
+        c.id === currentChatId ? { ...c, messages: updatedMessages } : c
       )
     )
 
     toast.success(
-      updatedMessages[messageIndex].saved 
-        ? 'Resposta salva!' 
-        : 'Resposta removida dos salvos'
+      updatedMessages[messageIndex].saved ? 'Resposta salva!' : 'Resposta removida dos salvos'
     )
   }
 
@@ -222,10 +166,17 @@ const LogosAIPage = () => {
     }
   }
 
+  const shareMessage = (content: string) => {
+    if (navigator.share) {
+      navigator.share({ title: 'Logos - MER', text: content }).catch(() => {})
+    } else {
+      copyToClipboard(content, -1)
+    }
+  }
+
   const handleSend = async () => {
     if (!input.trim() || loading) return
 
-    // Check usage limit
     if (usageStats && usageStats.remaining <= 0) {
       toast.error(`Limite diário atingido (${usageStats.limit} mensagens/dia). Tente novamente amanhã.`, { duration: 6000 })
       return
@@ -241,9 +192,7 @@ const LogosAIPage = () => {
     
     setChats(
       chats.map((c) =>
-        c.id === currentChatId
-          ? { ...c, messages: updatedMessages, lastUpdated: new Date() }
-          : c
+        c.id === currentChatId ? { ...c, messages: updatedMessages, lastUpdated: new Date() } : c
       )
     )
 
@@ -255,13 +204,9 @@ const LogosAIPage = () => {
     setLoading(true)
 
     try {
-      // Call Logos AI Edge Function
       const { data, error } = await supabase.functions.invoke('logos-ai', {
         body: {
-          messages: updatedMessages.map(m => ({
-            role: m.role,
-            content: m.content,
-          })),
+          messages: updatedMessages.map(m => ({ role: m.role, content: m.content })),
           userId: user!.id,
           stream: false,
         },
@@ -274,13 +219,8 @@ const LogosAIPage = () => {
             const textContent = await error.context?.text()
             const errorData = JSON.parse(textContent)
             
-            // Check if it's a usage limit error
             if (errorData.usageLimit) {
-              setUsageStats({
-                used: errorData.used,
-                limit: errorData.limit,
-                remaining: 0,
-              })
+              setUsageStats({ used: errorData.used, limit: errorData.limit, remaining: 0 })
               toast.error(errorData.error, { duration: 8000 })
               return
             }
@@ -293,11 +233,8 @@ const LogosAIPage = () => {
         throw new Error(errorMessage)
       }
 
-      if (!data?.message) {
-        throw new Error('Resposta vazia da API')
-      }
+      if (!data?.message) throw new Error('Resposta vazia da API')
 
-      // Update usage stats
       if (data.usageStatus) {
         setUsageStats(data.usageStatus)
       } else {
@@ -312,31 +249,17 @@ const LogosAIPage = () => {
 
       setChats(
         chats.map((c) =>
-          c.id === currentChatId
-            ? { ...c, messages: [...updatedMessages, aiMessage] }
-            : c
+          c.id === currentChatId ? { ...c, messages: [...updatedMessages, aiMessage] } : c
         )
       )
     } catch (error: any) {
       console.error('Logos AI error:', error)
-      
-      // Show user-friendly error message
       const errorMsg = error.message || 'Erro ao processar sua pergunta'
+      toast.error(errorMsg, { duration: 5000 })
       
-      if (errorMsg.includes('Limite de uso excedido') || errorMsg.includes('Limite diário')) {
-        toast.error(errorMsg, { duration: 8000 })
-      } else if (errorMsg.includes('Chave API inválida')) {
-        toast.error('Configuração da API inválida. Contate o administrador.', { duration: 6000 })
-      } else {
-        toast.error(errorMsg, { duration: 5000 })
-      }
-      
-      // Remove user message on error
       setChats(
         chats.map((c) =>
-          c.id === currentChatId
-            ? { ...c, messages: c.messages.slice(0, -1) }
-            : c
+          c.id === currentChatId ? { ...c, messages: c.messages.slice(0, -1) } : c
         )
       )
     } finally {
@@ -351,100 +274,100 @@ const LogosAIPage = () => {
       return
     }
     setInput(text)
+    setTimeout(() => handleSend(), 100)
   }
 
   if (isGuest) {
     return (
-      <Layout title="Logos — IA Cristã">
-        <div className="space-y-6">
-          {/* Hero Banner - Guest */}
-          <Card className="relative overflow-hidden border-0 shadow-2xl rounded-2xl elevation-3">
-            <div className="absolute inset-0">
-              <img
-                src="https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=1920&h=600&fit=crop&q=80"
-                alt="Logos AI"
-                className="w-full h-full object-cover opacity-90"
-              />
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-800/96 via-purple-800/94 to-pink-800/92" />
+      <Layout title="Logos — Sabedoria à Luz das Escrituras">
+        <div className="max-w-5xl mx-auto space-y-8 py-8">
+          {/* Spiritual Header - Guest */}
+          <div className="text-center space-y-6 py-12">
+            <div className="inline-flex items-center justify-center mb-4">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 rounded-2xl blur-xl opacity-30 animate-pulse" />
+                <div className="relative p-5 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl shadow-2xl">
+                  <Flame className="h-12 w-12 text-white" />
+                </div>
+              </div>
             </div>
             
-            <div className="relative z-10 p-6 md:p-10 lg:p-14 text-white">
-              <div className="max-w-4xl space-y-5 md:space-y-7">
-                <div className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-white/20 backdrop-blur-md rounded-full border border-white/30 shadow-lg">
-                  <Sparkles className="h-4 w-4 md:h-5 md:w-5" />
-                  <span className="text-sm md:text-base font-bold tracking-wide">
-                    LOGOS — IA CRISTÃ
-                  </span>
-                </div>
-
-                <div className="space-y-4">
-                  <h1 className="text-3xl md:text-5xl lg:text-6xl font-black leading-[1.15] tracking-tight">
-                    Sua Companheira de{' '}
-                    <span className="bg-gradient-to-r from-white via-yellow-200 to-white bg-clip-text text-transparent">
-                      Caminhada Bíblica
-                    </span>
-                  </h1>
-                  <p className="text-lg md:text-xl lg:text-2xl text-white/90 font-medium leading-relaxed max-w-2xl">
-                    Pergunte, explore e cresça na Palavra. A Logos responde baseada exclusivamente nas Escrituras Sagradas.
-                  </p>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <Button
-                    size="lg"
-                    onClick={() => navigate('/auth')}
-                    className="bg-white text-indigo-700 hover:bg-white/95 font-bold px-7 py-6 rounded-full shadow-2xl transform hover:scale-105 transition-all"
-                  >
-                    <UserPlus className="mr-2 h-5 w-5" />
-                    Criar Conta para Conversar
-                  </Button>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-3 pt-4">
-                  {suggestions.map((suggestion, index) => (
-                    <div
-                      key={index}
-                      className="p-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl"
-                    >
-                      <div className="flex items-center gap-3">
-                        <suggestion.icon className="h-5 w-5 text-white/90" />
-                        <p className="text-sm text-white/90">{suggestion.text}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+            <div className="space-y-3">
+              <h1 className="text-4xl md:text-6xl font-bold text-foreground tracking-tight">
+                Logos
+              </h1>
+              <p className="text-xl md:text-2xl text-muted-foreground font-medium">
+                Sabedoria à Luz das Escrituras
+              </p>
+              <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                Faça perguntas, explore as Escrituras e aprofunde sua caminhada com Deus.
+              </p>
             </div>
 
-            <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-yellow-400/20 to-transparent rounded-full blur-3xl" />
-            <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-white/10 to-transparent rounded-full blur-3xl" />
-          </Card>
+            <Button
+              size="lg"
+              onClick={() => navigate('/auth')}
+              className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-semibold px-8 py-6 rounded-2xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all"
+            >
+              <UserPlus className="mr-2 h-5 w-5" />
+              Criar Conta para Conversar
+            </Button>
+          </div>
+
+          {/* Sugestões de Perguntas - Guest */}
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-muted-foreground text-center">Exemplos de Perguntas</h2>
+            <div className="grid md:grid-cols-2 gap-4">
+              {suggestions.map((suggestion, index) => (
+                <Card
+                  key={index}
+                  className="group p-6 border-2 hover:border-amber-500/50 hover:shadow-lg transition-all cursor-pointer"
+                  onClick={() => navigate('/auth')}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 rounded-xl group-hover:scale-110 transition-transform">
+                      <suggestion.icon className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-xs font-semibold text-amber-600 dark:text-amber-400 mb-1">
+                        {suggestion.category}
+                      </div>
+                      <p className="text-sm font-medium text-foreground leading-relaxed">
+                        {suggestion.text}
+                      </p>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
 
           {/* Features - Guest */}
-          <div className="grid md:grid-cols-3 gap-5">
-            <Card className="p-6 border-2 hover:shadow-xl transition-all">
-              <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl inline-flex mb-4">
-                <BookOpen className="h-6 w-6 text-white" />
+          <div className="grid md:grid-cols-3 gap-6 pt-8">
+            <div className="text-center space-y-3">
+              <div className="inline-flex p-4 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-2xl">
+                <BookOpen className="h-8 w-8 text-blue-600 dark:text-blue-400" />
               </div>
-              <h3 className="text-xl font-bold text-foreground mb-2">Fundamentada na Bíblia</h3>
-              <p className="text-muted-foreground">Todas as respostas baseadas exclusivamente nas Escrituras Sagradas.</p>
-            </Card>
+              <h3 className="text-lg font-bold text-foreground">Fundamentada na Bíblia</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">Todas as respostas baseadas exclusivamente nas Escrituras Sagradas.</p>
+            </div>
 
-            <Card className="p-6 border-2 hover:shadow-xl transition-all">
-              <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl inline-flex mb-4">
-                <Heart className="h-6 w-6 text-white" />
+            <div className="text-center space-y-3">
+              <div className="inline-flex p-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-2xl">
+                <Heart className="h-8 w-8 text-purple-600 dark:text-purple-400" />
               </div>
-              <h3 className="text-xl font-bold text-foreground mb-2">Acolhedora e Clara</h3>
-              <p className="text-muted-foreground">Interface simples e linguagem pastoral, não técnica.</p>
-            </Card>
+              <h3 className="text-lg font-bold text-foreground">Acolhedora e Clara</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">Interface elegante e linguagem pastoral, não técnica.</p>
+            </div>
 
-            <Card className="p-6 border-2 hover:shadow-xl transition-all">
-              <div className="p-3 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl inline-flex mb-4">
-                <Cross className="h-6 w-6 text-white" />
+            <div className="text-center space-y-3">
+              <div className="inline-flex p-4 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-2xl">
+                <Cross className="h-8 w-8 text-amber-600 dark:text-amber-400" />
               </div>
-              <h3 className="text-xl font-bold text-foreground mb-2">Ortodoxa e Responsável</h3>
-              <p className="text-muted-foreground">Sem revelações extras, apenas a verdade bíblica histórica.</p>
-            </Card>
+              <h3 className="text-lg font-bold text-foreground">Ortodoxa e Responsável</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">Sem revelações extras, apenas a verdade bíblica histórica.</p>
+            </div>
           </div>
         </div>
       </Layout>
@@ -452,46 +375,52 @@ const LogosAIPage = () => {
   }
 
   return (
-    <Layout title="Logos — IA Cristã">
-      <div className="space-y-4">
-        {/* Usage Stats & Admin Metrics */}
-        {(usageStats || adminMetrics) && (
-          <div className="grid md:grid-cols-3 gap-4">
-            {usageStats && (
-              <>
-                <StatCard
-                  icon={Sparkles}
-                  label="Perguntas Hoje"
-                  value={usageStats.used}
-                  gradient="from-purple-500 to-indigo-500"
-                />
-                <StatCard
-                  icon={AlertCircle}
-                  label="Restantes Hoje"
-                  value={usageStats.remaining}
-                  gradient={usageStats.remaining > 10 ? "from-green-500 to-emerald-500" : "from-orange-500 to-red-500"}
-                />
-              </>
-            )}
-            {isAdmin && adminMetrics && (
-              <StatCard
-                icon={BarChart3}
-                label="Uso Total (Hoje)"
-                value={adminMetrics.todayUsage}
-                gradient="from-blue-500 to-cyan-500"
-              />
-            )}
+    <Layout title="Logos — Sabedoria à Luz das Escrituras">
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Spiritual Header */}
+        <div className="text-center space-y-4 py-8">
+          <div className="inline-flex items-center justify-center mb-2">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 rounded-2xl blur-xl opacity-20 animate-pulse" />
+              <div className="relative p-4 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl shadow-xl">
+                <Flame className="h-10 w-10 text-white" />
+              </div>
+            </div>
           </div>
-        )}
+          
+          <div className="space-y-2">
+            <h1 className="text-3xl md:text-5xl font-bold text-foreground tracking-tight">
+              Logos
+            </h1>
+            <p className="text-lg md:text-xl text-muted-foreground font-medium">
+              Sabedoria à Luz das Escrituras
+            </p>
+            <p className="text-sm md:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              Faça perguntas, explore as Escrituras e aprofunde sua caminhada com Deus.
+            </p>
+          </div>
 
-        <div className="flex h-[calc(100vh-16rem)] gap-4">
+          {/* Usage Indicator */}
+          {usageStats && (
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-muted/50 rounded-full border border-border">
+              <div className={`h-2 w-2 rounded-full ${
+                usageStats.remaining > 10 ? 'bg-green-500' : usageStats.remaining > 0 ? 'bg-orange-500' : 'bg-red-500'
+              }`} />
+              <span className="text-xs font-medium text-muted-foreground">
+                {usageStats.remaining} {usageStats.remaining === 1 ? 'pergunta restante' : 'perguntas restantes'} hoje
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-6">
           {/* Sidebar - Chat History */}
           {showSidebar && (
-            <Card className="w-72 flex-shrink-0 border-2 flex flex-col overflow-hidden">
-              <div className="p-4 border-b border-border">
+            <Card className="w-80 flex-shrink-0 border-2 flex flex-col overflow-hidden rounded-2xl shadow-lg" style={{ maxHeight: 'calc(100vh - 200px)' }}>
+              <div className="p-4 border-b border-border bg-muted/30">
                 <Button
                   onClick={createNewChat}
-                  className="w-full bg-gradient-to-r from-primary to-accent text-white font-semibold"
+                  className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-semibold rounded-xl shadow-md"
                 >
                   <PlusCircle className="mr-2 h-4 w-4" />
                   Nova Conversa
@@ -505,7 +434,7 @@ const LogosAIPage = () => {
                     onClick={() => setCurrentChatId(chat.id)}
                     className={`group p-3 rounded-lg cursor-pointer transition-all mb-1 ${
                       currentChatId === chat.id
-                        ? 'bg-primary/10 border-2 border-primary/30'
+                        ? 'bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-500/30'
                         : 'hover:bg-muted border-2 border-transparent'
                     }`}
                   >
@@ -537,42 +466,24 @@ const LogosAIPage = () => {
           )}
 
           {/* Main Chat Area */}
-          <Card className="flex-1 border-2 flex flex-col overflow-hidden">
-            {/* Header */}
-            <div className="p-6 border-b border-border bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10">
-              <div className="flex items-center gap-4">
-                <div className="relative">
-                  <div className="p-3 bg-gradient-to-br from-primary to-accent rounded-2xl shadow-lg">
-                    <Sparkles className="h-8 w-8 text-white" />
-                  </div>
-                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-card" />
-                </div>
-                <div className="flex-1">
-                  <h2 className="text-2xl font-bold text-foreground">Logos — IA Cristã</h2>
-                  <p className="text-sm text-muted-foreground">Sua companheira de caminhada bíblica • Fundamentada nas Escrituras</p>
-                </div>
-                {usageStats && (
-                  <div className="text-right">
-                    <div className="text-xs text-muted-foreground">Hoje</div>
-                    <div className={`text-lg font-bold ${usageStats.remaining > 10 ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'}`}>
-                      {usageStats.remaining}/{usageStats.limit}
+          <Card className="flex-1 border-2 flex flex-col overflow-hidden rounded-2xl shadow-lg" style={{ maxHeight: 'calc(100vh - 200px)' }}>
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-8 space-y-8 bg-gradient-to-b from-background via-muted/5 to-background">
+              {currentChat.messages.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-center px-4 py-12">
+                  <div className="mb-8">
+                    <div className="relative inline-flex">
+                      <div className="absolute inset-0 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 rounded-3xl blur-2xl opacity-20 animate-pulse" />
+                      <div className="relative p-8 bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 rounded-3xl">
+                        <Flame className="h-20 w-20 text-amber-600 dark:text-amber-400" />
+                      </div>
                     </div>
                   </div>
-                )}
-              </div>
-            </div>
-
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              {currentChat.messages.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-center px-4">
-                  <div className="p-6 bg-gradient-to-br from-primary/20 to-accent/20 rounded-3xl mb-6">
-                    <Sparkles className="h-20 w-20 text-primary" />
-                  </div>
-                  <h2 className="text-3xl font-bold text-foreground mb-3">
+                  
+                  <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
                     Como posso ajudá-lo hoje?
                   </h2>
-                  <p className="text-muted-foreground mb-12 max-w-2xl text-lg">
+                  <p className="text-muted-foreground mb-12 max-w-lg leading-relaxed">
                     Faça perguntas sobre a Bíblia, busque orientação espiritual ou explore a Palavra de Deus.
                   </p>
 
@@ -582,101 +493,143 @@ const LogosAIPage = () => {
                       <Card
                         key={index}
                         onClick={() => handleSuggestion(suggestion.text)}
-                        className="p-6 cursor-pointer hover:shadow-2xl transition-all border-2 hover:border-primary/50 hover:-translate-y-1 transform group"
+                        className="group p-6 cursor-pointer hover:shadow-xl transition-all border-2 hover:border-amber-500/50 hover:-translate-y-1 transform rounded-xl"
                       >
-                        <div className={`inline-flex p-4 rounded-2xl bg-gradient-to-br ${suggestion.color} mb-4 group-hover:scale-110 transition-transform shadow-lg`}>
-                          <suggestion.icon className="h-7 w-7 text-white" />
+                        <div className="flex items-start gap-4">
+                          <div className="p-3 bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 rounded-xl group-hover:scale-110 transition-transform">
+                            <suggestion.icon className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+                          </div>
+                          <div className="flex-1 text-left">
+                            <div className="text-xs font-semibold text-amber-600 dark:text-amber-400 mb-1">
+                              {suggestion.category}
+                            </div>
+                            <p className="text-sm font-medium text-foreground leading-relaxed">
+                              {suggestion.text}
+                            </p>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>
-                        <p className="text-sm text-foreground font-medium leading-relaxed">
-                          {suggestion.text}
-                        </p>
                       </Card>
                     ))}
                   </div>
                 </div>
               ) : (
                 <>
+                  {/* Conversation Start Indicator */}
+                  <div className="flex items-center gap-3 py-4">
+                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+                    <div className="text-xs font-medium text-muted-foreground px-3 py-1 bg-muted/50 rounded-full">
+                      Início da conversa
+                    </div>
+                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+                  </div>
+                  
                   {currentChat.messages.map((message, index) => (
-                    <div
-                      key={index}
-                      className={`flex gap-4 ${message.role === 'user' ? 'justify-end' : ''}`}
-                    >
-                      {message.role === 'assistant' && (
-                        <div className="flex-shrink-0">
-                          <div className="p-2 bg-gradient-to-br from-primary to-accent rounded-xl shadow-md">
-                            <Sparkles className="h-6 w-6 text-white" />
+                    <div key={index} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                      {message.role === 'user' ? (
+                        // User Message - Compact
+                        <div className="flex justify-end gap-3 mb-8">
+                          <div className="max-w-[80%] bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-2xl rounded-tr-md px-5 py-3 shadow-md">
+                            <p className="text-sm leading-relaxed">{message.content}</p>
+                          </div>
+                          <div className="flex-shrink-0">
+                            <div className="h-10 w-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-md flex items-center justify-center">
+                              <span className="text-white font-bold text-sm">
+                                {user?.username?.charAt(0).toUpperCase() || 'U'}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      )}
-                      
-                      <div
-                        className={`max-w-[75%] ${
-                          message.role === 'user'
-                            ? 'bg-gradient-to-r from-primary to-accent text-white rounded-2xl rounded-tr-sm'
-                            : 'bg-muted text-foreground rounded-2xl rounded-tl-sm'
-                        } p-5 shadow-md relative group`}
-                      >
-                        <div className="prose prose-sm dark:prose-invert max-w-none">
-                          <p className="leading-relaxed whitespace-pre-line">{message.content}</p>
-                        </div>
-                        <div className={`flex items-center justify-between mt-3 pt-2 border-t ${message.role === 'user' ? 'border-white/20' : 'border-border/50'}`}>
-                          <div className={`text-xs ${message.role === 'user' ? 'text-white/70' : 'text-muted-foreground'}`}>
-                            {message.timestamp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                      ) : (
+                        // Assistant Message - Elegant Card
+                        <div className="flex gap-4 mb-8">
+                          <div className="flex-shrink-0">
+                            <div className="h-10 w-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl shadow-md flex items-center justify-center">
+                              <Flame className="h-5 w-5 text-white" />
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            {message.role === 'assistant' && (
-                              <>
-                                <button
-                                  onClick={() => copyToClipboard(message.content, index)}
-                                  className="p-1 hover:bg-primary/10 rounded"
-                                  title="Copiar texto"
-                                >
-                                  {copiedIndex === index ? (
-                                    <Check className="h-4 w-4 text-green-500" />
-                                  ) : (
-                                    <Copy className="h-4 w-4 text-muted-foreground" />
-                                  )}
-                                </button>
-                                <button
-                                  onClick={() => toggleSaveMessage(index)}
-                                  className="p-1 hover:bg-primary/10 rounded"
-                                  title={message.saved ? 'Remover dos salvos' : 'Salvar resposta'}
-                                >
-                                  {message.saved ? (
-                                    <BookmarkCheck className="h-4 w-4 text-primary" />
-                                  ) : (
-                                    <Bookmark className="h-4 w-4 text-muted-foreground" />
-                                  )}
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </div>
+                          
+                          <Card className="flex-1 border-2 shadow-lg hover:shadow-xl transition-shadow rounded-2xl overflow-hidden group">
+                            <div className="p-6 space-y-4">
+                              {/* Main Response */}
+                              <div className="prose prose-sm dark:prose-invert max-w-none">
+                                <p className="text-foreground leading-relaxed whitespace-pre-line">
+                                  {message.content}
+                                </p>
+                              </div>
 
-                      {message.role === 'user' && (
-                        <div className="flex-shrink-0">
-                          <div className="p-2 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-md">
-                            <span className="h-6 w-6 flex items-center justify-center text-white font-bold text-sm">
-                              {user?.username?.charAt(0).toUpperCase() || 'U'}
-                            </span>
-                          </div>
+                              {/* Biblical Foundation Badge */}
+                              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-full">
+                                <BookOpen className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                                <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">
+                                  Baseado nas Escrituras
+                                </span>
+                              </div>
+
+                              {/* Actions Footer */}
+                              <div className="flex items-center justify-between pt-3 border-t border-border/50">
+                                <div className="text-xs text-muted-foreground">
+                                  {message.timestamp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                </div>
+                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <button
+                                    onClick={() => copyToClipboard(message.content, index)}
+                                    className="p-2 hover:bg-muted rounded-lg transition-colors"
+                                    title="Copiar texto"
+                                  >
+                                    {copiedIndex === index ? (
+                                      <Check className="h-4 w-4 text-green-500" />
+                                    ) : (
+                                      <Copy className="h-4 w-4 text-muted-foreground" />
+                                    )}
+                                  </button>
+                                  <button
+                                    onClick={() => shareMessage(message.content)}
+                                    className="p-2 hover:bg-muted rounded-lg transition-colors"
+                                    title="Compartilhar"
+                                  >
+                                    <Share2 className="h-4 w-4 text-muted-foreground" />
+                                  </button>
+                                  <button
+                                    onClick={() => toggleSaveMessage(index)}
+                                    className="p-2 hover:bg-muted rounded-lg transition-colors"
+                                    title={message.saved ? 'Remover dos salvos' : 'Salvar resposta'}
+                                  >
+                                    {message.saved ? (
+                                      <BookmarkCheck className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                    ) : (
+                                      <Bookmark className="h-4 w-4 text-muted-foreground" />
+                                    )}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </Card>
                         </div>
                       )}
                     </div>
                   ))}
+                  
                   {loading && (
-                    <div className="flex gap-4">
-                      <div className="p-2 bg-gradient-to-br from-primary to-accent rounded-xl shadow-md">
-                        <Sparkles className="h-6 w-6 text-white" />
-                      </div>
-                      <div className="bg-muted p-5 rounded-2xl rounded-tl-sm shadow-md">
-                        <div className="flex gap-2">
-                          <div className="w-2 h-2 bg-primary rounded-full animate-bounce" />
-                          <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                          <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                    <div className="flex gap-4 mb-8 animate-in fade-in duration-500">
+                      <div className="flex-shrink-0">
+                        <div className="h-10 w-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl shadow-md flex items-center justify-center">
+                          <Flame className="h-5 w-5 text-white animate-pulse" />
                         </div>
                       </div>
+                      
+                      <Card className="flex-1 border-2 shadow-lg rounded-2xl p-6">
+                        <div className="flex items-center gap-3">
+                          <div className="flex gap-1.5">
+                            <div className="w-2 h-2 bg-amber-500 rounded-full animate-bounce" />
+                            <div className="w-2 h-2 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }} />
+                            <div className="w-2 h-2 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }} />
+                          </div>
+                          <span className="text-sm text-muted-foreground italic">
+                            Logos está refletindo nas Escrituras...
+                          </span>
+                        </div>
+                      </Card>
                     </div>
                   )}
                   <div ref={messagesEndRef} />
@@ -684,45 +637,64 @@ const LogosAIPage = () => {
               )}
             </div>
 
-            {/* Input */}
-            <div className="p-6 border-t border-border bg-muted/30">
+            {/* Input Area - Fixed at Bottom */}
+            <div className="p-6 border-t-2 border-border bg-background">
+              {/* Sugestões Rápidas */}
+              {currentChat.messages.length === 0 && (
+                <div className="mb-4">
+                  <div className="text-xs font-semibold text-muted-foreground mb-2">Sugestões:</div>
+                  <div className="flex flex-wrap gap-2">
+                    {suggestions.slice(0, 3).map((suggestion, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleSuggestion(suggestion.text)}
+                        className="px-3 py-1.5 bg-muted hover:bg-muted/80 border border-border rounded-full text-xs font-medium text-foreground transition-colors"
+                      >
+                        {suggestion.text}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Usage Warning */}
               {usageStats && usageStats.remaining <= 5 && usageStats.remaining > 0 && (
-                <div className="mb-3 p-2 bg-orange-100 dark:bg-orange-900/20 border border-orange-300 dark:border-orange-700 rounded-lg text-center">
-                  <p className="text-xs text-orange-700 dark:text-orange-300">
+                <div className="mb-3 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl text-center">
+                  <p className="text-xs text-orange-700 dark:text-orange-300 font-medium">
                     ⚠️ Restam apenas {usageStats.remaining} {usageStats.remaining === 1 ? 'pergunta' : 'perguntas'} hoje
                   </p>
                 </div>
               )}
               
-              <div className="flex gap-3 items-end">
-                <div className="flex-1">
-                  <Input
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-                    placeholder="Faça sua pergunta bíblica..."
-                    className="min-h-[48px] text-base resize-none"
-                    disabled={loading || (usageStats?.remaining === 0)}
-                  />
-                </div>
+              {/* Input Field */}
+              <div className="relative">
+                <Input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
+                  placeholder="Pergunte algo sobre fé, Bíblia ou vida cristã..."
+                  className="w-full h-14 text-base pl-5 pr-14 rounded-2xl border-2 focus:border-amber-500 shadow-sm"
+                  disabled={loading || (usageStats?.remaining === 0)}
+                />
                 <Button
                   onClick={handleSend}
                   disabled={loading || !input.trim() || (usageStats?.remaining === 0)}
                   size="icon"
-                  className="h-12 w-12 bg-gradient-to-r from-primary to-accent hover:opacity-90"
+                  className="absolute right-1.5 top-1.5 h-11 w-11 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 rounded-xl shadow-md"
                 >
                   {loading ? (
-                    <Loader2 className="h-6 w-6 animate-spin text-white" />
+                    <Loader2 className="h-5 w-5 animate-spin text-white" />
                   ) : (
-                    <Send className="h-6 w-6 text-white" />
+                    <Send className="h-5 w-5 text-white" />
                   )}
                 </Button>
               </div>
               
-              {/* Info */}
-              <div className="mt-3 text-center">
+              {/* Footer Info */}
+              <div className="mt-3 flex items-center justify-center gap-2 text-center">
+                <BookOpen className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
                 <p className="text-xs text-muted-foreground">
-                  📖 Baseada exclusivamente nas Escrituras Sagradas • Sola Scriptura
+                  Baseada exclusivamente nas Escrituras Sagradas • Sola Scriptura
                 </p>
               </div>
             </div>
