@@ -10,7 +10,7 @@ import { Textarea } from '../components/ui/textarea'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useAppStore } from '../stores/appStore'
-import { Users, UserPlus, UserMinus, Plus, Edit2, Trash2, Shield, HandHeart, TrendingUp, Heart } from 'lucide-react'
+import { Users, UserPlus, UserMinus, Plus, Edit2, Trash2, Shield, HandHeart, TrendingUp, Heart, Activity, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Ministry } from '../types'
 import { StatCard } from '../components/shared/StatCard'
@@ -185,7 +185,7 @@ const MinistriesPage = () => {
       }
 
       setJoinedMinistries([...joinedMinistries, ministryId])
-      toast.success('Bem-vindo ao ministério!')
+      toast.success('Bem-vindo ao ministério! 🙏')
     }
     loadMinistries()
   }
@@ -204,7 +204,7 @@ const MinistriesPage = () => {
     <Layout title="Ministérios">
       <div className="space-y-6">
         {/* Hero Banner - Contextual por Papel */}
-        <Card className="relative overflow-hidden border-0 shadow-2xl rounded-2xl elevation-3">
+        <Card className="relative overflow-hidden border-0 shadow-2xl rounded-2xl">
           <div className="absolute inset-0">
             <img
               src="https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=1920&h=600&fit=crop&q=80"
@@ -219,7 +219,7 @@ const MinistriesPage = () => {
               <div className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-white/20 backdrop-blur-md rounded-full border border-white/30 shadow-lg">
                 <Users className="h-4 w-4 md:h-5 md:w-5" />
                 <span className="text-sm md:text-base font-bold tracking-wide">
-                  {isAdmin ? 'GESTÃO DE MINISTÉRIOS' : isGuest ? 'MINISTÉRIOS MER' : 'SERVIÇO NO CORPO'}
+                  {isAdmin ? 'GESTÃO DE MINISTÉRIOS' : isGuest ? 'HUB DE SERVIÇO' : 'SEU LUGAR NO CORPO'}
                 </span>
               </div>
 
@@ -227,9 +227,9 @@ const MinistriesPage = () => {
                 {isGuest && (
                   <>
                     <h1 className="text-3xl md:text-5xl lg:text-6xl font-black leading-[1.15] tracking-tight">
-                      Chamado Para{' '}
+                      Servindo Juntos para a{' '}
                       <span className="bg-gradient-to-r from-white via-yellow-200 to-white bg-clip-text text-transparent">
-                        Servir
+                        Glória de Deus
                       </span>
                     </h1>
                     <p className="text-lg md:text-xl lg:text-2xl text-white/90 font-medium leading-relaxed max-w-2xl">
@@ -322,8 +322,8 @@ const MinistriesPage = () => {
               gradient="from-blue-600 to-cyan-600"
             />
             <StatCard
-              icon={TrendingUp}
-              label={isAdmin ? 'Líderes Ativos' : 'Chamados Disponíveis'}
+              icon={Activity}
+              label="Áreas de Atuação"
               value={ministries.length}
               gradient="from-purple-600 to-pink-600"
             />
@@ -350,14 +350,14 @@ const MinistriesPage = () => {
                 return (
                   <Card
                     key={ministry.id}
-                    className="group p-6 md:p-7 border-2 hover:border-primary/50 transition-all hover:shadow-xl elevation-1"
+                    className="group relative p-6 md:p-7 border-2 hover:border-primary/50 transition-all hover:shadow-xl hover:-translate-y-1 transform duration-300"
                     style={{
                       borderColor: isJoined ? ministry.color : undefined,
                     }}
                   >
                     <div className="flex justify-between items-start mb-5">
                       <div
-                        className="inline-flex p-4 rounded-2xl shadow-lg"
+                        className="inline-flex p-4 rounded-2xl shadow-lg group-hover:scale-110 transition-transform"
                         style={{ backgroundColor: `${ministry.color}20` }}
                       >
                         <Users className="h-8 w-8" style={{ color: ministry.color }} />
@@ -387,7 +387,7 @@ const MinistriesPage = () => {
                       )}
                     </div>
 
-                    <h3 className="text-xl md:text-2xl font-bold text-foreground mb-3 line-clamp-2 leading-tight">
+                    <h3 className="text-xl md:text-2xl font-bold text-foreground mb-3 line-clamp-2 leading-tight group-hover:text-primary transition-colors">
                       {ministry.name}
                     </h3>
 
@@ -397,17 +397,24 @@ const MinistriesPage = () => {
                       </p>
                     )}
 
-                    {!isGuest && (
-                      <div className="mb-4 text-sm text-muted-foreground flex items-center gap-2">
-                        <HandHeart className="h-4 w-4" />
-                        {participantCount} {participantCount === 1 ? 'participante' : 'participantes'}
+                    <div className="flex items-center justify-between mb-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <HandHeart className="h-4 w-4" style={{ color: ministry.color }} />
+                        <span className="font-semibold">{participantCount} {participantCount === 1 ? 'participante' : 'participantes'}</span>
                       </div>
-                    )}
+                      {isJoined && !isGuest && (
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-primary/10 rounded-full">
+                          <Activity className="h-3.5 w-3.5 text-primary" />
+                          <span className="text-xs font-bold text-primary">Ativo</span>
+                        </div>
+                      )}
+                    </div>
 
                     {isGuest ? (
                       <Button
                         onClick={() => navigate('/auth')}
-                        className="w-full gradient-primary text-white font-semibold"
+                        className="w-full font-semibold group-hover:shadow-lg transition-shadow"
+                        style={{ backgroundColor: ministry.color, borderColor: ministry.color, color: 'white' }}
                       >
                         <UserPlus className="h-4 w-4 mr-2" />
                         Criar Conta para Servir
@@ -415,7 +422,7 @@ const MinistriesPage = () => {
                     ) : (
                       <Button
                         onClick={() => toggleJoin(ministry.id)}
-                        className="w-full font-semibold"
+                        className="w-full font-semibold group-hover:shadow-lg transition-shadow"
                         variant={isJoined ? 'default' : 'outline'}
                         style={
                           isJoined
@@ -478,49 +485,57 @@ const MinistriesPage = () => {
 
       {/* Ministry Editor Dialog */}
       <Dialog open={editorOpen} onOpenChange={setEditorOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{editingMinistry ? 'Editar Ministério' : 'Criar Novo Ministério'}</DialogTitle>
+            <DialogTitle className="text-2xl">{editingMinistry ? 'Editar Ministério' : 'Criar Novo Ministério'}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div>
-              <Label htmlFor="name">Nome do Ministério *</Label>
+              <Label htmlFor="name" className="text-base font-semibold">Nome do Ministério *</Label>
               <Input
                 id="name"
                 value={newMinistry.name}
                 onChange={(e) => setNewMinistry({ ...newMinistry, name: e.target.value })}
                 placeholder="Ex: Louvor e Adoração"
+                className="h-12 text-base mt-2"
               />
             </div>
             <div>
-              <Label htmlFor="description">Descrição / Propósito</Label>
+              <Label htmlFor="description" className="text-base font-semibold">Descrição / Propósito</Label>
               <Textarea
                 id="description"
                 value={newMinistry.description}
                 onChange={(e) => setNewMinistry({ ...newMinistry, description: e.target.value })}
                 placeholder="Descreva o propósito e chamado deste ministério..."
-                rows={4}
+                rows={5}
+                className="text-base mt-2 resize-none"
               />
             </div>
             <div>
-              <Label htmlFor="color">Cor de Identificação</Label>
-              <div className="flex gap-3">
+              <Label htmlFor="color" className="text-base font-semibold">Cor de Identificação</Label>
+              <div className="flex gap-3 mt-2">
                 <Input
                   id="color"
                   type="color"
                   value={newMinistry.color}
                   onChange={(e) => setNewMinistry({ ...newMinistry, color: e.target.value })}
-                  className="w-20 h-12"
+                  className="w-24 h-12 cursor-pointer"
                 />
                 <Input
                   type="text"
                   value={newMinistry.color}
                   onChange={(e) => setNewMinistry({ ...newMinistry, color: e.target.value })}
-                  className="flex-1"
+                  className="flex-1 h-12 font-mono"
+                  placeholder="#4A90A4"
                 />
               </div>
             </div>
-            <Button onClick={createOrUpdateMinistry} className="w-full gradient-primary text-white">
+            <Button 
+              onClick={createOrUpdateMinistry} 
+              className="w-full h-12 text-base font-semibold"
+              style={{ backgroundColor: newMinistry.color, color: 'white' }}
+            >
+              <ChevronRight className="mr-2 h-5 w-5" />
               {editingMinistry ? 'Atualizar Ministério' : 'Criar Ministério'}
             </Button>
           </div>
