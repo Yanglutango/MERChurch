@@ -146,3 +146,19 @@ export interface LiveMessage {
     avatar?: string
   }
 }
+
+export interface Testimony {
+  id: string
+  userId: string
+  title: string
+  content: string
+  category?: string
+  isAnonymous: boolean
+  isApproved: boolean
+  approvedBy?: string
+  createdAt: string
+  user?: {
+    username: string
+    avatar_url?: string
+  }
+}

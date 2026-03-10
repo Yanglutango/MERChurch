@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import Layout from '../components/layout/Layout'
 import { Card } from '../components/ui/card'
+import { Button } from '../components/ui/button'
 import { supabase } from '../lib/supabase'
+import { exportToCSV } from '../lib/reportExporter'
 import {
   LayoutDashboard,
   Users,
@@ -14,15 +16,17 @@ import {
   UserCheck,
   UserPlus,
   ArrowUpRight,
-  ArrowDownRight,
   Zap,
   CheckCircle2,
   Clock,
   MessageSquare,
   GraduationCap,
   ChevronRight,
+  Download,
+  FileSpreadsheet,
 } from 'lucide-react'
 import { LoadingState } from '../components/shared/LoadingState'
+import { toast } from 'sonner'
 
 const DashboardPage = () => {
   const [loading, setLoading] = useState(true)
@@ -41,6 +45,16 @@ const DashboardPage = () => {
   useEffect(() => {
     loadStats()
   }, [])
+
+  const handleExportReport = async (period: 'month' | 'year') => {
+    try {
+      await exportToCSV(period)
+      toast.success('Relatório exportado com sucesso!')
+    } catch (error) {
+      console.error('Export error:', error)
+      toast.error('Erro ao exportar relatório')
+    }
+  }
 
   const loadStats = async () => {
     setLoading(true)
@@ -122,6 +136,24 @@ const DashboardPage = () => {
           </div>
           
           <div className="flex items-center gap-3">
+            <Button
+              onClick={() => handleExportReport('month')}
+              variant="outline"
+              size="sm"
+              className="border-2"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Exportar Mensal
+            </Button>
+            <Button
+              onClick={() => handleExportReport('year')}
+              variant="outline"
+              size="sm"
+              className="border-2"
+            >
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Exportar Anual
+            </Button>
             <div className="flex items-center gap-2 px-4 py-2.5 bg-green-100 dark:bg-green-900/30 border-2 border-green-300 dark:border-green-700 rounded-xl">
               <div className="h-2.5 w-2.5 bg-green-500 rounded-full animate-pulse" />
               <span className="text-sm font-bold text-green-700 dark:text-green-300">Plataforma Ativa</span>

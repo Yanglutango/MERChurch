@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Layout from '../components/layout/Layout'
 import { Card } from '../components/ui/card'
 import { Button } from '../components/ui/button'
@@ -9,7 +9,7 @@ import { useAuthStore } from '../stores/authStore'
 import { useAppStore } from '../stores/appStore'
 import { authService } from '../lib/authService'
 import { supabase } from '../lib/supabase'
-import { Settings as SettingsIcon, User, Palette, Languages, Coins, Sparkles, Shield, Moon, Sun, Monitor } from 'lucide-react'
+import { Settings as SettingsIcon, User, Palette, Languages, Coins, Sparkles, Shield, Moon, Sun, Monitor, Upload, X } from 'lucide-react'
 import { toast } from 'sonner'
 
 const SettingsPage = () => {
@@ -23,6 +23,10 @@ const SettingsPage = () => {
   })
   const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>('system')
   const [accentColor, setAccentColor] = useState('#4A90A4')
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     loadUserPreferences()
@@ -90,14 +94,77 @@ const SettingsPage = () => {
     { name: 'Purple', value: '#9333EA' },
   ]
 
+  const handleAvatarSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!['image/jpeg', 'image/png'].includes(file.type)) {
+      toast.error('Apenas imagens JPG ou PNG são permitidas')
+      return
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Imagem deve ter no máximo 2MB')
+      return
+    }
+
+    setAvatarFile(file)
+    
+    // Create preview
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setAvatarPreview(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const uploadAvatar = async () => {
+    if (!avatarFile) return null
+
+    setUploadingAvatar(true)
+    try {
+      const fileExt = avatarFile.name.split('.').pop()
+      const fileName = `${user!.id}/${Date.now()}.${fileExt}`
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, avatarFile, { upsert: true })
+
+      if (uploadError) throw uploadError
+
+      // Get public URL
+      const { data } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName)
+
+      return data.publicUrl
+    } catch (error: any) {
+      console.error('Avatar upload error:', error)
+      throw error
+    } finally {
+      setUploadingAvatar(false)
+    }
+  }
+
   const updateProfile = async () => {
     setLoading(true)
     try {
+      let avatarUrl = user?.avatar
+
+      // Upload avatar if selected
+      if (avatarFile) {
+        avatarUrl = await uploadAvatar()
+      }
+
       const { error } = await supabase
         .from('user_profiles')
         .update({
           username: profile.username,
           phone: profile.phone,
+          avatar_url: avatarUrl,
         })
         .eq('id', user!.id)
 
@@ -106,7 +173,12 @@ const SettingsPage = () => {
       updateUser({
         username: profile.username,
         phone: profile.phone,
+        avatar: avatarUrl,
       })
+
+      // Clear avatar selection
+      setAvatarFile(null)
+      setAvatarPreview(null)
 
       toast.success(t('settings.profileUpdated'))
     } catch (error: any) {
@@ -212,6 +284,55 @@ const SettingsPage = () => {
           </div>
 
           <div className="space-y-5">
+            {/* Avatar Upload */}
+            <div>
+              <Label className="text-base font-semibold mb-3 block">Foto de Perfil</Label>
+              <div className="flex items-center gap-6">
+                <div className="relative">
+                  <div className="h-24 w-24 rounded-full overflow-hidden bg-gradient-to-br from-primary to-secondary shadow-lg">
+                    {avatarPreview ? (
+                      <img src={avatarPreview} alt="Preview" className="w-full h-full object-cover" />
+                    ) : user?.avatar ? (
+                      <img src={user.avatar} alt={user.username} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-white text-3xl font-bold">
+                        {user?.username?.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  {avatarPreview && (
+                    <button
+                      onClick={() => { setAvatarFile(null); setAvatarPreview(null); }}
+                      className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png"
+                    onChange={handleAvatarSelect}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="mb-2"
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    {avatarPreview ? 'Alterar Imagem' : 'Escolher Imagem'}
+                  </Button>
+                  <p className="text-sm text-muted-foreground">
+                    JPG ou PNG • Máximo 2MB
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <div className="grid md:grid-cols-2 gap-5">
               <div>
                 <Label htmlFor="username" className="text-base font-semibold mb-2 block">
@@ -266,11 +387,11 @@ const SettingsPage = () => {
 
             <Button
               onClick={updateProfile}
-              disabled={loading}
+              disabled={loading || uploadingAvatar}
               className="w-full h-12 text-base font-semibold bg-gradient-to-r from-primary to-secondary text-white shadow-lg hover:shadow-xl transition-shadow"
               size="lg"
             >
-              {loading ? t('common.loading') : t('common.save')}
+              {loading ? (uploadingAvatar ? 'Fazendo upload...' : t('common.loading')) : t('common.save')}
             </Button>
           </div>
         </Card>

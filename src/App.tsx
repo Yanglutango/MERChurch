@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { useAuth } from './hooks/useAuth'
+import TestimoniesPage from './pages/TestimoniesPage'
 import AuthPage from './pages/AuthPage'
 import HomePage from './pages/HomePage'
 import DashboardPage from './pages/DashboardPage'
@@ -103,6 +104,7 @@ function App() {
         <Route path="/counseling" element={user ? <CounselingPage /> : <Navigate to="/auth" />} />
         <Route path="/about" element={user ? <AboutPage /> : <Navigate to="/auth" />} />
         <Route path="/settings" element={user ? <SettingsPage /> : <Navigate to="/auth" />} />
+        <Route path="/testimonies" element={user ? <TestimoniesPage /> : <Navigate to="/auth" />} />
       </Routes>
       <Toaster position="top-center" richColors closeButton />
     </BrowserRouter>

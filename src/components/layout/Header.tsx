@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Menu, X, Bell, Shield, LogOut, User, Settings as SettingsIcon, UserPlus } from 'lucide-react'
+import { Menu, X, Shield, LogOut, Settings as SettingsIcon, UserPlus } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Logo } from '../ui/logo'
 import { ThemeToggle } from '../ui/theme-toggle'
+import { NotificationBell } from './NotificationBell'
 import { useAppStore } from '../../stores/appStore'
 import { useAuth } from '../../hooks/useAuth'
 import { authService } from '../../lib/authService'
@@ -35,6 +36,7 @@ const Header = () => {
       return [
         { label: t('nav.home'), path: '/home' },
         { label: t('nav.live'), path: '/live' },
+        { label: 'Testemunhos', path: '/testimonies' },
         { label: t('nav.about'), path: '/about' },
       ]
     }
@@ -121,14 +123,7 @@ const Header = () => {
             {(isMember || isAdmin) && (
               <>
                 {/* Notifications */}
-                <button
-                  onClick={() => navigate('/notifications')}
-                  className="relative p-2 hover:bg-muted/70 rounded-lg transition-colors"
-                  title="Notificações"
-                >
-                  <Bell className="h-5 w-5 text-foreground/70" />
-                  <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full shadow-sm" />
-                </button>
+                <NotificationBell />
 
                 {/* User Menu */}
                 <div className="relative">
