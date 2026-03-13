@@ -162,3 +162,65 @@ export interface Testimony {
     avatar_url?: string
   }
 }
+
+export interface SpiritualResource {
+  id: string
+  title: string
+  description?: string
+  category: 'ebook' | 'study' | 'devotional' | 'discipleship' | 'other'
+  fileUrl: string
+  fileType?: string
+  fileSize?: number
+  downloadsCount: number
+  tags?: string[]
+  createdBy?: string
+  createdAt: string
+}
+
+export interface SmallGroup {
+  id: string
+  name: string
+  description?: string
+  category?: string
+  region?: string
+  leaderId?: string
+  maxMembers?: number
+  meetingSchedule?: string
+  isActive: boolean
+  createdAt: string
+  leader?: {
+    username: string
+    avatar?: string
+  }
+}
+
+export interface GroupMember {
+  id: string
+  groupId: string
+  userId: string
+  role: 'leader' | 'co-leader' | 'member'
+  joinedAt: string
+}
+
+export interface GroupMessage {
+  id: string
+  groupId: string
+  userId: string
+  message: string
+  createdAt: string
+  user?: {
+    username: string
+    avatar?: string
+  }
+}
+
+export interface GroupMeeting {
+  id: string
+  groupId: string
+  title: string
+  description?: string
+  meetingDate: string
+  location?: string
+  createdBy?: string
+  createdAt: string
+}

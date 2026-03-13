@@ -6,7 +6,7 @@ import { Button } from '../components/ui/button'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useAppStore } from '../stores/appStore'
-import { Calendar, Clock, MapPin, Plus, Edit2, Trash2, Users, CheckCircle2, Circle, Flame, TrendingUp, Shield, UserPlus } from 'lucide-react'
+import { Calendar, Clock, MapPin, Plus, Edit2, Trash2, Users, CheckCircle2, Circle, Flame, TrendingUp, Shield, UserPlus, Download } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Event } from '../types'
 import { PageHeader } from '../components/shared/PageHeader'
@@ -15,6 +15,7 @@ import { LoadingState } from '../components/shared/LoadingState'
 import { AdminAction } from '../components/shared/AdminAction'
 import { GuestPrompt } from '../components/shared/GuestPrompt'
 import { EventEditor } from '../components/admin/EventEditor'
+import { downloadICS, getGoogleCalendarUrl, getOutlookUrl } from '../lib/calendarExporter'
 
 const AgendaPage = () => {
   const navigate = useNavigate()
@@ -294,27 +295,43 @@ const AgendaPage = () => {
 
                 <div className="flex flex-col sm:flex-row gap-2">
                   {!isGuest ? (
-                    <Button
-                      onClick={() => toggleRegistration(nextEvent.id)}
-                      className={`font-bold ${
-                        registeredEvents.includes(nextEvent.id)
-                          ? 'bg-green-600 hover:bg-green-700 text-white'
-                          : 'gradient-primary text-white'
-                      }`}
-                      size="lg"
-                    >
-                      {registeredEvents.includes(nextEvent.id) ? (
-                        <>
-                          <CheckCircle2 className="mr-2 h-5 w-5" />
-                          Confirmado
-                        </>
-                      ) : (
-                        <>
-                          <Circle className="mr-2 h-5 w-5" />
-                          Confirmar Presença
-                        </>
+                    <>
+                      <Button
+                        onClick={() => toggleRegistration(nextEvent.id)}
+                        className={`font-bold ${
+                          registeredEvents.includes(nextEvent.id)
+                            ? 'bg-green-600 hover:bg-green-700 text-white'
+                            : 'gradient-primary text-white'
+                        }`}
+                        size="lg"
+                      >
+                        {registeredEvents.includes(nextEvent.id) ? (
+                          <>
+                            <CheckCircle2 className="mr-2 h-5 w-5" />
+                            Confirmado
+                          </>
+                        ) : (
+                          <>
+                            <Circle className="mr-2 h-5 w-5" />
+                            Confirmar Presença
+                          </>
+                        )}
+                      </Button>
+                      
+                      {registeredEvents.includes(nextEvent.id) && (
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="lg"
+                            onClick={() => downloadICS(nextEvent)}
+                            className="flex-1 sm:flex-none"
+                          >
+                            <Download className="mr-2 h-4 w-4" />
+                            <span className="hidden md:inline">Exportar</span>
+                          </Button>
+                        </div>
                       )}
-                    </Button>
+                    </>
                   ) : (
                     <Button onClick={() => navigate('/about')} className="gradient-primary text-white font-bold" size="lg">
                       <UserPlus className="mr-2 h-5 w-5" />
@@ -419,26 +436,40 @@ const AgendaPage = () => {
                       </div>
 
                       {!isGuest ? (
-                        <Button
-                          onClick={() => toggleRegistration(event.id)}
-                          className={`w-full font-semibold ${
-                            isRegistered
-                              ? 'bg-green-600 hover:bg-green-700 text-white'
-                              : 'gradient-primary text-white'
-                          }`}
-                        >
-                          {isRegistered ? (
-                            <>
-                              <CheckCircle2 className="mr-2 h-4 w-4" />
-                              Confirmado
-                            </>
-                          ) : (
-                            <>
-                              <Circle className="mr-2 h-4 w-4" />
-                              Confirmar Presença
-                            </>
+                        <div className="space-y-2">
+                          <Button
+                            onClick={() => toggleRegistration(event.id)}
+                            className={`w-full font-semibold ${
+                              isRegistered
+                                ? 'bg-green-600 hover:bg-green-700 text-white'
+                                : 'gradient-primary text-white'
+                            }`}
+                          >
+                            {isRegistered ? (
+                              <>
+                                <CheckCircle2 className="mr-2 h-4 w-4" />
+                                Confirmado
+                              </>
+                            ) : (
+                              <>
+                                <Circle className="mr-2 h-4 w-4" />
+                                Confirmar Presença
+                              </>
+                            )}
+                          </Button>
+                          
+                          {isRegistered && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => downloadICS(event)}
+                              className="w-full"
+                            >
+                              <Download className="mr-2 h-3.5 w-3.5" />
+                              Exportar Calendário
+                            </Button>
                           )}
-                        </Button>
+                        </div>
                       ) : (
                         <Button onClick={() => navigate('/about')} className="w-full gradient-primary text-white font-semibold">
                           <UserPlus className="mr-2 h-4 w-4" />

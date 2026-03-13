@@ -37,6 +37,7 @@ const Header = () => {
         { label: t('nav.home'), path: '/home' },
         { label: t('nav.live'), path: '/live' },
         { label: 'Testemunhos', path: '/testimonies' },
+        { label: 'Recursos', path: '/resources' },
         { label: t('nav.about'), path: '/about' },
       ]
     }
@@ -48,6 +49,7 @@ const Header = () => {
         { label: t('nav.agenda'), path: '/agenda' },
         { label: t('nav.community'), path: '/community' },
         { label: t('nav.ministries'), path: '/ministries' },
+        { label: 'Recursos', path: '/resources' },
       ]
     }
 
@@ -58,6 +60,7 @@ const Header = () => {
       { label: t('nav.agenda'), path: '/agenda' },
       { label: t('nav.community'), path: '/community' },
       { label: t('nav.ministries'), path: '/ministries' },
+      { label: 'Recursos', path: '/resources' },
     ]
   }
 
