@@ -23,8 +23,8 @@ const LivePage = () => {
   const [newMessage, setNewMessage] = useState('')
   const [loading, setLoading] = useState(false)
   const [loadingMessages, setLoadingMessages] = useState(true)
-  const [viewerCount, setViewerCount] = useState(1247)
-  const [prayerRequests, setPrayerRequests] = useState(23)
+  const [viewerCount, setViewerCount] = useState(0)
+  const [prayerRequests, setPrayerRequests] = useState(0)
   
   const isGuest = user?.role === 'guest'
   const isMember = user?.role === 'member'
@@ -32,14 +32,25 @@ const LivePage = () => {
 
   useEffect(() => {
     loadMessages()
-    
-    // Simulate viewer count changes
+    loadStats()
+
+    // Poll for new messages and stats every 15 seconds
     const interval = setInterval(() => {
-      setViewerCount((prev) => prev + Math.floor(Math.random() * 10 - 5))
-    }, 5000)
+      loadMessages()
+      loadStats()
+    }, 15000)
 
     return () => clearInterval(interval)
   }, [])
+
+  const loadStats = async () => {
+    const [messagesRes, prayersRes] = await Promise.all([
+      supabase.from('live_messages').select('id', { count: 'exact', head: true }),
+      supabase.from('prayer_requests').select('id', { count: 'exact', head: true }),
+    ])
+    setViewerCount(messagesRes.count || 0)
+    setPrayerRequests(prayersRes.count || 0)
+  }
 
   const loadMessages = async () => {
     setLoadingMessages(true)

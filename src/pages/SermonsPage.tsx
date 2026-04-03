@@ -299,7 +299,10 @@ const SermonsPage = () => {
 
                 <div className="flex flex-col sm:flex-row gap-3 pt-2">
                   {!isGuest ? (
-                    <Button size="lg" className="bg-white text-primary hover:bg-white/95 font-bold shadow-xl">
+                    <Button size="lg" 
+                        className="bg-white text-primary hover:bg-white/95 font-bold shadow-xl"
+                        onClick={() => visibleSermons[0]?.videoUrl ? window.open(visibleSermons[0].videoUrl, '_blank') : toast.info('Vídeo não disponível para este sermão')}
+                      >
                       <Play className="mr-2 h-5 w-5" />
                       Assistir Agora
                     </Button>
@@ -406,7 +409,10 @@ const SermonsPage = () => {
                     </div>
 
                     {!isGuest ? (
-                      <Button className="w-full gradient-primary text-white font-semibold">
+                      <Button 
+                        className="w-full gradient-primary text-white font-semibold"
+                        onClick={() => sermon.videoUrl ? window.open(sermon.videoUrl, '_blank') : toast.info('Vídeo não disponível para este sermão')}
+                      >
                         <Play className="mr-2 h-4 w-4" />
                         Assistir
                       </Button>

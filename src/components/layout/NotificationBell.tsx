@@ -5,14 +5,22 @@ import { Button } from '../ui/button'
 import { Card } from '../ui/card'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
-import type { Notification } from '../../types'
+interface DBNotification {
+  id: string
+  user_id: string
+  title: string
+  message: string
+  type: string
+  is_read: boolean
+  created_at: string
+}
 
 export const NotificationBell = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [unreadCount, setUnreadCount] = useState(0)
   const [showPopup, setShowPopup] = useState(false)
-  const [recentNotifications, setRecentNotifications] = useState<Notification[]>([])
+  const [recentNotifications, setRecentNotifications] = useState<DBNotification[]>([])
 
   useEffect(() => {
     if (!user || user.role === 'guest') return
@@ -41,8 +49,8 @@ export const NotificationBell = () => {
       return
     }
 
-    setUnreadCount(data.length)
-    setRecentNotifications(data as any)
+    setUnreadCount(data?.length || 0)
+    setRecentNotifications(data || [])
   }
 
   const markAsRead = async (notificationId: string) => {
@@ -109,7 +117,7 @@ export const NotificationBell = () => {
                       {notification.message}
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">
-                      {new Date(notification.createdAt).toLocaleString('pt-BR', {
+                      {new Date(notification.created_at).toLocaleString('pt-BR', {
                         day: '2-digit',
                         month: 'short',
                         hour: '2-digit',

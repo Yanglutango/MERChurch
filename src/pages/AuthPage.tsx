@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { authService } from '../lib/authService'
-import { Mail, Lock, User, Phone, Key, Loader2, Chrome, Apple as AppleIcon, Building2, Users, Shield } from 'lucide-react'
+import { Mail, Lock, User, Phone, Key, Loader2, Chrome, Building2, Users, Shield } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
@@ -331,7 +331,7 @@ const AuthPage = () => {
             )}
           </form>
 
-          {/* OAuth */}
+          {/* OAuth - Only Google is enabled */}
           {isLogin && (
             <>
               <div className="relative my-6">
@@ -343,26 +343,15 @@ const AuthPage = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => handleOAuthLogin('google')}
-                  className="font-medium"
-                >
-                  <Chrome className="mr-2 h-4 w-4" />
-                  Google
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => handleOAuthLogin('apple')}
-                  className="font-medium"
-                >
-                  <AppleIcon className="mr-2 h-4 w-4" />
-                  Apple
-                </Button>
-              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleOAuthLogin('google')}
+                className="w-full font-medium"
+              >
+                <Chrome className="mr-2 h-4 w-4" />
+                Continuar com Google
+              </Button>
             </>
           )}
 

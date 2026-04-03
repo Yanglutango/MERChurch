@@ -30,12 +30,21 @@ const AcademyPage = () => {
   const isMember = user?.role === 'member'
   const isAdmin = user?.role === 'admin'
 
+  const [enrollmentCount, setEnrollmentCount] = useState(0)
+
   useEffect(() => {
     loadCourses()
     if (!isGuest) {
       loadEnrollments()
     }
   }, [])
+
+  const loadEnrollmentStats = async () => {
+    if (isAdmin) {
+      const { count } = await supabase.from('enrollments').select('id', { count: 'exact', head: true })
+      setEnrollmentCount(count || 0)
+    }
+  }
 
   const loadCourses = async () => {
     setLoading(true)
@@ -52,6 +61,7 @@ const AcademyPage = () => {
     }
 
     setCourses(data)
+    loadEnrollmentStats()
     setLoading(false)
   }
 
@@ -241,19 +251,19 @@ const AcademyPage = () => {
             <StatCard
               icon={TrendingUp}
               label={isAdmin ? 'Total de Inscrições' : 'Meus Cursos'}
-              value={isAdmin ? 156 : enrolledCourses.length}
+              value={isAdmin ? enrollmentCount : enrolledCourses.length}
               gradient="from-purple-600 to-pink-600"
             />
             <StatCard
               icon={Award}
-              label={isAdmin ? 'Certificados Emitidos' : 'Certificados'}
-              value={isAdmin ? 89 : 0}
+              label={isAdmin ? 'Cursos Publicados' : 'Certificados'}
+              value={isAdmin ? courses.filter(c => c.isPublished).length : 0}
               gradient="from-green-600 to-emerald-600"
             />
             <StatCard
               icon={BarChart3}
-              label={isAdmin ? 'Progresso Médio' : 'Progresso Geral'}
-              value={isAdmin ? '67%' : '0%'}
+              label={isAdmin ? 'Total de Cursos' : 'Inscrições'}
+              value={isAdmin ? courses.length : enrolledCourses.length}
               gradient="from-amber-600 to-orange-600"
             />
           </div>

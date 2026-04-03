@@ -49,10 +49,10 @@ const TreasuryPage = () => {
   useEffect(() => {
     loadTransactions()
     
-    // Poll for transaction updates every 10 seconds
+    // Poll for transaction updates every 30 seconds
     const interval = setInterval(() => {
       if (!isGuest) loadTransactions()
-    }, 10000)
+    }, 30000)
 
     return () => clearInterval(interval)
   }, [])
@@ -125,7 +125,7 @@ const TreasuryPage = () => {
 
     setProcessingPayment(true)
     try {
-      const { data, error } = await supabase.functions.invoke('multicaixa-payment/generate', {
+      const { data, error } = await supabase.functions.invoke('multicaixa-payment', {
         body: {
           userId: user!.id,
           amount: parseFloat(newTransaction.amount),

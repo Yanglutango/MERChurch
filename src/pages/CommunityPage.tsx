@@ -90,12 +90,22 @@ const CommunityPage = () => {
   }
 
   const toggleLike = async (postId: string) => {
-    // Simplified like toggle (just for UI feedback)
-    setPosts(posts.map(p => 
-      p.id === postId 
-        ? { ...p, likesCount: (p.likesCount || 0) + 1 } 
-        : p
-    ))
+    // Try to insert like; if unique constraint fails, remove it
+    const { error } = await supabase.from('post_likes').insert({
+      post_id: postId,
+      user_id: user!.id,
+    })
+
+    if (error && error.code === '23505') {
+      // Already liked — unlike
+      await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', user!.id)
+      await supabase.from('community_posts').update({ likes_count: Math.max(0, (posts.find(p => p.id === postId)?.likesCount || 1) - 1) }).eq('id', postId)
+      setPosts(posts.map(p => p.id === postId ? { ...p, likesCount: Math.max(0, (p.likesCount || 1) - 1) } : p))
+    } else if (!error) {
+      // Liked successfully
+      await supabase.from('community_posts').update({ likes_count: (posts.find(p => p.id === postId)?.likesCount || 0) + 1 }).eq('id', postId)
+      setPosts(posts.map(p => p.id === postId ? { ...p, likesCount: (p.likesCount || 0) + 1 } : p))
+    }
   }
 
   return (

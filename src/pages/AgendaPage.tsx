@@ -33,8 +33,10 @@ const AgendaPage = () => {
 
   useEffect(() => {
     loadEvents()
-    loadRegistrations()
-  }, [])
+    if (user && !isGuest) {
+      loadRegistrations()
+    }
+  }, [user])
 
   const loadEvents = async () => {
     setLoading(true)
@@ -55,10 +57,11 @@ const AgendaPage = () => {
   }
 
   const loadRegistrations = async () => {
+    if (!user || isGuest) return
     const { data, error } = await supabase
       .from('event_attendees')
       .select('event_id')
-      .eq('user_id', user!.id)
+      .eq('user_id', user.id)
 
     if (error) {
       console.error('Error loading registrations:', error)

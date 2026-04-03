@@ -274,7 +274,6 @@ const LogosAIPage = () => {
       return
     }
     setInput(text)
-    setTimeout(() => handleSend(), 100)
   }
 
   if (isGuest) {

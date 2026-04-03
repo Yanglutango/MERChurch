@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Layout from '../components/layout/Layout'
 import { Card } from '../components/ui/card'
 import { Button } from '../components/ui/button'
@@ -29,7 +30,9 @@ import { LoadingState } from '../components/shared/LoadingState'
 import { toast } from 'sonner'
 
 const DashboardPage = () => {
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
+  const [recentActivity, setRecentActivity] = useState<any[]>([])
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalMembers: 0,
@@ -59,7 +62,7 @@ const DashboardPage = () => {
   const loadStats = async () => {
     setLoading(true)
     try {
-      const [users, members, guests, sermons, events, prayers, transactions, courses] = await Promise.all([
+      const [users, members, guests, sermons, events, prayers, transactions, courses, prayersRecent, sermonsRecent, eventsRecent] = await Promise.all([
         supabase.from('user_profiles').select('id', { count: 'exact', head: true }),
         supabase.from('user_profiles').select('id', { count: 'exact', head: true }).eq('role', 'member'),
         supabase.from('user_profiles').select('id', { count: 'exact', head: true }).eq('role', 'guest'),
@@ -68,6 +71,9 @@ const DashboardPage = () => {
         supabase.from('prayer_requests').select('id', { count: 'exact', head: true }),
         supabase.from('transactions').select('amount, status'),
         supabase.from('courses').select('id', { count: 'exact', head: true }),
+        supabase.from('prayer_requests').select('title, created_at').order('created_at', { ascending: false }).limit(2),
+        supabase.from('sermons').select('title, created_at').order('created_at', { ascending: false }).limit(2),
+        supabase.from('events').select('title, created_at').order('created_at', { ascending: false }).limit(1),
       ])
 
       const completedTransactions = transactions.data?.filter((t) => t.status === 'completed') || []
@@ -84,20 +90,28 @@ const DashboardPage = () => {
         totalRevenue,
         totalCourses: courses.count || 0,
       })
+
+      // Build real recent activity from DB
+      const activities: any[] = []
+      for (const prayer of (prayersRecent.data || [])) {
+        activities.push({ icon: Heart, label: `Novo pedido de oração: ${prayer.title}`, time: prayer.created_at, color: 'text-rose-600 dark:text-rose-400' })
+      }
+      for (const sermon of (sermonsRecent.data || [])) {
+        activities.push({ icon: BookOpen, label: `Sermão publicado: ${sermon.title}`, time: sermon.created_at, color: 'text-blue-600 dark:text-blue-400' })
+      }
+      for (const event of (eventsRecent.data || [])) {
+        activities.push({ icon: Calendar, label: `Evento criado: ${event.title}`, time: event.created_at, color: 'text-purple-600 dark:text-purple-400' })
+      }
+
+      // Sort by date descending
+      activities.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
+      setRecentActivity(activities.slice(0, 5))
     } catch (error) {
       console.error('Error loading stats:', error)
     } finally {
       setLoading(false)
     }
   }
-
-  const recentActivities = [
-    { icon: UserPlus, label: 'Novo membro registrado', time: 'Há 2 horas', color: 'text-green-600 dark:text-green-400' },
-    { icon: BookOpen, label: 'Novo sermão publicado', time: 'Há 5 horas', color: 'text-blue-600 dark:text-blue-400' },
-    { icon: Calendar, label: 'Novo evento criado', time: 'Há 1 dia', color: 'text-purple-600 dark:text-purple-400' },
-    { icon: DollarSign, label: 'Nova contribuição registrada', time: 'Há 2 dias', color: 'text-emerald-600 dark:text-emerald-400' },
-    { icon: MessageSquare, label: 'Nova pergunta na Logos', time: 'Há 3 dias', color: 'text-amber-600 dark:text-amber-400' },
-  ]
 
   const quickActions = [
     { icon: BookOpen, label: 'Gerenciar Sermões', href: '/sermons', color: 'from-purple-500 to-pink-500' },
@@ -344,7 +358,9 @@ const DashboardPage = () => {
               Atividade Recente da Plataforma
             </h2>
             <div className="space-y-4">
-              {recentActivities.map((activity, idx) => (
+              {(recentActivity.length > 0 ? recentActivity : [
+                { icon: Activity, label: 'Carregando atividades recentes...', time: new Date().toISOString(), color: 'text-muted-foreground' },
+              ]).map((activity, idx) => (
                 <div
                   key={idx}
                   className="flex items-start gap-4 p-4 rounded-xl border-2 border-border hover:border-primary/30 hover:bg-muted/50 transition-all group cursor-pointer"
@@ -356,7 +372,7 @@ const DashboardPage = () => {
                     <div className="font-semibold text-foreground mb-0.5">{activity.label}</div>
                     <div className="text-sm text-muted-foreground flex items-center gap-1.5">
                       <Clock className="h-3.5 w-3.5" />
-                      {activity.time}
+                      {new Date(activity.time).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
                   <ChevronRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />

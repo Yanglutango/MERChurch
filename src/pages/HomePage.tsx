@@ -1,7 +1,9 @@
+import { useState, useEffect } from 'react'
 import Layout from '../components/layout/Layout'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../stores/appStore'
 import { useAuth } from '../hooks/useAuth'
+import { supabase } from '../lib/supabase'
 import {
   Radio,
   BookOpen,
@@ -38,6 +40,20 @@ const HomePage = () => {
   const isGuest = user?.role === 'guest'
   const isMember = user?.role === 'member'
   const isAdmin = user?.role === 'admin'
+  const [recentSermons, setRecentSermons] = useState<any[]>([])
+  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([])
+
+  useEffect(() => {
+    const loadData = async () => {
+      const [sermonsRes, eventsRes] = await Promise.all([
+        supabase.from('sermons').select('id, title, speaker, date, views').order('date', { ascending: false }).limit(3),
+        supabase.from('events').select('id, title, date, location, max_attendees').gte('date', new Date().toISOString()).order('date', { ascending: true }).limit(3),
+      ])
+      if (sermonsRes.data) setRecentSermons(sermonsRes.data)
+      if (eventsRes.data) setUpcomingEvents(eventsRes.data)
+    }
+    loadData()
+  }, [])
 
   // Caminhos contextuais por papel
   const getQuickActions = () => {
@@ -371,11 +387,7 @@ const HomePage = () => {
               )}
             </div>
             <div className="space-y-3">
-              {[
-                { title: 'O Poder da Fé que Move Montanhas', speaker: 'Pr. João Silva', date: '20 Dez 2024', views: '1.2k' },
-                { title: 'Vencendo Desafios com Cristo', speaker: 'Pra. Maria Santos', date: '15 Dez 2024', views: '980' },
-                { title: 'O Amor Incondicional de Deus', speaker: 'Pr. Pedro Costa', date: '10 Dez 2024', views: '1.5k' },
-              ].map((sermon) => (
+              {(recentSermons.length > 0 ? recentSermons : []).map((sermon: any) => (
                 <div 
                   key={sermon.title} 
                   onClick={() => navigate('/sermons')}
@@ -388,14 +400,14 @@ const HomePage = () => {
                     <div className="font-bold text-sm md:text-base text-foreground mb-1 group-hover:text-primary transition-colors leading-snug line-clamp-1">
                       {sermon.title}
                     </div>
-                    <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground leading-relaxed">
-                      <span className="font-medium">{sermon.speaker}</span>
-                      <span>•</span>
-                      <span>{sermon.date}</span>
+                    <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground leading-relaxed flex-wrap">
+                      {sermon.speaker && <span className="font-medium">{sermon.speaker}</span>}
+                      {sermon.speaker && <span>•</span>}
+                      <span>{new Date(sermon.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
                       <span>•</span>
                       <span className="flex items-center gap-1">
                         <Play className="h-3 w-3" />
-                        {sermon.views}
+                        {sermon.views || 0}
                       </span>
                     </div>
                   </div>
@@ -432,11 +444,7 @@ const HomePage = () => {
               )}
             </div>
             <div className="space-y-3">
-              {[
-                { title: 'Culto de Natal - Celebração Especial', date: '24 Dez 2024', time: '18:00', attendees: '320+' },
-                { title: 'Retiro de Jovens - Tempo de Renovação', date: '05 Jan 2025', time: '08:00', attendees: '85' },
-                { title: 'Conferência Anual MER 2025', date: '15 Jan 2025', time: '19:00', attendees: '500+' },
-              ].map((event) => (
+              {(upcomingEvents.length > 0 ? upcomingEvents : []).map((event: any) => (
                 <div 
                   key={event.title} 
                   onClick={() => navigate('/agenda')}
@@ -449,15 +457,19 @@ const HomePage = () => {
                     <div className="font-bold text-sm md:text-base text-foreground mb-1 group-hover:text-purple-700 dark:group-hover:text-purple-400 transition-colors leading-snug line-clamp-1">
                       {event.title}
                     </div>
-                    <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground leading-relaxed">
-                      <span className="font-medium">{event.date}</span>
+                    <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground leading-relaxed flex-wrap">
+                      <span className="font-medium">{new Date(event.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>
                       <span>•</span>
-                      <span>{event.time}</span>
-                      <span>•</span>
-                      <span className="flex items-center gap-1">
-                        <Users className="h-3 w-3" />
-                        {event.attendees}
-                      </span>
+                      <span>{new Date(event.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                      {event.max_attendees && (
+                        <>
+                          <span>•</span>
+                          <span className="flex items-center gap-1">
+                            <Users className="h-3 w-3" />
+                            {event.max_attendees}
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
