@@ -4,6 +4,7 @@ import { Toaster } from 'sonner'
 import { useAuth } from './hooks/useAuth'
 import TestimoniesPage from './pages/TestimoniesPage'
 import ResourcesPage from './pages/ResourcesPage'
+import GroupsPage from './pages/GroupsPage'
 import AuthPage from './pages/AuthPage'
 import HomePage from './pages/HomePage'
 import DashboardPage from './pages/DashboardPage'
@@ -107,6 +108,7 @@ function App() {
         <Route path="/settings" element={user ? <SettingsPage /> : <Navigate to="/auth" />} />
         <Route path="/testimonies" element={user ? <TestimoniesPage /> : <Navigate to="/auth" />} />
         <Route path="/resources" element={user ? <ResourcesPage /> : <Navigate to="/auth" />} />
+        <Route path="/groups" element={user ? <GroupsPage /> : <Navigate to="/auth" />} />
       </Routes>
       <Toaster position="top-center" richColors closeButton />
     </BrowserRouter>

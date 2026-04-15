@@ -48,8 +48,8 @@ const Header = () => {
         { label: t('nav.live'), path: '/live' },
         { label: t('nav.agenda'), path: '/agenda' },
         { label: t('nav.community'), path: '/community' },
+        { label: 'Grupos', path: '/groups' },
         { label: t('nav.ministries'), path: '/ministries' },
-        { label: 'Recursos', path: '/resources' },
       ]
     }
 
@@ -59,8 +59,8 @@ const Header = () => {
       { label: t('nav.live'), path: '/live' },
       { label: t('nav.agenda'), path: '/agenda' },
       { label: t('nav.community'), path: '/community' },
+      { label: 'Grupos', path: '/groups' },
       { label: t('nav.ministries'), path: '/ministries' },
-      { label: 'Recursos', path: '/resources' },
     ]
   }
 
