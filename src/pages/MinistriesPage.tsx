@@ -9,6 +9,7 @@ import { Textarea } from '../components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
+import { logActivity } from '../lib/activityLogger'
 import { Users, UserPlus, UserMinus, Plus, Edit2, Trash2, Shield, HandHeart, Activity, ChevronRight, Tag, Users2 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Ministry } from '../types'
@@ -104,6 +105,15 @@ const MinistriesPage = () => {
       const { error } = await supabase.from('ministry_members').insert({ ministry_id: ministryId, user_id: user!.id })
       if (error) { toast.error('Erro ao entrar'); return }
       setJoinedMinistries([...joinedMinistries, ministryId])
+      const ministry = ministries.find(m => m.id === ministryId)
+      await logActivity({
+        type: 'ministry_joined',
+        actorId: user!.id,
+        actorName: user!.username,
+        title: ministry?.name || 'Ministério',
+        referenceId: ministryId,
+        referenceType: 'ministry',
+      })
       toast.success('Bem-vindo ao ministério! 🙏')
     }
     loadMinistries()

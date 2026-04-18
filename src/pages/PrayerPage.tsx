@@ -10,6 +10,7 @@ import { Checkbox } from '../components/ui/checkbox'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
+import { logActivity } from '../lib/activityLogger'
 import { Heart, Plus, Check, Users, Shield, UserPlus, Trash2, BookOpen, Filter, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { PrayerRequest } from '../types'
@@ -56,9 +57,9 @@ const PrayerPage = () => {
 
   const createPrayer = async () => {
     if (!newPrayer.title.trim() || !newPrayer.description.trim()) { toast.error('Preencha todos os campos'); return }
-    const { error } = await supabase.from('prayer_requests').insert({
+    const { data, error } = await supabase.from('prayer_requests').insert({
       user_id: user!.id, title: newPrayer.title, description: newPrayer.description, is_anonymous: newPrayer.isAnonymous,
-    })
+    }).select().single()
     if (error) { toast.error('Erro ao criar pedido'); return }
     toast.success('Pedido de oração compartilhado! 🙏')
     setIsDialogOpen(false)

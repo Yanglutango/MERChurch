@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { useAuth } from './hooks/useAuth'
+import { RealTimeContext, useRealTimeProvider } from './hooks/useRealTime'
 import TestimoniesPage from './pages/TestimoniesPage'
 import ResourcesPage from './pages/ResourcesPage'
 import GroupsPage from './pages/GroupsPage'
@@ -23,6 +24,12 @@ import AboutPage from './pages/AboutPage'
 import SettingsPage from './pages/SettingsPage'
 import { useAuthStore } from './stores/authStore'
 import { supabase } from './lib/supabase'
+
+// ─── Real-Time Provider wrapper ───────────────────────────────────────────────
+function RealTimeProvider({ children }: { children: React.ReactNode }) {
+  const state = useRealTimeProvider()
+  return <RealTimeContext.Provider value={state}>{children}</RealTimeContext.Provider>
+}
 
 function App() {
   const { user, loading } = useAuth()
@@ -87,6 +94,7 @@ function App() {
   }
 
   return (
+    <RealTimeProvider>
     <BrowserRouter>
       <Routes>
         <Route path="/" element={user ? <Navigate to="/home" /> : <AuthPage />} />
@@ -112,6 +120,7 @@ function App() {
       </Routes>
       <Toaster position="top-center" richColors closeButton />
     </BrowserRouter>
+    </RealTimeProvider>
   )
 }
 

@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/layout/Layout'
@@ -6,9 +7,8 @@ import { useAppStore } from '../stores/appStore'
 import { supabase } from '../lib/supabase'
 import { Card } from '../components/ui/card'
 import { Input } from '../components/ui/input'
-import { Button } from '../components/ui/button'
-import { 
-  Sparkles, 
+import { Button } from '../components/ui/button' 
+import { // Added 'import {' here
   Send, 
   Loader2, 
   BookOpen, 
@@ -27,7 +27,7 @@ import {
   Flame,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { FunctionsHttpError } from '@supabase/supabase-js'
+import { routeAIRequest } from '../lib/aiRouter'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -203,68 +203,40 @@ const LogosAIPage = () => {
     setInput('')
     setLoading(true)
 
-    try {
-      const { data, error } = await supabase.functions.invoke('logos-ai', {
-        body: {
-          messages: updatedMessages.map(m => ({ role: m.role, content: m.content })),
-          userId: user!.id,
-          stream: false,
-        },
-      })
+    // Use AI Router — provider-agnostic, handles fallback automatically
+    const result = await routeAIRequest({
+      messages: updatedMessages.map(m => ({ role: m.role, content: m.content })),
+      userId: user!.id,
+      topic: userMessage.content.slice(0, 60),
+    })
 
-      if (error) {
-        let errorMessage = error.message
-        if (error instanceof FunctionsHttpError) {
-          try {
-            const textContent = await error.context?.text()
-            const errorData = JSON.parse(textContent)
-            
-            if (errorData.usageLimit) {
-              setUsageStats({ used: errorData.used, limit: errorData.limit, remaining: 0 })
-              toast.error(errorData.error, { duration: 8000 })
-              return
-            }
-            
-            errorMessage = errorData.error || error.message
-          } catch {
-            errorMessage = error.message || 'Erro ao conectar com a Logos AI'
-          }
-        }
-        throw new Error(errorMessage)
-      }
-
-      if (!data?.message) throw new Error('Resposta vazia da API')
-
-      if (data.usageStatus) {
-        setUsageStats(data.usageStatus)
-      } else {
-        loadUsageStats()
-      }
-
-      const aiMessage: Message = {
-        role: 'assistant',
-        content: data.message,
-        timestamp: new Date(),
-      }
-
-      setChats(
-        chats.map((c) =>
-          c.id === currentChatId ? { ...c, messages: [...updatedMessages, aiMessage] } : c
-        )
-      )
-    } catch (error: any) {
-      console.error('Logos AI error:', error)
-      const errorMsg = error.message || 'Erro ao processar sua pergunta'
-      toast.error(errorMsg, { duration: 5000 })
-      
-      setChats(
-        chats.map((c) =>
-          c.id === currentChatId ? { ...c, messages: c.messages.slice(0, -1) } : c
-        )
-      )
-    } finally {
+    if (result.error === 'quota_exceeded') {
+      setUsageStats(prev => prev ? { ...prev, remaining: 0 } : null)
+      toast.error('Limite diário atingido. Volte amanhã! "Cada dia tem o seu próprio afã." Mateus 6:34', { duration: 8000 })
+      setChats(chats.map(c => c.id === currentChatId ? { ...c, messages: c.messages.slice(0, -1) } : c))
       setLoading(false)
+      return
     }
+
+    const aiMessage: Message = {
+      role: 'assistant',
+      content: result.content,
+      timestamp: new Date(),
+    }
+
+    setChats(
+      chats.map((c) =>
+        c.id === currentChatId ? { ...c, messages: [...updatedMessages, aiMessage] } : c
+      )
+    )
+
+    if (!result.success) {
+      toast.warning('Logos está temporariamente com lentidão. A resposta pode ser limitada.', { duration: 4000 })
+    } else {
+      loadUsageStats()
+    }
+
+    setLoading(false)
   }
 
   const handleSuggestion = (text: string) => {
@@ -273,6 +245,7 @@ const LogosAIPage = () => {
       navigate('/auth')
       return
     }
+    // Set input directly — no setTimeout needed, state updates are synchronous here
     setInput(text)
   }
 

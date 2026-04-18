@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
+import { logActivity } from '../lib/activityLogger'
 import {
   Users, MapPin, Plus, LogIn, LogOut, MessageCircle, Calendar,
   Send, ChevronRight, Search, Shield, UserPlus, X, Clock,
@@ -188,19 +189,33 @@ const GroupsPage = () => {
 
   const createGroup = async () => {
     if (!newGroup.name.trim()) { toast.error('Nome é obrigatório'); return }
-    const { error } = await supabase.from('small_groups').insert({
+    const { data, error } = await supabase.from('small_groups').insert({
       name: newGroup.name,
       description: newGroup.description || null,
       category: newGroup.category || null,
       region: newGroup.region || null,
       meeting_schedule: newGroup.meeting_schedule || null,
       leader_id: user!.id,
-    })
+    }).select().single()
     if (error) { toast.error('Erro ao criar grupo'); return }
+    // Log activity
+    await logActivity({
+      type: 'group_created',
+      actorId: user!.id,
+      actorName: user!.username,
+      title: newGroup.name,
+      referenceId: data?.id,
+      referenceType: 'group',
+    })
+    // Auto-join as leader
+    if (data?.id) {
+      await supabase.from('group_members').insert({ group_id: data.id, user_id: user!.id, role: 'leader' })
+    }
     toast.success('Grupo criado com sucesso!')
     setCreateOpen(false)
     setNewGroup({ name: '', description: '', category: '', region: '', meeting_schedule: '' })
     loadGroups()
+    loadMyGroups()
   }
 
   const getCategoryLabel = (cat: string | null) =>
@@ -241,12 +256,10 @@ const GroupsPage = () => {
               </p>
               <div className="flex flex-wrap gap-3">
                 {!isGuest && (
-                  <AdminAction>
-                    <Button onClick={() => setCreateOpen(true)} size="lg" className="bg-white text-violet-700 hover:bg-white/95 font-bold px-7 py-6 rounded-full shadow-2xl transform hover:scale-105 transition-all">
-                      <Plus className="mr-2 h-5 w-5" />
-                      Criar Grupo
-                    </Button>
-                  </AdminAction>
+                  <Button onClick={() => setCreateOpen(true)} size="lg" className="bg-white text-violet-700 hover:bg-white/95 font-bold px-7 py-6 rounded-full shadow-2xl transform hover:scale-105 transition-all">
+                    <Plus className="mr-2 h-5 w-5" />
+                    Criar Grupo
+                  </Button>
                 )}
                 {isGuest && (
                   <Button onClick={() => navigate('/auth')} size="lg" className="bg-white text-violet-700 hover:bg-white/95 font-bold px-7 py-6 rounded-full shadow-2xl">

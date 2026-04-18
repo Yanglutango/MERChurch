@@ -18,12 +18,14 @@ import {
 } from 'recharts'
 import { LoadingState } from '../components/shared/LoadingState'
 import { toast } from 'sonner'
-
+import { useRealTime } from '../hooks/useRealTime'
+import { getActivityLabel, getActivityColor } from '../lib/activityLogger'
 const COLORS = ['#4A90A4', '#D4A574', '#0A2E4A', '#10B981', '#F59E0B', '#EF4444']
 
 const DashboardPage = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { activityFeed, version } = useRealTime()
   const [loading, setLoading] = useState(true)
   const [recentActivity, setRecentActivity] = useState<any[]>([])
   const [stats, setStats] = useState({
@@ -74,9 +76,10 @@ const DashboardPage = () => {
     { day: 'Sáb', orações: 25, sermões: 2, mensagens: 55 },
   ])
 
+  // Re-fetch stats whenever the real-time layer detects changes
   useEffect(() => {
     loadStats()
-  }, [])
+  }, [version])
 
   const handleExportReport = async (period: 'month' | 'year') => {
     try {
@@ -123,18 +126,9 @@ const DashboardPage = () => {
         pendingCounseling: counseling.count || 0,
       })
 
+      // Use platform_activity feed if available
       const activities: any[] = []
-      for (const prayer of (prayersRecent.data || [])) {
-        activities.push({ icon: Heart, label: `Pedido de oração: ${prayer.title}`, time: prayer.created_at, color: 'text-rose-600 dark:text-rose-400' })
-      }
-      for (const sermon of (sermonsRecent.data || [])) {
-        activities.push({ icon: BookOpen, label: `Sermão publicado: ${sermon.title}`, time: sermon.created_at, color: 'text-blue-600 dark:text-blue-400' })
-      }
-      for (const event of (eventsRecent.data || [])) {
-        activities.push({ icon: Calendar, label: `Evento: ${event.title}`, time: event.created_at, color: 'text-purple-600 dark:text-purple-400' })
-      }
-      activities.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
-      setRecentActivity(activities.slice(0, 6))
+      setRecentActivity(activities)
     } catch (error) {
       console.error('Error loading stats:', error)
     } finally {
@@ -371,18 +365,29 @@ const DashboardPage = () => {
               Atividade Recente
             </h2>
             <div className="space-y-3">
-              {(recentActivity.length > 0 ? recentActivity : [
-                { icon: Activity, label: 'Nenhuma atividade recente', time: new Date().toISOString(), color: 'text-muted-foreground' },
-              ]).map((activity, idx) => (
-                <div key={idx} className="flex items-start gap-3 p-3 rounded-xl border-2 border-border hover:border-primary/30 hover:bg-muted/50 transition-all">
-                  <div className={`p-2 bg-muted rounded-lg flex-shrink-0 ${activity.color}`}>
-                    <activity.icon className="h-4 w-4" />
+              {activityFeed.length === 0 ? (
+                <div className="flex items-start gap-3 p-3 rounded-xl border-2 border-border">
+                  <div className="p-2 bg-muted rounded-lg flex-shrink-0">
+                    <Activity className="h-4 w-4 text-muted-foreground" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-foreground text-sm truncate">{activity.label}</div>
+                    <div className="font-semibold text-foreground text-sm">Aguardando atividade...</div>
+                    <div className="text-xs text-muted-foreground">Ações da plataforma aparecem aqui em tempo real</div>
+                  </div>
+                </div>
+              ) : activityFeed.slice(0, 6).map((activity) => (
+                <div key={activity.id} className="flex items-start gap-3 p-3 rounded-xl border-2 border-border hover:border-primary/30 hover:bg-muted/50 transition-all">
+                  <div className={`p-2 bg-muted rounded-lg flex-shrink-0 ${getActivityColor(activity.type)}`}>
+                    <Activity className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-foreground text-sm truncate">
+                      {getActivityLabel(activity.type)}: {activity.title}
+                    </div>
                     <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                       <Clock className="h-3 w-3" />
-                      {new Date(activity.time).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      {activity.actorName && <span className="font-medium">{activity.actorName} •</span>}
+                      {new Date(activity.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
                 </div>
