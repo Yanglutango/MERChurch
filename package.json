@@ -105,5 +105,18 @@
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
     "vite": "^5.4.1"
-  }
+  },
+  "description": "There are several ways of editing your application.",
+  "main": "eslint.config.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Yanglutango/MERChurch.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Yanglutango/MERChurch/issues"
+  },
+  "homepage": "https://github.com/Yanglutango/MERChurch#readme"
 }
