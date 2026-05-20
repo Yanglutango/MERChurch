@@ -251,7 +251,7 @@ const LogosAIPage = () => {
 
   if (isGuest) {
     return (
-      <Layout title="Logos — Sabedoria à Luz das Escrituras">
+      <Layout title="Logos by KAIRÓS">
         <div className="max-w-5xl mx-auto space-y-8 py-8">
           {/* Spiritual Header - Guest */}
           <div className="text-center space-y-6 py-12">
@@ -347,7 +347,7 @@ const LogosAIPage = () => {
   }
 
   return (
-    <Layout title="Logos — Sabedoria à Luz das Escrituras">
+    <Layout title="Logos by KAIRÓS">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Spiritual Header */}
         <div className="text-center space-y-4 py-8">

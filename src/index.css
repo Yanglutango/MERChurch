@@ -151,20 +151,19 @@
 }
 
 @layer components {
+  /**
+   * gradient-primary: the ONE permitted gradient on interactive elements.
+   * Use explicit Tailwind classes on buttons instead:
+   *   Navy primary: bg-[#0A2E4A] hover:bg-[#0d3a5c] active:bg-[#071f33]
+   *   Teal secondary: bg-[#4A90A4] hover:bg-[#3d7b8d] active:bg-[#2f6070]
+   */
   .gradient-primary {
     @apply bg-gradient-to-br from-[#0A2E4A] to-[#4A90A4];
   }
-  
-  .gradient-secondary {
-    @apply bg-gradient-to-br from-[#4A90A4] to-[#5BA3B8];
-  }
-  
+
+  /* Accent gradient — decorative only, never on buttons */
   .gradient-accent {
     @apply bg-gradient-to-br from-[#D4A574] to-[#C89860];
-  }
-  
-  .gradient-divine {
-    @apply bg-gradient-to-br from-[#0A2E4A] via-[#4A90A4] to-[#D4A574];
   }
   
   .text-gradient {
@@ -237,7 +236,7 @@
   
   /* Botões com Tamanhos Padronizados */
   .btn-base {
-    @apply font-semibold transition-all duration-200 rounded-lg;
+    @apply font-semibold transition-colors duration-150 rounded-lg;
   }
   
   .btn-lg {
@@ -250,6 +249,16 @@
   
   .btn-sm {
     @apply btn-base px-4 py-2 text-sm;
+  }
+
+  /* ── Explicit navy/teal button utilities ──────────────────────────── */
+  /* Navy (primary action): */
+  .btn-navy {
+    @apply bg-[#0A2E4A] hover:bg-[#0d3a5c] active:bg-[#071f33] text-white font-semibold transition-colors duration-150;
+  }
+  /* Teal (secondary action): */
+  .btn-teal {
+    @apply bg-[#4A90A4] hover:bg-[#3d7b8d] active:bg-[#2f6070] text-white font-semibold transition-colors duration-150;
   }
 
   /* Consistent Spacing Scale */
@@ -271,6 +280,11 @@
 }
 
 @layer utilities {
+  /* Mobile bottom tab safe area */
+  .safe-area-inset-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
   .animate-delay-100 { animation-delay: 100ms; }
   .animate-delay-200 { animation-delay: 200ms; }
   .animate-delay-300 { animation-delay: 300ms; }

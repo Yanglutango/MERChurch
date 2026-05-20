@@ -87,7 +87,8 @@ function App() {
               className="w-20 h-20 object-contain"
             />
           </div>
-          <p className="text-lg text-muted-foreground font-medium">Carregando...</p>
+          <p className="text-base font-semibold text-foreground">KAIRÓS</p>
+          <p className="text-sm text-muted-foreground">por MER</p>
         </div>
       </div>
     )
