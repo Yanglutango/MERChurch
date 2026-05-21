@@ -42,15 +42,18 @@ const HomePage = () => {
   const isAdmin = user?.role === 'admin'
   const [recentSermons, setRecentSermons] = useState<any[]>([])
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([])
+  const [isLive, setIsLive] = useState(false)
 
   useEffect(() => {
     const loadData = async () => {
-      const [sermonsRes, eventsRes] = await Promise.all([
+      const [sermonsRes, eventsRes, liveRes] = await Promise.all([
         supabase.from('sermons').select('id, title, speaker, date, views').order('date', { ascending: false }).limit(3),
         supabase.from('events').select('id, title, date, location, max_attendees').gte('date', new Date().toISOString()).order('date', { ascending: true }).limit(3),
+        supabase.from('live_streams').select('id').eq('is_active', true).limit(1),
       ])
       if (sermonsRes.data) setRecentSermons(sermonsRes.data)
       if (eventsRes.data) setUpcomingEvents(eventsRes.data)
+      if (liveRes.data && liveRes.data.length > 0) setIsLive(true)
     }
     loadData()
   }, [])
@@ -141,10 +144,16 @@ const HomePage = () => {
           <div className="relative z-10 p-6 md:p-12 lg:p-16 text-white">
             <div className="max-w-4xl space-y-6 md:space-y-8">
               {/* Badge dinâmico */}
-              <div className="inline-flex items-center gap-2.5 px-4 py-2 md:px-5 md:py-2.5 bg-white/15 backdrop-blur-md rounded-full border border-white/20 shadow-lg">
-                <div className="h-2.5 w-2.5 bg-red-500 rounded-full animate-pulse shadow-lg shadow-red-500/50" />
-                <span className="text-sm md:text-base font-bold tracking-wide">AO VIVO AGORA</span>
-              </div>
+              {isLive ? (
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-500/90 backdrop-blur-md rounded-full border border-red-400/50 shadow-lg">
+                  <div className="h-2 w-2 bg-white rounded-full animate-pulse" />
+                  <span className="text-sm font-bold tracking-wide">AO VIVO AGORA</span>
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/15 backdrop-blur-md rounded-full border border-white/20">
+                  <span className="text-sm font-semibold">Próximo Culto: Domingo 9h</span>
+                </div>
+              )}
 
               {/* Título contextual */}
               <div className="space-y-4 md:space-y-5">

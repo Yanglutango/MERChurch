@@ -9,7 +9,7 @@ import { Label } from '../components/ui/label'
 import { Textarea } from '../components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
-import { LogoHero } from '../components/ui/logo'
+import { Logo } from '../components/ui/logo'
 import { supabase } from '../lib/supabase'
 import { MapPin, Phone, Mail, Send, Heart, Users, Globe, BookOpen, Shield, Edit2, Plus, Save, X, Clock } from 'lucide-react'
 import { toast } from 'sonner'
@@ -103,9 +103,10 @@ const AboutPage = () => {
             <img src="https://images.unsplash.com/photo-1438032005730-c779502df39b?w=1920&h=600&fit=crop&q=80" alt="MER Church" className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-r from-primary/95 via-blue-900/90 to-indigo-900/95" />
           </div>
-          <div className="relative z-10 p-8 md:p-16 text-white text-center">
-            <LogoHero />
-            <p className="text-base md:text-xl text-white/90 italic mt-6 md:mt-8 max-w-3xl mx-auto leading-relaxed">
+          <div className="relative z-10 p-8 md:p-14 text-white text-center">
+            <div className="flex justify-center mb-4"><Logo size="lg" showText={false} /></div>
+            <h1 className="text-2xl md:text-4xl font-bold mb-3">Missão Evangélica da Reconciliação</h1>
+            <p className="text-sm md:text-lg text-white italic max-w-3xl mx-auto leading-relaxed">
               {t('brand.verse')}
             </p>
           </div>

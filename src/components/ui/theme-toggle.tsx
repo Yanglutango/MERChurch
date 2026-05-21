@@ -1,113 +1,87 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Moon, Sun, Monitor } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
-import { authService } from '../../lib/authService'
 import { supabase } from '../../lib/supabase'
 
 type ThemeMode = 'light' | 'dark' | 'system'
 type ActiveTheme = 'light' | 'dark'
 
+const resolveTheme = (mode: ThemeMode): ActiveTheme =>
+  mode === 'system'
+    ? window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+    : mode
+
+const applyThemeToDom = (mode: ThemeMode) => {
+  const active = resolveTheme(mode)
+  document.documentElement.classList.remove('light', 'dark')
+  document.documentElement.classList.add(active)
+  localStorage.setItem('theme', mode)
+}
+
 export const ThemeToggle = () => {
   const { user, updateUser } = useAuthStore()
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Determina o tema ativo baseado na preferência do usuário ou localStorage
-  const getInitialThemeMode = (): ThemeMode => {
+  const getInitial = (): ThemeMode => {
     if (user?.themeMode) return user.themeMode
     const stored = localStorage.getItem('theme') as ThemeMode
-    if (stored && ['light', 'dark', 'system'].includes(stored)) return stored
-    return 'system'
+    return stored && ['light', 'dark', 'system'].includes(stored) ? stored : 'system'
   }
 
-  const [themeMode, setThemeMode] = useState<ThemeMode>(getInitialThemeMode)
+  const [themeMode, setThemeMode] = useState<ThemeMode>(getInitial)
 
-  // Converte 'system' para 'light' ou 'dark' baseado na preferência do SO
-  const resolveTheme = (mode: ThemeMode): ActiveTheme => {
-    if (mode === 'system') {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-    }
-    return mode
-  }
-
-  const [activeTheme, setActiveTheme] = useState<ActiveTheme>(() => resolveTheme(themeMode))
-
-  // ✅ Aplica o tema no DOM sempre que activeTheme muda
+  // Sync system preference listener
   useEffect(() => {
-    const root = document.documentElement
-    root.classList.remove('light', 'dark')
-    root.classList.add(activeTheme)
-    localStorage.setItem('theme', themeMode)
-  }, [activeTheme, themeMode])
+    if (themeMode !== 'system') return
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    const handler = () => applyThemeToDom('system')
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [themeMode])
 
-  // ✅ Sincroniza com mudanças de preferência do usuário
+  // Sync from user store
   useEffect(() => {
     if (user?.themeMode && user.themeMode !== themeMode) {
       setThemeMode(user.themeMode)
-      setActiveTheme(resolveTheme(user.themeMode))
+      applyThemeToDom(user.themeMode)
     }
   }, [user?.themeMode])
 
-  // ✅ Ouve mudanças de preferência do sistema quando mode é 'system'
-  useEffect(() => {
-    if (themeMode !== 'system') return
+  const toggleTheme = () => {
+    const next: ThemeMode =
+      themeMode === 'light' ? 'dark' : themeMode === 'dark' ? 'system' : 'light'
 
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-    const handler = (e: MediaQueryListEvent) => {
-      setActiveTheme(e.matches ? 'dark' : 'light')
-    }
+    // 1. Apply immediately to DOM + localStorage
+    applyThemeToDom(next)
+    setThemeMode(next)
+    updateUser({ themeMode: next })
 
-    mediaQuery.addEventListener('change', handler)
-    return () => mediaQuery.removeEventListener('change', handler)
-  }, [themeMode])
-
-  const toggleTheme = async () => {
-    const nextMode: ThemeMode = themeMode === 'light' ? 'dark' : themeMode === 'dark' ? 'system' : 'light'
-    const nextActive = resolveTheme(nextMode)
-
-    if (user) {
+    // 2. Debounce Supabase save — only last click within 2s is persisted
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    saveTimerRef.current = setTimeout(async () => {
+      if (!user) return
       try {
-        const { error } = await supabase
+        await supabase
           .from('user_profiles')
-          .update({ theme_mode: nextMode })
+          .update({ theme_mode: next })
           .eq('id', user.id)
-
-        if (error) throw error
-
-        await authService.updateProfile({ themeMode: nextMode })
-        updateUser({ themeMode: nextMode })
-      } catch (error) {
-        console.error('Failed to save theme preference:', error)
+      } catch (err) {
+        console.error('[ThemeToggle] Failed to persist theme:', err)
       }
-    }
-
-    setThemeMode(nextMode)
-    setActiveTheme(nextActive)
+    }, 2000)
   }
 
-  const getIcon = () => {
-    if (themeMode === 'light') return Sun
-    if (themeMode === 'dark') return Moon
-    return Monitor
-  }
-
-  const Icon = getIcon()
+  const Icon = themeMode === 'light' ? Sun : themeMode === 'dark' ? Moon : Monitor
+  const label = themeMode === 'light' ? 'Claro' : themeMode === 'dark' ? 'Escuro' : 'Sistema'
 
   return (
     <button
       onClick={toggleTheme}
-      className="group relative p-2.5 rounded-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/50 bg-gradient-to-br from-secondary/20 to-accent/20 hover:from-secondary/30 hover:to-accent/30 border-2 border-border hover:border-primary/30"
-      aria-label={`Theme: ${themeMode}`}
-      title={`Tema: ${themeMode === 'light' ? 'Claro' : themeMode === 'dark' ? 'Escuro' : 'Sistema'}`}
+      className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary"
+      aria-label={`Tema: ${label}`}
+      title={`Tema: ${label}`}
     >
-      <div className="relative">
-        <Icon className="h-5 w-5 text-foreground transition-transform duration-300 group-hover:scale-110" />
-        
-        {/* Glow effect */}
-        <div
-          className={`absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${
-            activeTheme === 'dark' ? 'bg-[#4A90A4]/30' : 'bg-[#D4A574]/30'
-          } blur-lg -z-10`}
-        />
-      </div>
+      <Icon className="h-4 w-4" aria-hidden="true" />
     </button>
   )
 }
