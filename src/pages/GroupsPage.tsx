@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/layout/Layout'
@@ -10,11 +11,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
+import { useRealTime } from '../hooks/useRealTime'
 import { logActivity } from '../lib/activityLogger'
 import {
   Users, MapPin, Plus, LogIn, LogOut, MessageCircle, Calendar,
-  Send, Search, UserPlus, X, Clock, ArrowLeft,
-} from 'lucide-react'
+  Send, Search, UserPlus, X, Clock, ArrowLeft, // <-- Missing a comma here
+} from 'lucide-react' // <-- This line was missing
+
 import { toast } from 'sonner'
 import { EmptyState } from '../components/shared/EmptyState'
 import { LoadingState } from '../components/shared/LoadingState'
@@ -47,6 +50,7 @@ const CATEGORIES = [
 const GroupsPage = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { version } = useRealTime()
   const [groups, setGroups] = useState<SmallGroup[]>([])
   const [myGroupIds, setMyGroupIds] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
@@ -71,12 +75,12 @@ const GroupsPage = () => {
 
   useEffect(() => {
     if (selectedGroup) {
+      // Clear messages immediately to avoid showing stale data from previous group
+      setMessages([])
       loadMessages(selectedGroup.id)
       loadMeetings(selectedGroup.id)
-      const interval = setInterval(() => loadMessages(selectedGroup.id), 10000)
-      return () => clearInterval(interval)
     }
-  }, [selectedGroup])
+  }, [selectedGroup?.id, version]) // version from useRealTime replaces polling interval
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
 

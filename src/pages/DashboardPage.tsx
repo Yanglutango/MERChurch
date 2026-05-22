@@ -13,7 +13,7 @@ import {
   FileSpreadsheet, Shield, MessageSquare, BarChart3,
 } from 'lucide-react'
 import {
-  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
+  LineChart, Line, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, AreaChart, Area,
 } from 'recharts'
 import { LoadingState } from '../components/shared/LoadingState'
@@ -43,9 +43,11 @@ const DashboardPage = () => {
   const [memberGrowthData, setMemberGrowthData] = useState<{ month: string; members: number }[]>([])
   const [eventParticipationData, setEventParticipationData] = useState<{ event: string; confirmed: number }[]>([])
   const [weeklyActivityData, setWeeklyActivityData] = useState<{ day: string; orações: number; mensagens: number }[]>([])
-  const [contributionData] = useState([
-    { name: 'Dízimo', value: 60 }, { name: 'Oferta', value: 25 }, { name: 'Doação', value: 15 },
-  ])
+  const contributionData = [
+    { name: 'Dízimo', value: 60, color: '#0A2E4A' },
+    { name: 'Oferta',  value: 25, color: '#4A90A4' },
+    { name: 'Doação',  value: 15, color: '#D4A574' },
+  ]
 
   useEffect(() => { loadStats() }, [version])
 
@@ -320,31 +322,28 @@ const DashboardPage = () => {
             )}
           </Card>
 
-          {/* Contributions Pie */}
+          {/* Contributions — progress bars instead of pie chart */}
           <Card className="p-4 border hover:shadow-md transition-shadow">
             <div className="flex items-center gap-2 mb-4">
               <DollarSign className="h-4 w-4 text-emerald-600" />
               <h3 className="font-semibold text-foreground text-sm">Contribuições</h3>
             </div>
-            <ResponsiveContainer width="100%" height={140}>
-              <PieChart>
-                <Pie data={contributionData} cx="50%" cy="50%" outerRadius={60} dataKey="value" nameKey="name"
-                  label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={10}>
-                  {contributionData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                </Pie>
-                <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', fontSize: '12px' }} />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="space-y-1.5 mt-2">
-              {contributionData.map((item, idx) => (
-                <div key={item.name} className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: COLORS[idx] }} />
-                    <span className="text-muted-foreground">{item.name}</span>
+            <div className="space-y-4 mt-2">
+              {contributionData.map(item => (
+                <div key={item.name}>
+                  <div className="flex items-center justify-between text-xs mb-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
+                      <span className="font-semibold text-foreground">{item.name}</span>
+                    </div>
+                    <span className="font-bold text-foreground">{item.value}%</span>
                   </div>
-                  <span className="font-bold text-foreground">{item.value}%</span>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-700" style={{ width: `${item.value}%`, backgroundColor: item.color }} />
+                  </div>
                 </div>
               ))}
+              <p className="text-[10px] text-muted-foreground pt-1">Distribuição estimada de contribuições</p>
             </div>
           </Card>
         </div>

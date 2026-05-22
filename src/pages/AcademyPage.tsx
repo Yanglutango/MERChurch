@@ -323,7 +323,7 @@ const AcademyPage = () => {
                             <span className="font-semibold">{course.durationHours}h de conteúdo</span>
                           </div>
                         )}
-                        <Button className="w-full gradient-primary text-white font-semibold">
+                        <Button className="w-full gradient-primary text-white font-semibold" onClick={() => navigate(`/academy/${course.id}`)}>
                           <Play className="h-4 w-4 mr-2" />
                           Continuar Curso
                         </Button>
@@ -412,9 +412,9 @@ const AcademyPage = () => {
                           Acessar Curso
                         </Button>
                       ) : isEnrolled ? (
-                        <Button className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold">
+                        <Button className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold" onClick={() => navigate(`/academy/${course.id}`)}>
                           <CheckCircle2 className="h-4 w-4 mr-2" />
-                          Inscrito
+                          Ver Curso
                         </Button>
                       ) : (
                         <Button

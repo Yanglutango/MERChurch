@@ -6,7 +6,8 @@ import { Button } from '../components/ui/button'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useAppStore } from '../stores/appStore'
-import { Calendar, Clock, MapPin, Plus, Edit2, Trash2, Users, CheckCircle2, Circle, Flame, TrendingUp, Shield, UserPlus, Download } from 'lucide-react'
+import { Calendar, Clock, MapPin, Plus, Edit2, Trash2, Users, CheckCircle2, Circle, Flame, Shield, UserPlus, Download, CalendarPlus, ExternalLink, Copy } from 'lucide-react'
+import { useState as usePopoverState } from 'react'
 import { toast } from 'sonner'
 import type { Event } from '../types'
 import { PageHeader } from '../components/shared/PageHeader'
@@ -16,6 +17,7 @@ import { AdminAction } from '../components/shared/AdminAction'
 import { GuestPrompt } from '../components/shared/GuestPrompt'
 import { EventEditor } from '../components/admin/EventEditor'
 import { downloadICS, getGoogleCalendarUrl, getOutlookUrl } from '../lib/calendarExporter'
+import { toast as sonnerToast } from 'sonner'
 
 const AgendaPage = () => {
   const navigate = useNavigate()
@@ -55,6 +57,29 @@ const AgendaPage = () => {
     setEvents(data)
     setLoading(false)
   }
+
+  // Per-event calendar popover state
+  const [calPopover, setCalPopover] = useState<string | null>(null)
+
+  const CalendarPopover = ({ event }: { event: Event }) => (
+    calPopover === event.id ? (
+      <div className="absolute z-50 right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-xl p-2 min-w-[200px]" onClick={e => e.stopPropagation()}>
+        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-2 py-1">Exportar para</p>
+        <button onClick={() => { window.open(getGoogleCalendarUrl(event), '_blank'); setCalPopover(null) }}
+          className="w-full flex items-center gap-2 px-2 py-1.5 text-xs font-medium text-foreground hover:bg-muted rounded-lg transition-colors">
+          <ExternalLink className="h-3.5 w-3.5 text-blue-500" />Google Calendar
+        </button>
+        <button onClick={() => { downloadICS(event); setCalPopover(null) }}
+          className="w-full flex items-center gap-2 px-2 py-1.5 text-xs font-medium text-foreground hover:bg-muted rounded-lg transition-colors">
+          <Download className="h-3.5 w-3.5 text-primary" />Baixar .ICS
+        </button>
+        <button onClick={() => { window.open(getOutlookUrl(event), '_blank'); setCalPopover(null) }}
+          className="w-full flex items-center gap-2 px-2 py-1.5 text-xs font-medium text-foreground hover:bg-muted rounded-lg transition-colors">
+          <Copy className="h-3.5 w-3.5 text-orange-500" />Outlook
+        </button>
+      </div>
+    ) : null
+  )
 
   const loadRegistrations = async () => {
     if (!user || isGuest) return
@@ -141,8 +166,26 @@ const AgendaPage = () => {
   return (
     <Layout title="Agenda">
       <div className="space-y-6">
-        {/* Hero Contextual */}
-        <Card className="relative overflow-hidden border-0 shadow-2xl rounded-2xl elevation-3">
+        {/* Compact page header */}
+        <div className="flex items-center justify-between gap-3 pb-1 border-b border-border">
+          <div>
+            <h1 className="text-xl font-bold text-foreground">Agenda</h1>
+            <p className="text-sm text-muted-foreground">{events.length} eventos · {registeredEvents.length} confirmados</p>
+          </div>
+          {isAdmin && (
+            <Button size="sm" onClick={() => { setEditingEvent(null); setEditorOpen(true) }} className="bg-[#0A2E4A] hover:bg-[#0d3a5c] text-white font-semibold">
+              <Plus className="h-4 w-4 mr-1.5" />Criar Evento
+            </Button>
+          )}
+          {isGuest && (
+            <Button size="sm" onClick={() => navigate('/about')} className="bg-[#0A2E4A] hover:bg-[#0d3a5c] text-white font-semibold">
+              <UserPlus className="h-4 w-4 mr-1.5" />Entrar
+            </Button>
+          )}
+        </div>
+
+        {/* KEPT: Hero Contextual (below compact header) */}
+        <Card className="relative overflow-hidden border-0 shadow-2xl rounded-2xl elevation-3 hidden md:block">
           <div className="absolute inset-0">
             <img
               src="https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=1920&h=600&fit=crop&q=80"
@@ -225,8 +268,7 @@ const AgendaPage = () => {
             </div>
           </div>
 
-          <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-yellow-400/20 to-transparent rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-white/10 to-transparent rounded-full blur-3xl" />
+          <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-[#D4A574]/20 to-transparent rounded-full blur-3xl" />
         </Card>
 
         {/* Próximo Evento em Destaque */}
