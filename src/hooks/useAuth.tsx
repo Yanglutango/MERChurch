@@ -4,19 +4,24 @@ import { supabase } from '../lib/supabase'
 import { AuthUser } from '../types'
 import type { User } from '@supabase/supabase-js'
 
-function mapSupabaseUser(user: User): AuthUser {
+// Substituir mapSupabaseUser inteira:
+async function fetchAndMapUser(userId: string, supabaseUser: User): Promise<AuthUser> {
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('role, username, phone, avatar_url, theme_mode')
+    .eq('id', userId)
+    .single()
+
   return {
-    id: user.id,
-    email: user.email!,
-    username: user.user_metadata?.username || user.user_metadata?.full_name || user.email!.split('@')[0],
-    avatar: user.user_metadata?.avatar_url || user.user_metadata?.picture,
-    role: user.user_metadata?.role || 'member',
-    phone: user.user_metadata?.phone,
-    themeMode: user.user_metadata?.theme_mode || 'system',
-    accentColor: user.user_metadata?.accent_color || '#4A90A4',
+    id: supabaseUser.id,
+    email: supabaseUser.email!,
+    username: profile?.username || supabaseUser.user_metadata?.username || supabaseUser.email!.split('@')[0],
+    avatar: profile?.avatar_url || supabaseUser.user_metadata?.avatar_url,
+    role: profile?.role || 'member',   // ← fonte de verdade é o banco, não user_metadata
+    phone: profile?.phone || supabaseUser.user_metadata?.phone,
+    themeMode: profile?.theme_mode || supabaseUser.user_metadata?.theme_mode || 'system',
   }
 }
-
 export const useAuth = () => {
   const { user, loading, login, logout, setLoading } = useAuthStore()
 
@@ -26,9 +31,8 @@ export const useAuth = () => {
     // Check existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (mounted && session?.user) {
-        login(mapSupabaseUser(session.user))
-      }
-      if (mounted) setLoading(false)
+        fetchAndMapUser(session.user.id, session.user).then(mapped => {
+  if (mounted) { login(mapped); setLoading(false) }
     })
 
     // Listen to auth state changes
@@ -38,13 +42,16 @@ export const useAuth = () => {
       if (!mounted) return
 
       if (event === 'SIGNED_IN' && session?.user) {
-        login(mapSupabaseUser(session.user))
-        setLoading(false)
+        fetchAndMapUser(session.user.id, session.user).then(mapped => {
+  if (mounted) login(mapped)
+})
       } else if (event === 'SIGNED_OUT') {
         logout()
         setLoading(false)
       } else if (event === 'TOKEN_REFRESHED' && session?.user) {
-        login(mapSupabaseUser(session.user))
+        fetchAndMapUser(session.user.id, session.user).then(mapped => {
+  if (mounted) login(mapped)
+})
       }
     })
 
