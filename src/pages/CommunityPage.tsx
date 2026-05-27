@@ -4,6 +4,7 @@ import Layout from '../components/layout/Layout'
 import { Card } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Textarea } from '../components/ui/textarea'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../components/ui/alert-dialog'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useAppStore } from '../stores/appStore'
@@ -23,6 +24,7 @@ const CommunityPage = () => {
   const [newPost, setNewPost] = useState('')
   const [loading, setLoading] = useState(false)
   const [loadingPosts, setLoadingPosts] = useState(true)
+  const [deletePostId, setDeletePostId] = useState<string | null>(null)
 
   const isGuest = user?.role === 'guest'
   const isMember = user?.role === 'member'
@@ -75,20 +77,16 @@ const CommunityPage = () => {
     }
   }
 
-  const deletePost = async (postId: string) => {
-    if (!confirm('Tem certeza que deseja excluir esta publicação?')) return
-
-    const { error } = await supabase.from('community_posts').delete().eq('id', postId)
-
-    if (error) {
-      toast.error('Erro ao excluir publicação')
-      return
-    }
-
-    setPosts(posts.filter((p) => p.id !== postId))
-    toast.success('Publicação excluída')
-  }
-
+  const deletePost = async () => {
+    if (!deletePostId) return
+      const { error } = await supabase.from('community_posts').delete().eq('id', deletePostId)
+        setDeletePostId(null)
+  
+    if (error) { toast.error('Erro ao excluir'); return }
+    setPosts(prev => prev.filter(p => p.id !== deletePostId))
+      toast.success('Publicação removida')
+}
+  
   const toggleLike = async (postId: string) => {
     // Try to insert like; if unique constraint fails, remove it
     const { error } = await supabase.from('post_likes').insert({
@@ -293,7 +291,7 @@ const CommunityPage = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => deletePost(post.id)}
+                            onClick={() => setDeletePostId(post.id)}
                             className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100"
                           >
                             <Trash2 className="h-4 w-4 text-red-500" />
@@ -347,6 +345,20 @@ const CommunityPage = () => {
           />
         )}
       </div>
+      <AlertDialog open={!!deletePostId} onOpenChange={open => { if (!open) setDeletePostId(null) }}>
+  <AlertDialogContent>
+    <AlertDialogHeader>
+      <AlertDialogTitle>Remover publicação?</AlertDialogTitle>
+      <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
+    </AlertDialogHeader>
+    <AlertDialogFooter>
+      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+      <AlertDialogAction onClick={deletePost} className="bg-red-600 hover:bg-red-700 text-white">
+        Remover
+      </AlertDialogAction>
+    </AlertDialogFooter>
+  </AlertDialogContent>
+</AlertDialog>
     </Layout>
   )
 }
