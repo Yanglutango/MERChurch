@@ -3,6 +3,14 @@ import type { User } from '@supabase/supabase-js'
 import { AuthUser } from '../types'
 
 class AuthService {
+  // Adicionar este método privado no topo da classe AuthService:
+private async verifyAdminKey(adminKey: string): Promise<void> {
+  const { data, error } = await supabase.functions.invoke('verify-admin-key', {
+    body: { keyAttempt: adminKey },
+  })
+  if (error) throw new Error('Erro ao verificar chave de administrador')
+  if (!data?.valid) throw new Error('Chave de administrador inválida')
+}
   mapUser(user: User): AuthUser {
     return {
       id: user.id,
@@ -36,10 +44,10 @@ class AuthService {
     congregation?: string
   ) {
     // Verify admin key if role is admin
-    if (role === 'admin' && adminKey !== '1989-2000-2026') {
-      throw new Error('Chave de administrador inválida')
-    }
-
+    if (role === 'admin') {
+  if (!adminKey) throw new Error('Chave de administrador obrigatória')
+  await this.verifyAdminKey(adminKey)
+}
     const { data, error } = await supabase.auth.verifyOtp({
       email,
       token,
@@ -76,10 +84,10 @@ class AuthService {
 
   async signInWithPassword(identifier: string, password: string, role: 'member' | 'admin' | 'guest', adminKey?: string) {
     // Verify admin key if role is admin
-    if (role === 'admin' && adminKey !== '1989-2000-2026') {
-      throw new Error('Chave de administrador inválida')
-    }
-
+    if (role === 'admin') {
+  if (!adminKey) throw new Error('Chave de administrador obrigatória')
+  await this.verifyAdminKey(adminKey)
+}
     // Check if identifier is email or username/phone
     const isEmail = identifier.includes('@')
     
@@ -117,10 +125,10 @@ class AuthService {
 
   async signInWithOAuth(provider: 'google' | 'apple' | 'facebook', role: 'member' | 'admin' | 'guest', adminKey?: string) {
     // Verify admin key if role is admin
-    if (role === 'admin' && adminKey !== '1989-2000-2026') {
-      throw new Error('Chave de administrador inválida')
-    }
-
+    if (role === 'admin') {
+  if (!adminKey) throw new Error('Chave de administrador obrigatória')
+  await this.verifyAdminKey(adminKey)
+}
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
