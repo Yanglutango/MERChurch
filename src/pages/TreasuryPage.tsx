@@ -17,6 +17,7 @@ import { StatCard } from '../components/shared/StatCard'
 import { EmptyState } from '../components/shared/EmptyState'
 import { LoadingState } from '../components/shared/LoadingState'
 import { GuestPrompt } from '../components/shared/GuestPrompt'
+import { useRealTime } from '../hooks/useRealTime'
 
 const TreasuryPage = () => {
   const navigate = useNavigate()
@@ -47,13 +48,9 @@ const TreasuryPage = () => {
   const isAdmin = user?.role === 'admin'
 
   useEffect(() => {
-    loadTransactions()
-    
-    // Poll for transaction updates every 30 seconds
-    const interval = setInterval(() => {
-      if (!isGuest) loadTransactions()
-    }, 30000)
-
+  if (!isGuest) loadTransactions()
+}, [version])
+  
     return () => clearInterval(interval)
   }, [])
 
@@ -107,13 +104,18 @@ const TreasuryPage = () => {
     }
 
     if (filters.dateFrom) {
-      filtered = filtered.filter((t) => new Date(t.createdAt) >= new Date(filters.dateFrom))
-    }
+  filtered = filtered.filter(t => {
+    const d = new Date((t as any).created_at || t.createdAt)
+    return d >= new Date(filters.dateFrom)
+  })
+}
 
     if (filters.dateTo) {
-      filtered = filtered.filter((t) => new Date(t.createdAt) <= new Date(filters.dateTo))
-    }
-
+  filtered = filtered.filter(t => {
+    const d = new Date((t as any).created_at || t.createdAt)
+    return d <= new Date(filters.dateTo + 'T23:59:59')
+  })
+}
     setFilteredTransactions(filtered)
   }
 
@@ -221,7 +223,7 @@ const TreasuryPage = () => {
               alt="Treasury"
               className="w-full h-full object-cover opacity-90"
             />
-            <div className="absolute inset-0 bg-gradient-to-br from-green-800/96 via-emerald-800/94 to-teal-800/92" />
+            <div className="absolute inset-0 bg-gradient-to-br from-[#0A2E4A]/96 via-[#1a4d6d]/94 to-[#4A90A4]/92" />
           </div>
           
           <div className="relative z-10 p-6 md:p-10 lg:p-14 text-white">
@@ -281,7 +283,7 @@ const TreasuryPage = () => {
                     <DialogTrigger asChild>
                       <Button
                         size="lg"
-                        className="bg-white text-green-800 hover:bg-white/95 font-bold px-7 py-6 rounded-full shadow-2xl transform hover:scale-105 transition-all"
+                        className="bg-white text-[#0A2E4A] hover:bg-white/90 font-bold px-7 py-6 rounded-full shadow-lg transition-colors"
                       >
                         <QrCode className="mr-2 h-5 w-5" />
                         Nova Contribuição (Multicaixa)
@@ -293,8 +295,7 @@ const TreasuryPage = () => {
                   <Button
                     size="lg"
                     onClick={() => navigate('/auth')}
-                    className="bg-white text-green-800 hover:bg-white/95 font-bold px-7 py-6 rounded-full shadow-2xl transform hover:scale-105 transition-all"
-                  >
+                    className="bg-white text-[#0A2E4A] hover:bg-white/90 font-bold px-7 py-6 rounded-full shadow-lg transition-colors">
                     <UserPlus className="mr-2 h-5 w-5" />
                     Criar Conta para Contribuir
                   </Button>
