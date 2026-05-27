@@ -20,8 +20,6 @@ const StatSkeleton = () => (
   </div>
 )
 
-const [nextSession, setNextSession] = useState<{ title: string; start_time: string } | null>(null)
-
 const HomePage = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -37,7 +35,8 @@ const HomePage = () => {
   const [upcomingEvent, setUpcomingEvent] = useState<any>(null)
   const [recentSermon, setRecentSermon] = useState<any>(null)
   const [isLive, setIsLive] = useState(false)
-
+  const [nextSession, setNextSession] = useState<{ title: string; start_time: string } | null>(null)
+  
   useEffect(() => {
     const load = async () => {
       setStatsLoading(true)
