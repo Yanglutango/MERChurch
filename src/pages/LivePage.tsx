@@ -8,7 +8,7 @@ import { useAuth } from '../hooks/useAuth'
 import { useAppStore } from '../stores/appStore'
 import { supabase } from '../lib/supabase'
 import {
-  Send, MessageCircle, Shield, Ban, Pin, Calendar, Clock, MapPin,
+  Send, MessageCircle, Shield, Ban, Calendar, Clock, MapPin,
   Flame, Eye, UserPlus, Radio as RadioIcon, Heart, BookOpen,
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -45,11 +45,14 @@ const LivePage = () => {
   const isAdmin = user?.role === 'admin'
 
   useEffect(() => {
-    loadSession()
+    loadSession(
+      supabase.from('prayer_requests')
+  .select('id', { count: 'exact', head: true })
+  .gte('created_at', new Date(new Date().setHours(0, 0, 0, 0)).toISOString()),
+    )
     loadMessages()
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {})
     const interval = setInterval(() => { loadMessages(); loadSession() }, 15000)
-    return () => { clearInterval(interval); subscription.unsubscribe() }
+    return () => { clearInterval(interval) }
   }, [])
 
   useEffect(() => {
@@ -115,10 +118,18 @@ const LivePage = () => {
             )}
           </div>
           {isAdmin && (
-            <Button size="sm" variant="outline" onClick={() => navigate('/dashboard')} className="text-xs">
-              <Shield className="h-3.5 w-3.5 mr-1.5" />Gerenciar
-            </Button>
-          )}
+  <button
+    onClick={async () => {
+      await supabase.from('live_messages').delete().eq('id', msg.id)
+      setMessages(prev => prev.filter(m => m.id !== msg.id))
+      toast.success('Mensagem removida')
+    }}
+    className="p-1 hover:bg-red-100 dark:hover:bg-red-950/20 rounded text-muted-foreground hover:text-red-500 transition-colors"
+    title="Remover mensagem"
+  >
+    <Ban className="h-3 w-3" />
+  </button>
+)}
         </div>
 
         <div className="grid lg:grid-cols-3 gap-5">
