@@ -32,6 +32,7 @@ const DashboardPage = () => {
   const { user } = useAuth()
   const { activityFeed, version } = useRealTime()
   const [loading, setLoading] = useState(true)
+  const [contributionData, setContributionData] = useState<{ name: string; value: number; color: string }[]>([])
 
   const [stats, setStats] = useState({
     totalUsers: 0, totalMembers: 0, totalGuests: 0, totalSermons: 0,
@@ -94,6 +95,18 @@ const DashboardPage = () => {
 
       const completedTransactions = transactions.data?.filter(t => t.status === 'completed') || []
       const totalRevenue = completedTransactions.reduce((sum, t) => sum + parseFloat(t.amount), 0)
+      const sumByType = (type: string) =>
+  completedTransactions.filter(t => (t as any).type === type).reduce((s, t) => s + parseFloat(t.amount), 0)
+const grand = totalRevenue || 1
+const rawContributions = [
+  { name: 'Dízimo', value: sumByType('tithe'),    color: '#0A2E4A' },
+  { name: 'Oferta', value: sumByType('offering'), color: '#4A90A4' },
+  { name: 'Doação', value: sumByType('donation'), color: '#D4A574' },
+].map(item => ({ ...item, value: Math.round(item.value / grand * 100) }))
+
+// Se todos forem zero (sem dados), não mostrar o gráfico vazio com zeros
+const hasContributions = rawContributions.some(c => c.value > 0)
+setContributionData(hasContributions ? rawContributions : [])
 
       setStats({
         totalUsers: users.count || 0, totalMembers: members.count || 0, totalGuests: guests.count || 0,
