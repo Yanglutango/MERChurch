@@ -20,6 +20,8 @@ const StatSkeleton = () => (
   </div>
 )
 
+const [nextSession, setNextSession] = useState<{ title: string; start_time: string } | null>(null)
+
 const HomePage = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -52,6 +54,7 @@ const HomePage = () => {
       if (sermonRes.data) setRecentSermon(sermonRes.data)
       if (liveRes.data && liveRes.data.length > 0) setIsLive(true)
       setStatsLoading(false)
+      if (nextRes.data) setNextSession(nextRes.data)
     }
     load()
   }, [])
@@ -108,8 +111,10 @@ const HomePage = () => {
                 </div>
               ) : (
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/15 backdrop-blur-md rounded-full text-xs font-semibold">
-                  Próximo Culto: Domingo 9h
-                </div>
+  {nextSession
+    ? `Próximo: ${new Date(nextSession.start_time).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })} · ${new Date(nextSession.start_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+    : 'Sem transmissão agendada'}
+</div>
               )}
 
               {/* Contextual title */}
