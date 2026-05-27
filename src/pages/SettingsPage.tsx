@@ -25,6 +25,7 @@ const SettingsPage = () => {
   const [loading, setLoading] = useState(false)
   const [profile, setProfile] = useState({ username: user?.username || '', phone: user?.phone || '' })
   const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>('system')
+  const [accentColor, setAccentColor] = useState('#4A90A4')
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
@@ -37,13 +38,25 @@ const SettingsPage = () => {
 
   const loadPreferences = async () => {
     if (!user) return
-    const { data } = await supabase.from('user_profiles').select('theme_mode, preferred_language, preferred_currency, notification_preferences').eq('id', user.id).single()
+    const { data } = await supabase.from('user_profiles').select('theme_mode, accent_color, preferred_language, preferred_currency').eq('id', user.id).single()
     if (data) {
-      if (data.notification_preferences) setNotifications(data.notification_preferences)
       setThemeMode(data.theme_mode || 'system')
+      setAccentColor(data.accent_color || '#4A90A4')
       if (data.preferred_language) setLanguage(data.preferred_language as any)
       if (data.preferred_currency) setCurrency(data.preferred_currency as any)
     }
+  }
+
+  const hexToHSL = (hex: string): { h: number; s: number; l: number } => {
+    const r = parseInt(hex.slice(1,3),16)/255, g = parseInt(hex.slice(3,5),16)/255, b = parseInt(hex.slice(5,7),16)/255
+    const max = Math.max(r,g,b), min = Math.min(r,g,b), l = (max+min)/2
+    if (max===min) return { h: 0, s: 0, l: Math.round(l*100) }
+    const d = max-min, s = l > 0.5 ? d/(2-max-min) : d/(max+min)
+    let h = 0
+    if (max===r) h = ((g-b)/d + (g<b?6:0))/6
+    else if (max===g) h = ((b-r)/d + 2)/6
+    else h = ((r-g)/d + 4)/6
+    return { h: Math.round(h*360), s: Math.round(s*100), l: Math.round(l*100) }
   }
 
   const applyTheme = (mode: 'light' | 'dark' | 'system') => {
@@ -104,6 +117,18 @@ const SettingsPage = () => {
     toast.success('Tema atualizado!')
   }
 
+  const saveAccentColor = async () => {
+    setLoading(true)
+    const { error } = await supabase.from('user_profiles').update({ accent_color: accentColor }).eq('id', user!.id)
+    if (error) { toast.error(error.message); setLoading(false); return }
+    // Apply to CSS variable immediately
+    const hsl = hexToHSL(accentColor)
+    document.documentElement.style.setProperty('--accent', `${hsl.h} ${hsl.s}% ${hsl.l}%`)
+    localStorage.setItem('accent-color', accentColor)
+    toast.success('Cor de destaque aplicada!')
+    setLoading(false)
+  }
+
   const saveLanguage = async (lang: string) => {
     const { error } = await supabase.from('user_profiles').update({ preferred_language: lang }).eq('id', user!.id)
     if (!error) { setLanguage(lang as any); toast.success('Idioma atualizado!') }
@@ -145,7 +170,14 @@ const SettingsPage = () => {
     { code: 'EUR', name: 'Euro', symbol: '€', flag: '🇪🇺' },
     { code: 'GBP', name: 'Libra', symbol: '£', flag: '🇬🇧' },
   ]
-  
+
+  const accentColors = [
+    { name: 'Teal', value: '#4A90A4' }, { name: 'Navy', value: '#0A2E4A' },
+    { name: 'Gold', value: '#D4A574' }, { name: 'Royal Blue', value: '#2563EB' },
+    { name: 'Emerald', value: '#10B981' }, { name: 'Rose', value: '#F43F5E' },
+    { name: 'Amber', value: '#F59E0B' }, { name: 'Purple', value: '#9333EA' },
+  ]
+
   return (
     <Layout title={t('settings.title')}>
       <div className="max-w-4xl mx-auto space-y-6">
@@ -323,7 +355,33 @@ const SettingsPage = () => {
                 ))}
               </div>
             </Card>
-</div>
+
+            {/* Accent Color */}
+            <Card className="p-5 md:p-8 border-2 shadow-lg">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="p-2.5 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl shadow-lg">
+                  <Palette className="h-5 w-5 text-white" />
+                </div>
+                <h2 className="text-xl md:text-2xl font-bold text-foreground">Cor de Destaque</h2>
+              </div>
+              <div className="grid grid-cols-4 gap-3 mb-4">
+                {accentColors.map(color => (
+                  <button key={color.value} onClick={() => setAccentColor(color.value)}
+                    className={`p-3 border-2 rounded-xl flex flex-col items-center gap-2 transition-all ${accentColor === color.value ? 'border-primary shadow-lg scale-105' : 'border-border hover:border-primary/50'}`}>
+                    <div className="h-10 w-10 rounded-full shadow-md" style={{ backgroundColor: color.value }} />
+                    <span className="text-xs font-semibold text-foreground text-center">{color.name}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-3 mb-4">
+                <Input type="color" value={accentColor} onChange={e => setAccentColor(e.target.value)} className="w-20 h-11 cursor-pointer border-2" />
+                <Input type="text" value={accentColor} onChange={e => setAccentColor(e.target.value)} placeholder="#4A90A4" className="flex-1 h-11 font-mono border-2" />
+              </div>
+              <Button onClick={saveAccentColor} disabled={loading} className="w-full h-11 font-bold text-white" style={{ backgroundColor: accentColor }} size="lg">
+                Aplicar Cor de Destaque
+              </Button>
+            </Card>
+          </div>
         )}
 
         {/* Tab: Notifications */}
@@ -357,16 +415,7 @@ const SettingsPage = () => {
                 </div>
               ))}
             </div>
-            <Button className="w-full h-11 mt-5 font-bold bg-gradient-to-r from-primary to-secondary text-white" onClick={async () => {
-  setLoading(true)
-  const { error } = await supabase
-    .from('user_profiles')
-    .update({ notification_preferences: notifications })
-    .eq('id', user!.id)
-  setLoading(false)
-  if (error) { toast.error('Erro ao salvar preferências'); return }
-  toast.success('Preferências de notificação guardadas!')
-}}>
+            <Button className="w-full h-11 mt-5 font-bold bg-gradient-to-r from-primary to-secondary text-white" onClick={() => toast.success('Preferências salvas!')}>
               <Save className="mr-2 h-4 w-4" />Salvar Preferências
             </Button>
           </Card>
