@@ -47,12 +47,11 @@ const TreasuryPage = () => {
   const isMember = user?.role === 'member'
   const isAdmin = user?.role === 'admin'
 
+  const { version } = useRealTime()
+
   useEffect(() => {
-  if (!isGuest) loadTransactions()
-}, [version])
-  
-    return () => clearInterval(interval)
-  }, [])
+    if (!isGuest) loadTransactions()
+  }, [version])
 
   useEffect(() => {
     applyFilters()
