@@ -120,7 +120,7 @@ export function useRealTimeProvider(): RealTimeState {
 
       setActivityFeed(feed)
       setLiveMetrics({
-        onlineEstimate: Math.max(1, Math.floor(Math.random() * 8) + newPosts + newPrayers),
+        onlineEstimate: newPosts + newPrayers, // actividade real dos últimos 15s, sem random
         newPrayersToday: newPrayers,
         newPostsToday: newPosts,
         recentActivity: feed.slice(0, 6),
