@@ -2,6 +2,16 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/layout/Layout'
 import { Card } from '../components/ui/card'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../components/ui/alert-dialog'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Textarea } from '../components/ui/textarea'
@@ -11,7 +21,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { logActivity } from '../lib/activityLogger'
-import { Heart, Plus, Check, Users, UserPlus, Trash2, BookOpen, Filter, CheckCircle2, Lock } from 'lucide-react'
+import { Heart, Plus, Check, Users, UserPlus, Trash2, BookOpen, CheckCircle2, Lock } from 'lucide-react'
 import { toast } from 'sonner'
 import type { PrayerRequest } from '../types'
 import { EmptyState } from '../components/shared/EmptyState'
@@ -27,6 +37,7 @@ const PrayerPage = () => {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'mine' | 'answered'>('all')
   const [newPrayer, setNewPrayer] = useState({ title: '', description: '', isAnonymous: false })
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
 
   const isGuest = user?.role === 'guest'
   const isAdmin = user?.role === 'admin'
@@ -67,15 +78,18 @@ const PrayerPage = () => {
   }
 
   const prayFor = async (prayerId: string) => {
-    if (prayedFor.includes(prayerId)) { toast.info('Você já orou por este pedido'); return }
-    const { error } = await supabase.from('prayer_interactions').insert({ prayer_id: prayerId, user_id: user!.id })
-    if (error) { toast.error('Erro ao registrar oração'); return }
-    const prayer = prayers.find(p => p.id === prayerId)
-    if (prayer) await supabase.from('prayer_requests').update({ prayer_count: (prayer.prayerCount || 0) + 1 }).eq('id', prayerId)
-    setPrayedFor([...prayedFor, prayerId])
-    loadPrayers()
-    toast.success('Obrigado por orar! 🙏')
+  if (prayedFor.includes(prayerId)) { toast.info('Você já orou por este pedido'); return }
+  const { error } = await supabase.from('prayer_interactions').insert({ prayer_id: prayerId, user_id: user!.id })
+  if (error) {
+    if (error.code === '23505') { toast.info('Você já orou por este pedido'); setPrayedFor(prev => [...prev, prayerId]); return }
+    toast.error('Erro ao registrar oração'); return
   }
+  // Incremento atómico — sem race condition
+  await supabase.rpc('increment_prayer_count', { p_prayer_id: prayerId })
+  setPrayedFor(prev => [...prev, prayerId])
+  loadPrayers()
+  toast.success('Obrigado por orar! 🙏')
+}
 
   const markAnswered = async (prayerId: string) => {
     const { error } = await supabase.from('prayer_requests').update({ is_answered: true }).eq('id', prayerId)
@@ -84,13 +98,14 @@ const PrayerPage = () => {
     loadPrayers()
   }
 
-  const deletePrayer = async (prayerId: string) => {
-    if (!confirm('Remover este pedido?')) return
-    const { error } = await supabase.from('prayer_requests').delete().eq('id', prayerId)
-    if (error) { toast.error('Erro ao remover'); return }
-    toast.success('Pedido removido')
-    loadPrayers()
-  }
+  const deletePrayer = async () => {
+  if (!deleteTargetId) return
+  const { error } = await supabase.from('prayer_requests').delete().eq('id', deleteTargetId)
+  setDeleteTargetId(null)
+  if (error) { toast.error('Erro ao remover'); return }
+  toast.success('Pedido removido')
+  loadPrayers()
+}
 
   const answeredCount = prayers.filter(p => p.isAnswered).length
 
@@ -177,7 +192,7 @@ const PrayerPage = () => {
                             </span>
                           )}
                           {(isAdmin || isOwn) && (
-                            <button onClick={() => deletePrayer(prayer.id)} className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-950/20 hover:text-red-600 text-muted-foreground transition-colors">
+                            <button onClick={() => setDeleteTargetId(prayer.id)} className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-950/20 hover:text-red-600 text-muted-foreground transition-colors">
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>
                           )}
@@ -261,6 +276,20 @@ const PrayerPage = () => {
           </div>
         </DialogContent>
       </Dialog>
+      <AlertDialog open={!!deleteTargetId} onOpenChange={open => { if (!open) setDeleteTargetId(null) }}>
+  <AlertDialogContent>
+    <AlertDialogHeader>
+      <AlertDialogTitle>Remover pedido de oração?</AlertDialogTitle>
+      <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
+    </AlertDialogHeader>
+    <AlertDialogFooter>
+      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+      <AlertDialogAction onClick={deletePrayer} className="bg-red-600 hover:bg-red-700 text-white">
+        Remover
+      </AlertDialogAction>
+    </AlertDialogFooter>
+  </AlertDialogContent>
+</AlertDialog>
     </Layout>
   )
 }
