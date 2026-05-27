@@ -47,6 +47,13 @@ const HomePage = () => {
         supabase.from('events').select('id, title, date, location').gte('date', new Date().toISOString()).order('date', { ascending: true }).limit(1).maybeSingle(),
         supabase.from('sermons').select('id, title, speaker, date, views').order('date', { ascending: false }).limit(1).maybeSingle(),
         supabase.from('live_sessions').select('id').eq('is_active', true).limit(1),
+        supabase.from('live_sessions')
+  .select('title, start_time')
+  .eq('is_active', false)
+  .gte('start_time', new Date().toISOString())
+  .order('start_time', { ascending: true })
+  .limit(1)
+  .maybeSingle(),
       ])
       setMembersConnected(membersRes.count || 0)
       setActiveCells(cellsRes.count || 0)
@@ -78,7 +85,7 @@ const HomePage = () => {
   // ── Stats grid: 2 real + fixed ──────────────────────────────────────────
   const statItems = isGuest
     ? [
-        { label: 'Anos de história',  value: '35+',  icon: Flame },
+        { label: 'Anos de história',  value: '25+',  icon: Flame },
         { label: 'Vidas impactadas',  value: '10k+', icon: Heart },
       ]
     : [
