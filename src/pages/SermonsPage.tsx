@@ -4,6 +4,7 @@ import Layout from '../components/layout/Layout'
 import { Card } from '../components/ui/card'
 import { Input } from '../components/ui/input'
 import { Button } from '../components/ui/button'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../components/ui/alert-dialog'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useAppStore } from '../stores/appStore'
@@ -41,6 +42,7 @@ const SermonsPage = () => {
   const [loading, setLoading] = useState(true)
   const [editorOpen, setEditorOpen] = useState(false)
   const [editingSermon, setEditingSermon] = useState<Sermon | null>(null)
+  const [deleteSermonId, setDeleteSermonId] = useState<string | null>(null)
 
   const isGuest = user?.role === 'guest'
   const isAdmin = user?.role === 'admin'
@@ -57,12 +59,14 @@ const SermonsPage = () => {
 
   const handleEdit = (sermon: Sermon) => { setEditingSermon(sermon); setEditorOpen(true) }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Excluir este sermão?')) return
-    const { error } = await supabase.from('sermons').delete().eq('id', id)
-    if (error) { toast.error('Erro ao excluir sermão'); return }
+  const handleDelete = async () => {
+    if (!deleteSermonId) return
+    const { error } = await supabase.from('sermons').delete().eq('id', deleteSermonId)
+    setDeleteSermonId(null)
+    if (error) { toast.error('Erro ao excluir'); return }
+    setSermons(prev => prev.filter(p.id !== deleteSermonId))
     toast.success('Sermão excluído!')
-    loadSermons()
+    loadSermons()  
   }
 
   const filteredSermons = sermons.filter(s => {
@@ -286,6 +290,20 @@ const SermonsPage = () => {
       </div>
 
       <SermonEditor open={editorOpen} onOpenChange={setEditorOpen} sermon={editingSermon} onSuccess={() => { loadSermons(); setEditingSermon(null) }} />
+          <AlertDialog open={!!deletePostId} onOpenChange={open => { if (!open) setDeletePostId(null) }}>
+  <AlertDialogContent>
+    <AlertDialogHeader>
+      <AlertDialogTitle>Remover publicação?</AlertDialogTitle>
+      <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
+    </AlertDialogHeader>
+    <AlertDialogFooter>
+      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+      <AlertDialogAction onClick={deletePost} className="bg-red-600 hover:bg-red-700 text-white">
+        Remover
+      </AlertDialogAction>
+    </AlertDialogFooter>
+  </AlertDialogContent>
+</AlertDialog>
     </Layout>
   )
 }
