@@ -44,11 +44,6 @@ const DashboardPage = () => {
   const [memberGrowthData, setMemberGrowthData] = useState<{ month: string; members: number }[]>([])
   const [eventParticipationData, setEventParticipationData] = useState<{ event: string; confirmed: number }[]>([])
   const [weeklyActivityData, setWeeklyActivityData] = useState<{ day: string; orações: number; mensagens: number }[]>([])
-  const contributionData = [
-    { name: 'Dízimo', value: 60, color: '#0A2E4A' },
-    { name: 'Oferta',  value: 25, color: '#4A90A4' },
-    { name: 'Doação',  value: 15, color: '#D4A574' },
-  ]
 
   useEffect(() => { loadStats() }, [version])
 

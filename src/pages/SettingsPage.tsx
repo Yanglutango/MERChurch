@@ -148,7 +148,7 @@ const SettingsPage = () => {
     toast.success('Senha alterada com sucesso!')
     setPasswords({ current: '', new: '', confirm: '' })
     setLoading(false)
-}
+  }
 
   const TABS: { id: Tab; label: string; icon: any }[] = [
     { id: 'profile', label: 'Perfil', icon: User },
