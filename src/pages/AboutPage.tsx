@@ -147,23 +147,20 @@ const AboutPage = () => {
 
 Nosso ministério nasceu de **2 Coríntios 5:18** e nosso lema é *"Somos o Povo da Fé e a Geração dos Poderosos"*. Estamos em todo o país e esta plataforma é criação da MER no Lubango.
 
-A **MER-Lubango** foi fundada em **Fevereiro de 2000** pelo **Pastor Garcia Doki Lutango**, hoje com 25 anos, continuamos crescendo e, no âmbito da inovação, criou-se essa plataforma digital KAIRÓS.`).split('\n\n').filter(Boolean).map((para, i) => (
-              <p key={i} {getContent('history', `...`).split('\n\n').filter(Boolean).map((para, i) => {
-  // Processar markdown apenas para strong e em — sem permitir HTML arbitrário
-  const parts = para.split(/(\*\*.*?\*\*|\*.*?\*)/g)
-  return (
-    <p key={i}>
-      {parts.map((part, j) => {
-        if (part.startsWith('**') && part.endsWith('**'))
-          return <strong key={j} className="text-foreground">{part.slice(2, -2)}</strong>
-        if (part.startsWith('*') && part.endsWith('*'))
-          return <em key={j} className="text-primary font-semibold">{part.slice(1, -1)}</em>
-        return part
-      })}
-    </p>
-  )
-})} />
-            ))}
+A **MER-Lubango** foi fundada em **Fevereiro de 2000** pelo **Pastor Garcia Doki Lutango**, hoje com 25 anos, continuamos crescendo e, no âmbito da inovação, criou-se essa plataforma digital KAIRÓS.`).split('\n\n').filter(Boolean).map((para, i) => {
+              const parts = para.split(/(\*\*.*?\*\*|\*.*?\*)/g)
+              return (
+                <p key={i}>
+                  {parts.map((part, j) => {
+                    if (part.startsWith('**') && part.endsWith('**'))
+                      return <strong key={j} className="text-foreground">{part.slice(2, -2)}</strong>
+                    if (part.startsWith('*') && part.endsWith('*'))
+                      return <em key={j} className="text-primary font-semibold">{part.slice(1, -1)}</em>
+                    return part
+                  })}
+                </p>
+              )
+            })}
             <div className="p-5 bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 rounded-2xl border-2 border-primary/20 mt-6">
               <p className="text-foreground font-semibold text-center text-lg italic">"{t('brand.verse')}"</p>
             </div>
