@@ -7,7 +7,6 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useAppStore } from '../stores/appStore'
 import { Calendar, Clock, MapPin, Plus, Edit2, Trash2, Users, CheckCircle2, Circle, Flame, Shield, UserPlus, Download, CalendarPlus, ExternalLink, Copy } from 'lucide-react'
-import { useState as usePopoverState } from 'react'
 import { toast } from 'sonner'
 import type { Event } from '../types'
 import { PageHeader } from '../components/shared/PageHeader'
@@ -17,7 +16,6 @@ import { AdminAction } from '../components/shared/AdminAction'
 import { GuestPrompt } from '../components/shared/GuestPrompt'
 import { EventEditor } from '../components/admin/EventEditor'
 import { downloadICS, getGoogleCalendarUrl, getOutlookUrl } from '../lib/calendarExporter'
-import { toast as sonnerToast } from 'sonner'
 
 const AgendaPage = () => {
   const navigate = useNavigate()
