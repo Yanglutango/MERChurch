@@ -59,7 +59,7 @@ const TreasuryPage = () => {
 
   const loadTransactions = async () => {
     setLoading(true)
-    
+
     if (isAdmin) {
       const { data, error } = await supabase
         .from('transactions')
@@ -141,7 +141,7 @@ const TreasuryPage = () => {
       setIsDialogOpen(false)
       setIsPaymentDialogOpen(true)
       toast.success('Referência de pagamento gerada!')
-      
+
       loadTransactions()
     } catch (error: any) {
       console.error('Payment generation error:', error)
@@ -156,6 +156,20 @@ const TreasuryPage = () => {
       navigator.clipboard.writeText(paymentReference)
       toast.success('Referência copiada!')
     }
+  }
+
+  const deleteTransaction = async (id: string) => {
+    const { data, error } = await supabase .from('transactions') .delete() .eq('id', id) .select('id')
+
+    if (error) { toast.error('Erro ao remover: ' + error.message); return }
+
+    if (!data || data.length === 0){
+      toast.error('Sem permissão para remover esta transacção')
+      return
+    }
+
+    toast.success('Transacção removida')
+    loadTransactions()
   }
 
   const totalAmount = filteredTransactions
@@ -184,18 +198,18 @@ const TreasuryPage = () => {
 
   const getStatusBadge = (status: string) => {
     const badges: Record<string, { color: string; label: string; icon: any }> = {
-      pending: { 
-        color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300', 
+      pending: {
+        color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
         label: 'Pendente',
         icon: Clock
       },
-      completed: { 
-        color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300', 
+      completed: {
+        color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
         label: 'Confirmado',
         icon: CheckCircle
       },
-      failed: { 
-        color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300', 
+      failed: {
+        color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
         label: 'Falhou',
         icon: AlertCircle
       },
@@ -224,7 +238,7 @@ const TreasuryPage = () => {
             />
             <div className="absolute inset-0 bg-gradient-to-br from-[#0A2E4A]/96 via-[#1a4d6d]/94 to-[#4A90A4]/92" />
           </div>
-          
+
           <div className="relative z-10 p-6 md:p-10 lg:p-14 text-white">
             <div className="max-w-4xl space-y-5 md:space-y-7">
               <div className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-white/20 backdrop-blur-md rounded-full border border-white/30 shadow-lg">
@@ -248,7 +262,7 @@ const TreasuryPage = () => {
                     </p>
                   </>
                 )}
-                
+
                 {isMember && (
                   <>
                     <h1 className="text-3xl md:text-5xl lg:text-6xl font-black leading-[1.15] tracking-tight">
@@ -262,7 +276,7 @@ const TreasuryPage = () => {
                     </p>
                   </>
                 )}
-                
+
                 {isAdmin && (
                   <>
                     <h1 className="text-3xl md:text-5xl lg:text-6xl font-black leading-[1.15] tracking-tight flex items-center gap-3 md:gap-4 flex-wrap">
@@ -429,7 +443,7 @@ const TreasuryPage = () => {
               {filteredTransactions.map((transaction) => {
                 const badge = getStatusBadge(transaction.status)
                 const StatusIcon = badge.icon
-                
+
                 return (
                   <div
                     key={transaction.id}
@@ -437,8 +451,8 @@ const TreasuryPage = () => {
                   >
                     <div className="flex items-center gap-4">
                       <div className={`p-3 rounded-xl ${
-                        transaction.status === 'completed' 
-                          ? 'bg-green-100 dark:bg-green-900/20' 
+                        transaction.status === 'completed'
+                          ? 'bg-green-100 dark:bg-green-900/20'
                           : transaction.status === 'pending'
                           ? 'bg-yellow-100 dark:bg-yellow-900/20'
                           : 'bg-red-100 dark:bg-red-900/20'
@@ -566,8 +580,8 @@ const TreasuryPage = () => {
               />
             </div>
 
-            <Button 
-              onClick={generatePaymentReference} 
+            <Button
+              onClick={generatePaymentReference}
               disabled={processingPayment}
               className="w-full gradient-primary text-white"
             >
@@ -588,7 +602,7 @@ const TreasuryPage = () => {
               <div className="text-center space-y-3">
                 <CheckCircle className="h-12 w-12 text-green-600 dark:text-green-400 mx-auto" />
                 <h3 className="text-xl font-bold text-green-700 dark:text-green-300">Referência Gerada!</h3>
-                
+
                 <div className="p-4 bg-white dark:bg-gray-900 rounded-lg border border-green-200 dark:border-green-800">
                   <p className="text-xs text-muted-foreground mb-1">REFERÊNCIA MULTICAIXA</p>
                   <p className="text-2xl font-bold text-foreground font-mono tracking-wider">
