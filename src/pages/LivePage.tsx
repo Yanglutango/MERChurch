@@ -9,7 +9,7 @@ import { useAppStore } from '../stores/appStore'
 import { supabase } from '../lib/supabase'
 import {
   Send, MessageCircle, Shield, Ban, Calendar, Clock, MapPin,
-  Flame, Eye, UserPlus, Radio as RadioIcon, Heart, BookOpen,
+  Flame, Eye, UserPlus, Radio as RadioIcon, Heart, BookOpen, Pin,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { LiveMessage } from '../types'
