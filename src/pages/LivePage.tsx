@@ -8,7 +8,7 @@ import { useAuth } from '../hooks/useAuth'
 import { useAppStore } from '../stores/appStore'
 import { supabase } from '../lib/supabase'
 import {
-  Send, MessageCircle, Shield, Ban, Calendar, Clock,
+  Send, MessageCircle, Shield, Ban, Calendar, Clock, Pin,
   Flame, Eye, UserPlus, Radio as RadioIcon, Heart, BookOpen,
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -117,19 +117,6 @@ const LivePage = () => {
               <span className="px-2 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full">AO VIVO</span>
             )}
           </div>
-          {isAdmin && (
-  <button
-    onClick={async () => {
-      await supabase.from('live_messages').delete().eq('id', msg.id)
-      setMessages(prev => prev.filter(m => m.id !== msg.id))
-      toast.success('Mensagem removida')
-    }}
-    className="p-1 hover:bg-red-100 dark:hover:bg-red-950/20 rounded text-muted-foreground hover:text-red-500 transition-colors"
-    title="Remover mensagem"
-  >
-    <Ban className="h-3 w-3" />
-  </button>
-)}
         </div>
 
         <div className="grid lg:grid-cols-3 gap-5">
