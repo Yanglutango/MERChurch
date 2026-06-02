@@ -8,7 +8,7 @@ import { useAuth } from '../hooks/useAuth'
 import { useAppStore } from '../stores/appStore'
 import { supabase } from '../lib/supabase'
 import {
-  Send, MessageCircle, Shield, Ban, Calendar, Clock, MapPin,
+  Send, MessageCircle, Shield, Ban, Calendar, Clock,
   Flame, Eye, UserPlus, Radio as RadioIcon, Heart, BookOpen,
 } from 'lucide-react'
 import { toast } from 'sonner'
