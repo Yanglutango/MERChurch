@@ -64,7 +64,7 @@ const SermonsPage = () => {
     const { error } = await supabase.from('sermons').delete().eq('id', deleteSermonId)
     setDeleteSermonId(null)
     if (error) { toast.error('Erro ao excluir'); return }
-    setSermons(prev => prev.filter(p.id !== deleteSermonId))
+    setSermons(prev => prev.filter(p => p.id !== deleteSermonId))
     toast.success('Sermão excluído!')
     loadSermons()  
   }
@@ -230,7 +230,7 @@ const SermonsPage = () => {
                       <Button size="sm" variant="secondary" onClick={() => handleEdit(sermon)} className="h-7 w-7 p-0 backdrop-blur-md">
                         <Edit2 className="h-3 w-3" />
                       </Button>
-                      <Button size="sm" variant="destructive" onClick={() => handleDelete(sermon.id)} className="h-7 w-7 p-0">
+                      <Button size="sm" variant="destructive" onClick={() => setDeleteSermonId(sermon.id)} className="h-7 w-7 p-0">
                         <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>
@@ -290,15 +290,15 @@ const SermonsPage = () => {
       </div>
 
       <SermonEditor open={editorOpen} onOpenChange={setEditorOpen} sermon={editingSermon} onSuccess={() => { loadSermons(); setEditingSermon(null) }} />
-          <AlertDialog open={!!deletePostId} onOpenChange={open => { if (!open) setDeletePostId(null) }}>
+          <AlertDialog open={!!deleteSermonId} onOpenChange={open => { if (!open) setDeleteSermonId(null) }}>
   <AlertDialogContent>
     <AlertDialogHeader>
-      <AlertDialogTitle>Remover publicação?</AlertDialogTitle>
+      <AlertDialogTitle>Remover sermão?</AlertDialogTitle>
       <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
     </AlertDialogHeader>
     <AlertDialogFooter>
       <AlertDialogCancel>Cancelar</AlertDialogCancel>
-      <AlertDialogAction onClick={deletePost} className="bg-red-600 hover:bg-red-700 text-white">
+      <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700 text-white">
         Remover
       </AlertDialogAction>
     </AlertDialogFooter>
