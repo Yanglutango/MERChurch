@@ -100,9 +100,13 @@ const PrayerPage = () => {
 
   const deletePrayer = async () => {
   if (!deleteTargetId) return
-  const { error } = await supabase.from('prayer_requests').delete().eq('id', deleteTargetId)
+  const { error } = await supabase.from('prayer_requests').delete().eq('id', deleteTargetId).select('id')
   setDeleteTargetId(null)
   if (error) { toast.error('Erro ao remover'); return }
+  if (!data || data.length === 0) {
+    toast.error('Sem permissão para remover este pedido')
+    return
+  }
   toast.success('Pedido removido')
   loadPrayers()
 }
