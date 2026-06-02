@@ -92,8 +92,10 @@ export interface Transaction {
   userId?: string
   amount: number
   type: 'tithe' | 'offering' | 'donation' | 'project'
-  method: 'credit_card' | 'debit_card' | 'pix' | 'transfer'
+  method: 'credit_card' | 'debit_card' | 'pix' | 'transfer' | 'multicaixa'
   status: 'pending' | 'completed' | 'failed'
+  paymentReference?: string
+  multicaixaTransactionId: string
   description?: string
   projectId?: string
   createdAt: string
