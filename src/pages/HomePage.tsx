@@ -40,7 +40,7 @@ const HomePage = () => {
   useEffect(() => {
     const load = async () => {
       setStatsLoading(true)
-      const [membersRes, cellsRes, eventRes, sermonRes, liveRes] = await Promise.all([
+      const [membersRes, cellsRes, eventRes, sermonRes, liveRes, nextRes] = await Promise.all([
         supabase.from('user_profiles').select('id', { count: 'exact', head: true }).eq('role', 'member'),
         supabase.from('small_groups').select('id', { count: 'exact', head: true }).eq('is_active', true),
         supabase.from('events').select('id, title, date, location').gte('date', new Date().toISOString()).order('date', { ascending: true }).limit(1).maybeSingle(),
