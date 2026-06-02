@@ -17,7 +17,7 @@ private async verifyAdminKey(adminKey: string): Promise<void> {
       email: user.email!,
       username: user.user_metadata?.username || user.user_metadata?.full_name || user.email!.split('@')[0],
       avatar: user.user_metadata?.avatar_url || user.user_metadata?.picture,
-      role: user.user_metadata?.role || 'member',
+      role: 'member',
       phone: user.user_metadata?.phone,
       congregation: user.user_metadata?.congregation,
       themeMode: user.user_metadata?.theme_mode || 'system',
@@ -90,9 +90,9 @@ private async verifyAdminKey(adminKey: string): Promise<void> {
 }
     // Check if identifier is email or username/phone
     const isEmail = identifier.includes('@')
-    
+
     let email = identifier
-    
+
     if (!isEmail) {
       // Query user_profiles to get email from username or phone
       const { data: profiles, error: profileError } = await supabase
@@ -104,7 +104,7 @@ private async verifyAdminKey(adminKey: string): Promise<void> {
       if (profileError || !profiles) {
         throw new Error('Usuário não encontrado')
       }
-      
+
       email = profiles.email
     }
 
