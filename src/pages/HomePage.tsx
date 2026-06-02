@@ -36,27 +36,34 @@ const HomePage = () => {
   const [recentSermon, setRecentSermon] = useState<any>(null)
   const [isLive, setIsLive] = useState(false)
   const [nextSession, setNextSession] = useState<{ title: string; start_time: string } | null>(null)
-  
+
   useEffect(() => {
     const load = async () => {
       setStatsLoading(true)
-      const [membersRes, cellsRes, eventRes, sermonRes, liveRes, nextRes] = await Promise.all([
+      const [membersRes, cellsRes, liveRes, sermonRes, eventRes] = await Promise.all([
         supabase.from('user_profiles').select('id', { count: 'exact', head: true }).eq('role', 'member'),
         supabase.from('small_groups').select('id', { count: 'exact', head: true }).eq('is_active', true),
         supabase.from('events').select('id, title, date, location').gte('date', new Date().toISOString()).order('date', { ascending: true }).limit(1).maybeSingle(),
         supabase.from('sermons').select('id, title, speaker, date, views').order('date', { ascending: false }).limit(1).maybeSingle(),
         supabase.from('live_sessions').select('id').eq('is_active', true).limit(1),
-        supabase.from('live_sessions') .select('title, start_time') .eq('is_active', false) .gte('start_time', new Date().toISOString())
-  .order('start_time', { ascending: true }) .limit(1) .maybeSingle(),
+        supabase.from('live_sessions') 
+        .select('title, start_time') 
+        .eq('is_active', false) 
+        .gte('start_time', new Date().toISOString()) 
+        .order('start_time', { ascending: true }) 
+        .limit(1) 
+        .maybeSingle(),
       ])
-      
+
+      if (nextRes.data) setNextSession(nextRes.data)
+
       setMembersConnected(membersRes.count || 0)
       setActiveCells(cellsRes.count || 0)
       if (eventRes.data) setUpcomingEvent(eventRes.data)
       if (sermonRes.data) setRecentSermon(sermonRes.data)
       if (liveRes.data && liveRes.data.length > 0) setIsLive(true)
       setStatsLoading(false)
-      if (nextRes.data) setNextSession(nextRes.data)
+
     }
     load()
   }, [])
