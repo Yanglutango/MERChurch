@@ -45,7 +45,7 @@ const HomePage = () => {
         supabase.from('small_groups').select('id', { count: 'exact', head: true }).eq('is_active', true),
         supabase.from('events').select('id, title, date, location').gte('date', new Date().toISOString()).order('date', { ascending: true }).limit(1).maybeSingle(),
         supabase.from('sermons').select('id, title, speaker, date, views').order('date', { ascending: false }).limit(1).maybeSingle(),
-        supabase.from('live_sessions').select('id').eq('is_active', true).limit(1),
+        supabase.from('live_sessions').select('*').eq('is_active', true).maybeSingle(),
         supabase.from('live_sessions') 
         .select('title, start_time') 
         .eq('is_active', false) 
