@@ -1,9 +1,10 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
 import { useAuth } from '../../hooks/useAuth'
 import {
   Home, Radio, BookOpen, Calendar, Bell, Sparkles, Users, GraduationCap,
   MessageCircle, DollarSign, Heart, HeadphonesIcon, Info, Settings,
-  LayoutDashboard, LogOut, ScrollText, LibraryBig, Users2, MoreHorizontal,
+  LayoutDashboard, LogOut, ScrollText, LibraryBig, Users2, MoreHorizontal, X,
 } from 'lucide-react'
 import { authService } from '../../lib/authService'
 import { useAppStore } from '../../stores/appStore'
@@ -105,6 +106,7 @@ const Layout = ({ children, title }: LayoutProps) => {
   const location = useLocation()
   const navigate = useNavigate()
   const { t } = useAppStore()
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false)
 
   const navSections = useNavSections(user?.role, t)
   const bottomTabs  = useBottomTabs(user?.role, t)
@@ -227,6 +229,7 @@ const Layout = ({ children, title }: LayoutProps) => {
               <Link
                 key={tab.path}
                 to={tab.path}
+                onClick={() => setMoreMenuOpen(false)}
                 className={`flex-1 flex flex-col items-center justify-center gap-0.5 min-w-0 px-1 transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-primary ${
                   active ? 'text-[#0A2E4A] dark:text-[#7bbdd4]' : 'text-muted-foreground hover:text-foreground'
                 }`}
@@ -240,21 +243,102 @@ const Layout = ({ children, title }: LayoutProps) => {
             )
           })}
 
-          {/* More → Settings (always last) */}
-          <Link
-            to="/settings"
+          {/* More → Open Modal (not Link) */}
+          <button
+            onClick={() => setMoreMenuOpen(!moreMenuOpen)}
             className={`flex-1 flex flex-col items-center justify-center gap-0.5 min-w-0 px-1 transition-colors duration-150 ${
-              isActive('/settings') ? 'text-[#0A2E4A] dark:text-[#7bbdd4]' : 'text-muted-foreground hover:text-foreground'
+              moreMenuOpen ? 'text-[#0A2E4A] dark:text-[#7bbdd4]' : 'text-muted-foreground hover:text-foreground'
             }`}
             aria-label="Mais opções"
+            aria-expanded={moreMenuOpen}
           >
-            <div className={`p-1.5 rounded-lg transition-colors ${isActive('/settings') ? 'bg-[#0A2E4A]/10 dark:bg-[#4A90A4]/20' : ''}`}>
+            <div className={`p-1.5 rounded-lg transition-colors ${moreMenuOpen ? 'bg-[#0A2E4A]/10 dark:bg-[#4A90A4]/20' : ''}`}>
               <MoreHorizontal className="h-5 w-5" aria-hidden="true" />
             </div>
             <span className="text-[10px] font-semibold leading-none">Mais</span>
-          </Link>
+          </button>
         </div>
       </nav>
+
+      {/* ── Mobile More Menu Modal (overlay + drawer) ───────────────── */}
+      {moreMenuOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="lg:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+            onClick={() => setMoreMenuOpen(false)}
+            aria-hidden="true"
+          />
+
+          {/* Drawer Content */}
+          <div className="lg:hidden fixed bottom-16 left-0 right-0 z-50 max-h-[60vh] bg-card border-t border-border/50 overflow-y-auto rounded-t-lg">
+            <div className="p-2 space-y-4">
+              {/* Header + Close button */}
+              <div className="flex items-center justify-between px-3 pt-2">
+                <h2 className="text-sm font-semibold text-foreground">Mais opções</h2>
+                <button
+                  onClick={() => setMoreMenuOpen(false)}
+                  className="p-1.5 hover:bg-muted rounded-lg transition-colors"
+                  aria-label="Fechar menu"
+                >
+                  <X className="h-5 w-5" aria-hidden="true" />
+                </button>
+              </div>
+
+              {/* Navigation Sections */}
+              {navSections.map((section, si) => (
+                <div key={si}>
+                  {section.heading && (
+                    <div className="px-3 pt-1 pb-0.5">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 select-none">
+                        {section.heading}
+                      </span>
+                    </div>
+                  )}
+                  <div className="space-y-0.5">
+                    {section.items.map(item => {
+                      const active = isActive(item.path)
+                      return (
+                        <Link
+                          key={item.path}
+                          to={item.path}
+                          onClick={() => setMoreMenuOpen(false)}
+                          className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 focus-visible:outline-2 focus-visible:outline-primary ${
+                            active
+                              ? 'bg-[#0A2E4A] text-white shadow-sm'
+                              : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                          }`}
+                          aria-current={active ? 'page' : undefined}
+                        >
+                          <item.icon className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
+                          <span className="truncate text-[13px]">{item.label}</span>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                  {si < navSections.length - 1 && (
+                    <div className="mt-3 border-t border-border/40" aria-hidden="true" />
+                  )}
+                </div>
+              ))}
+
+              {/* Logout Button */}
+              <div className="px-2 pt-2 pb-4 border-t border-border/40">
+                <button
+                  onClick={() => {
+                    setMoreMenuOpen(false)
+                    handleLogout()
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                >
+                  <LogOut className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
+                  {t('nav.logout')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }
