@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
 import { Logo } from '../components/ui/logo'
 import { supabase } from '../lib/supabase'
-import { MapPin, Phone, Mail, Send, Heart, Users, Globe, BookOpen, Shield, Edit2, Plus, Save, X, Clock } from 'lucide-react'
+import { MapPin, Phone, Mail, Send, Heart, Users, Globe, BookOpen, Shield, Edit2, Save, X, Clock } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface ContentSection {
@@ -142,25 +142,22 @@ const AboutPage = () => {
               </Button>
             )}
           </div>
-          <div className="space-y-5 text-muted-foreground leading-relaxed text-base md:text-lg">
-            {getContent('history', `A **Missão Evangélica da Reconciliação (MER)** nasceu em Angola, foi fundada em **Março de 1989** pelo **Apóstolo Mawete Viticilo**, tem sua sede internacional na capital do país, Luanda, no bairro do Rocha Pinto, e com 36 anos, continuamos crescendo cada vez mais.
-
-Nosso ministério nasceu de **2 Coríntios 5:18** e nosso lema é *"Somos o Povo da Fé e a Geração dos Poderosos"*. Estamos em todo o país e esta plataforma é criação da MER no Lubango.
-
-A **MER-Lubango** foi fundada em **Fevereiro de 2000** pelo **Pastor Garcia Doki Lutango**, hoje com 25 anos, continuamos crescendo e, no âmbito da inovação, criou-se essa plataforma digital KAIRÓS.`).split('\n\n').filter(Boolean).map((para, i) => {
-              const parts = para.split(/(\*\*.*?\*\*|\*.*?\*)/g)
-              return (
-                <p key={i}>
-                  {parts.map((part, j) => {
-                    if (part.startsWith('**') && part.endsWith('**'))
-                      return <strong key={j} className="text-foreground">{part.slice(2, -2)}</strong>
-                    if (part.startsWith('*') && part.endsWith('*'))
-                      return <em key={j} className="text-primary font-semibold">{part.slice(1, -1)}</em>
-                    return part
-                  })}
-                </p>
-              )
-            })}
+          // ✅ CORRETO - Substituir linhas 145-163:
+<div className="space-y-5 text-muted-foreground leading-relaxed text-base md:text-lg">
+  {getContent('history', `A **Missão Evangélica da Reconciliação (MER)** nasceu em Angola...`).split('\n\n').map((para, i) => {
+    const parts = para.split(/(\*\*.*?\*\*|\*.*?\*)/g)
+    return (
+      <p key={i}>
+        {parts.map((part, j) => {
+          if (part.startsWith('**') && part.endsWith('**'))
+            return <strong key={j} className="text-foreground">{part.slice(2, -2)}</strong>
+          if (part.startsWith('*') && part.endsWith('*'))
+            return <em key={j} className="text-primary font-semibold">{part.slice(1, -1)}</em>
+          return part
+        })}
+      </p>
+    )
+  })}
             <div className="p-5 bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 rounded-2xl border-2 border-primary/20 mt-6">
               <p className="text-foreground font-semibold text-center text-lg italic">"{t('brand.verse')}"</p>
             </div>
@@ -259,7 +256,7 @@ A **MER-Lubango** foi fundada em **Fevereiro de 2000** pelo **Pastor Garcia Doki
             <div className="flex items-center justify-between gap-3 mb-5">
               <h2 className="text-xl md:text-2xl font-bold text-foreground">{t('about.schedules')}</h2>
               {isAdmin && (
-                <Button size="sm" variant="ghost" onClick={() => startEdit({ id: '', section: 'schedules_note', title: 'Horários', content: getContent('schedules_note', 'Todos são bem-vindos!'), updated_at: '' })} className="h-8 w-8 p-0">
+                <Button size="sm" variant="ghost" onClick={() => startEdit({ id: '', section: 'schedules_note', title: 'Horários', content: getContent('schedules_note'), updated_at: '' })} className="h-8 w-8 p-0">
                   <Edit2 className="h-4 w-4" />
                 </Button>
               )}
