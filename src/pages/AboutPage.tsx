@@ -142,7 +142,7 @@ const AboutPage = () => {
               </Button>
             )}
           </div>
-          // ✅ CORRETO - Substituir linhas 145-163:
+          
 <div className="space-y-5 text-muted-foreground leading-relaxed text-base md:text-lg">
   {getContent('history', `A **Missão Evangélica da Reconciliação (MER)** nasceu em Angola...`).split('\n\n').map((para, i) => {
     const parts = para.split(/(\*\*.*?\*\*|\*.*?\*)/g)
