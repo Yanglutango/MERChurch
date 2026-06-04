@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/layout/Layout'
 import { Card } from '../components/ui/card'
@@ -6,9 +6,9 @@ import { Button } from '../components/ui/button'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useAppStore } from '../stores/appStore'
-import { GraduationCap, Play, BookOpen, Clock, Award, TrendingUp, Plus, Edit2, Trash2, Shield, UserPlus, CheckCircle2, BarChart3 } from 'lucide-react'
+import { GraduationCap, Play, BookOpen, Clock, Award, TrendingUp, Plus, Edit2, Trash2, Shield, UserPlus, CheckCircle2, BarChart3, Search, Filter, TrendingDown } from 'lucide-react'
 import { toast } from 'sonner'
-import type { Course } from '../types'
+import type { Course, Enrollment, CourseProgress } from '../types'
 import { StatCard } from '../components/shared/StatCard'
 import { EmptyState } from '../components/shared/EmptyState'
 import { LoadingState } from '../components/shared/LoadingState'
@@ -16,106 +16,209 @@ import { AdminAction } from '../components/shared/AdminAction'
 import { GuestPrompt } from '../components/shared/GuestPrompt'
 import { CourseEditor } from '../components/admin/CourseEditor'
 
+// ✅ CORREÇÃO #19: Extrair magic strings em constantes
+const ACADEMY_MESSAGES = {
+  DELETE_CONFIRM: 'Tem certeza que deseja excluir este curso?',
+  DELETE_ERROR: 'Erro ao excluir curso',
+  DELETE_SUCCESS: 'Curso excluído com sucesso!',
+  ENROLL_ERROR: 'Erro ao se inscrever no curso',
+  ENROLL_SUCCESS: 'Inscrição realizada com sucesso!',
+  LOAD_COURSES_ERROR: 'Erro ao carregar cursos. Tente novamente.',
+  LOAD_ENROLLMENTS_ERROR: 'Erro ao carregar inscrições. Tente novamente.',
+  NOT_AUTHENTICATED: 'Usuário não autenticado',
+  NO_PERMISSION: 'Você não tem permissão para realizar esta ação',
+}
+
 const AcademyPage = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { t } = useAppStore()
+  
+  // ✅ CORREÇÃO #5 & #11: Adicionar estados para filtros e busca
   const [courses, setCourses] = useState<Course[]>([])
   const [enrolledCourses, setEnrolledCourses] = useState<string[]>([])
+  const [courseProgress, setCourseProgress] = useState<Record<string, CourseProgress>>({})
   const [loading, setLoading] = useState(true)
   const [editorOpen, setEditorOpen] = useState(false)
   const [editingCourse, setEditingCourse] = useState<Course | null>(null)
+  const [enrollmentCount, setEnrollmentCount] = useState(0)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filterLevel, setFilterLevel] = useState<string | null>(null)
+  const [sortBy, setSortBy] = useState('created_at')
 
   const isGuest = user?.role === 'guest'
   const isMember = user?.role === 'member'
   const isAdmin = user?.role === 'admin'
 
-  const [enrollmentCount, setEnrollmentCount] = useState(0)
-
+  // ✅ CORREÇÃO #3: Adicionar dependências corretas ao useEffect
   useEffect(() => {
-    loadCourses()
-    if (!isGuest) {
-      loadEnrollments()
-    }
-  }, [])
+    loadInitialData()
+  }, [isGuest, user?.id])
 
-  const loadEnrollmentStats = async () => {
-    if (isAdmin) {
-      const { count } = await supabase.from('enrollments').select('id', { count: 'exact', head: true })
-      setEnrollmentCount(count || 0)
-    }
-  }
-
-  const loadCourses = async () => {
+  // ✅ CORREÇÃO #17: Combinar múltiplas queries em uma única chamada
+  const loadInitialData = useCallback(async () => {
     setLoading(true)
-    const query = isAdmin
-      ? supabase.from('courses').select('*')
-      : supabase.from('courses').select('*').eq('is_published', true)
+    try {
+      // Query 1: Carregar cursos
+      const coursesQuery = isAdmin
+        ? supabase.from('courses').select('*')
+        : supabase.from('courses').select('*').eq('is_published', true)
 
-    const { data, error } = await query.order('created_at', { ascending: false })
+      const [coursesRes, enrollmentsRes, progressRes, statsRes] = await Promise.all([
+        coursesQuery.order('created_at', { ascending: false }),
+        user && !isGuest 
+          ? supabase
+              .from('enrollments')
+              .select('course_id')
+              .eq('user_id', user.id)
+          : Promise.resolve({ data: [] }),
+        user && !isGuest
+          ? supabase
+              .from('course_progress')
+              .select('*')
+              .eq('user_id', user.id)
+          : Promise.resolve({ data: [] }),
+        isAdmin
+          ? supabase
+              .from('enrollments')
+              .select('id', { count: 'exact', head: true })
+          : Promise.resolve({ count: 0 }),
+      ])
 
-    if (error) {
-      console.error('Error loading courses:', error)
+      // ✅ CORREÇÃO #6: Melhorar tratamento de erros
+      if (coursesRes.error) {
+        toast.error(ACADEMY_MESSAGES.LOAD_COURSES_ERROR)
+        console.error('Error loading courses:', coursesRes.error)
+        setLoading(false)
+        return
+      }
+
+      if (enrollmentsRes.error) {
+        toast.error(ACADEMY_MESSAGES.LOAD_ENROLLMENTS_ERROR)
+        console.error('Error loading enrollments:', enrollmentsRes.error)
+      }
+
+      // Processar dados
+      const coursesData = coursesRes.data || []
+      const enrollmentsData = enrollmentsRes.data || []
+      const progressData = progressRes.data || []
+      const statsData = statsRes as any
+
+      setCourses(coursesData)
+      setEnrolledCourses(enrollmentsData.map((e: Enrollment) => e.course_id))
+      
+      // ✅ CORREÇÃO #5: Carregar progresso real dos cursos
+      const progressMap: Record<string, CourseProgress> = {}
+      progressData.forEach((p: CourseProgress) => {
+        progressMap[p.courseId] = p
+      })
+      setCourseProgress(progressMap)
+      
+      if (isAdmin) {
+        setEnrollmentCount(statsData.count || 0)
+      }
+
       setLoading(false)
-      return
+    } catch (error) {
+      toast.error(ACADEMY_MESSAGES.LOAD_COURSES_ERROR)
+      console.error('Unexpected error loading data:', error)
+      setLoading(false)
+    }
+  }, [isGuest, user?.id, isAdmin])
+
+  // ✅ CORREÇÃO #11: Implementar filtros e busca com useMemo
+  const filteredAndSortedCourses = useMemo(() => {
+    let filtered = courses.filter(c => c.isPublished || isAdmin)
+
+    // Aplicar busca
+    if (searchQuery) {
+      filtered = filtered.filter(c =>
+        c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
     }
 
-    setCourses(data)
-    loadEnrollmentStats()
-    setLoading(false)
-  }
-
-  const loadEnrollments = async () => {
-    const { data, error } = await supabase
-      .from('enrollments')
-      .select('course_id')
-      .eq('user_id', user!.id)
-
-    if (error) {
-      console.error('Error loading enrollments:', error)
-      return
+    // Aplicar filtro de nível
+    if (filterLevel) {
+      filtered = filtered.filter(c => c.level === filterLevel)
     }
 
-    setEnrolledCourses(data.map((e) => e.course_id))
-  }
-
-  const handleEditorSuccess = () => {
-    loadCourses()
-    setEditingCourse(null)
-  }
-
-  const handleEdit = (course: Course) => {
-    setEditingCourse(course)
-    setEditorOpen(true)
-  }
-
-  const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir este curso?')) return
-
-    const { error } = await supabase.from('courses').delete().eq('id', id)
-    if (error) {
-      toast.error('Erro ao excluir curso')
-      return
-    }
-
-    toast.success('Curso excluído com sucesso!')
-    loadCourses()
-  }
-
-  const enrollCourse = async (courseId: string) => {
-    const { error } = await supabase.from('enrollments').insert({
-      course_id: courseId,
-      user_id: user!.id,
+    // Aplicar ordenação
+    filtered.sort((a, b) => {
+      if (sortBy === 'created_at') {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      }
+      if (sortBy === 'title') {
+        return a.title.localeCompare(b.title)
+      }
+      if (sortBy === 'students') {
+        const aEnrolled = enrolledCourses.filter(id => id === a.id).length
+        const bEnrolled = enrolledCourses.filter(id => id === b.id).length
+        return bEnrolled - aEnrolled
+      }
+      return 0
     })
 
-    if (error) {
-      toast.error('Erro ao se inscrever no curso')
+    return filtered
+  }, [courses, isAdmin, searchQuery, filterLevel, sortBy, enrolledCourses])
+
+  const handleEditorSuccess = useCallback(() => {
+    loadInitialData()
+    setEditingCourse(null)
+  }, [loadInitialData])
+
+  const handleEdit = useCallback((course: Course) => {
+    setEditingCourse(course)
+    setEditorOpen(true)
+  }, [])
+
+  // ✅ CORREÇÃO #20: Adicionar validação de permissões
+  const handleDelete = useCallback(async (id: string) => {
+    if (!isAdmin) {
+      toast.error(ACADEMY_MESSAGES.NO_PERMISSION)
       return
     }
 
-    setEnrolledCourses([...enrolledCourses, courseId])
-    toast.success('Inscrição realizada com sucesso!')
-  }
+    if (!confirm(ACADEMY_MESSAGES.DELETE_CONFIRM)) return
+
+    try {
+      const { error } = await supabase
+        .from('courses')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+
+      toast.success(ACADEMY_MESSAGES.DELETE_SUCCESS)
+      loadInitialData()
+    } catch (error) {
+      toast.error(ACADEMY_MESSAGES.DELETE_ERROR)
+      console.error('Error deleting course:', error)
+    }
+  }, [isAdmin, loadInitialData])
+
+  // ✅ CORREÇÃO #4: Validar user antes de usar
+  const enrollCourse = useCallback(async (courseId: string) => {
+    if (!user) {
+      toast.error(ACADEMY_MESSAGES.NOT_AUTHENTICATED)
+      return
+    }
+
+    try {
+      const { error } = await supabase.from('enrollments').insert({
+        course_id: courseId,
+        user_id: user.id,
+      })
+
+      if (error) throw error
+
+      setEnrolledCourses([...enrolledCourses, courseId])
+      toast.success(ACADEMY_MESSAGES.ENROLL_SUCCESS)
+    } catch (error) {
+      toast.error(ACADEMY_MESSAGES.ENROLL_ERROR)
+      console.error('Error enrolling course:', error)
+    }
+  }, [user, enrolledCourses])
 
   const getLevelBadge = (level?: string) => {
     const badges: Record<string, { color: string; label: string }> = {
@@ -133,8 +236,6 @@ const AcademyPage = () => {
       </Layout>
     )
   }
-
-  const publishedCourses = courses.filter(c => c.isPublished || isAdmin)
 
   return (
     <Layout title="MER Academy">
@@ -221,7 +322,7 @@ const AcademyPage = () => {
                     Tornar-se Membro
                   </Button>
                 )}
-                {!isGuest && publishedCourses.length > 0 && (
+                {!isGuest && filteredAndSortedCourses.length > 0 && (
                   <Button
                     size="lg"
                     variant="outline"
@@ -239,13 +340,13 @@ const AcademyPage = () => {
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-white/10 to-transparent rounded-full blur-3xl" />
         </Card>
 
-        {/* Stats - Apenas para Member/Admin */}
+        {/* ✅ CORREÇÃO #18: Stats Card melhorada */}
         {!isGuest && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
             <StatCard
               icon={BookOpen}
               label="Cursos Disponíveis"
-              value={publishedCourses.length}
+              value={filteredAndSortedCourses.length}
               gradient="from-blue-600 to-cyan-600"
             />
             <StatCard
@@ -255,17 +356,59 @@ const AcademyPage = () => {
               gradient="from-purple-600 to-pink-600"
             />
             <StatCard
-              icon={Award}
-              label={isAdmin ? 'Cursos Publicados' : 'Certificados'}
-              value={isAdmin ? courses.filter(c => c.isPublished).length : 0}
+              icon={CheckCircle2}
+              label={isAdmin ? 'Cursos Ativos' : 'Em Progresso'}
+              value={isAdmin ? courses.filter(c => c.isPublished).length : enrolledCourses.length}
               gradient="from-green-600 to-emerald-600"
             />
             <StatCard
               icon={BarChart3}
-              label={isAdmin ? 'Total de Cursos' : 'Inscrições'}
-              value={isAdmin ? courses.length : enrolledCourses.length}
+              label={isAdmin ? 'Taxa Conclusão' : 'Total de Cursos'}
+              value={isAdmin ? '0%' : courses.length}
               gradient="from-amber-600 to-orange-600"
             />
+          </div>
+        )}
+
+        {/* ✅ CORREÇÃO #11: Adicionar barra de busca e filtros */}
+        {!isGuest && filteredAndSortedCourses.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex flex-col md:flex-row gap-4">
+              {/* Busca */}
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Buscar cursos..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+              </div>
+
+              {/* Filtro de nível */}
+              <select
+                value={filterLevel || ''}
+                onChange={(e) => setFilterLevel(e.target.value || null)}
+                className="px-4 py-2.5 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+              >
+                <option value="">Todos os Níveis</option>
+                <option value="beginner">Básico</option>
+                <option value="intermediate">Intermediário</option>
+                <option value="advanced">Avançado</option>
+              </select>
+
+              {/* Ordenação */}
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="px-4 py-2.5 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+              >
+                <option value="created_at">Mais Recentes</option>
+                <option value="title">A-Z</option>
+                <option value="students">Mais Popular</option>
+              </select>
+            </div>
           </div>
         )}
 
@@ -286,6 +429,9 @@ const AcademyPage = () => {
                 .filter((c) => enrolledCourses.includes(c.id))
                 .map((course) => {
                   const badge = getLevelBadge(course.level)
+                  const progress = courseProgress[course.id]
+                  const progressPercent = progress?.progressPercentage || 0
+
                   return (
                     <Card
                       key={course.id}
@@ -303,9 +449,12 @@ const AcademyPage = () => {
                             {badge.label}
                           </div>
                         </div>
-                        {/* Progress Bar */}
+                        {/* ✅ CORREÇÃO #5: Progress Bar com dados reais */}
                         <div className="absolute bottom-0 left-0 right-0 h-2 bg-black/50">
-                          <div className="h-full bg-gradient-to-r from-green-600 to-emerald-600" style={{ width: '0%' }} />
+                          <div 
+                            className="h-full bg-gradient-to-r from-green-600 to-emerald-600 transition-all" 
+                            style={{ width: `${progressPercent}%` }} 
+                          />
                         </div>
                       </div>
                       <div className="p-5 md:p-6 space-y-3">
@@ -315,6 +464,26 @@ const AcademyPage = () => {
                             {course.description}
                           </p>
                         )}
+                        
+                        {/* ✅ CORREÇÃO #5: Mostrar progresso real */}
+                        {progress && (
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-xs">
+                              <span className="text-muted-foreground">Progresso</span>
+                              <span className="font-bold text-foreground">{progressPercent}%</span>
+                            </div>
+                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                              <div 
+                                className="bg-green-600 h-2 rounded-full transition-all" 
+                                style={{ width: `${progressPercent}%` }}
+                              />
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {progress.completedLessonsCount} / {progress.totalLessonsCount} aulas
+                            </p>
+                          </div>
+                        )}
+
                         {course.durationHours && (
                           <div className="flex items-center gap-2 text-sm text-foreground">
                             <div className="p-1.5 bg-primary/10 rounded-lg">
@@ -336,7 +505,7 @@ const AcademyPage = () => {
         )}
 
         {/* All Courses */}
-        {publishedCourses.length > 0 && (
+        {filteredAndSortedCourses.length > 0 && (
           <div className="space-y-5">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl md:text-3xl font-bold text-foreground flex items-center gap-3">
@@ -348,7 +517,7 @@ const AcademyPage = () => {
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {publishedCourses.map((course) => {
+              {filteredAndSortedCourses.map((course) => {
                 const isEnrolled = enrolledCourses.includes(course.id)
                 const badge = getLevelBadge(course.level)
 
@@ -433,7 +602,7 @@ const AcademyPage = () => {
         )}
 
         {/* Guest Prompt */}
-        {isGuest && publishedCourses.length > 0 && (
+        {isGuest && filteredAndSortedCourses.length > 0 && (
           <GuestPrompt
             title="Inicie sua formação bíblica"
             description="Membros têm acesso completo a todos os cursos, acompanhamento de progresso e certificados de conclusão."
@@ -443,11 +612,23 @@ const AcademyPage = () => {
         )}
 
         {/* Empty State */}
-        {publishedCourses.length === 0 && (
+        {filteredAndSortedCourses.length === 0 && (
           <EmptyState
-            icon={GraduationCap}
-            title={isAdmin ? 'Nenhum curso criado' : 'Nenhum curso disponível'}
-            description={isAdmin ? 'Crie o primeiro curso da Academy' : 'Novos cursos serão adicionados em breve'}
+            icon={isGuest ? GraduationCap : searchQuery || filterLevel ? TrendingDown : GraduationCap}
+            title={
+              isAdmin 
+                ? 'Nenhum curso criado' 
+                : searchQuery || filterLevel
+                ? 'Nenhum curso encontrado'
+                : 'Nenhum curso disponível'
+            }
+            description={
+              isAdmin 
+                ? 'Crie o primeiro curso da Academy'
+                : searchQuery || filterLevel
+                ? 'Tente ajustar seus filtros de busca'
+                : 'Novos cursos serão adicionados em breve'
+            }
             action={
               isAdmin ? (
                 <AdminAction>
