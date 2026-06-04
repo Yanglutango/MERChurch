@@ -234,9 +234,9 @@ A **MER-Lubango** foi fundada em **Fevereiro de 2000** pelo **Pastor Garcia Doki
             <h2 className="text-xl md:text-2xl font-bold text-foreground mb-5">{t('about.contact')}</h2>
             <div className="space-y-4">
               {[
-                { Icon: MapPin, gradient: 'from-primary to-accent', title: t('about.address'), content: 'Bairro Rocha Pinto, Luanda (Sede Internacional)\nLubango, Huíla (Sede Regional Sul)' },
-                { Icon: Phone, gradient: 'from-blue-500 to-cyan-500', title: t('about.phone'), content: '(+244) 999-999-999\n(+244) 998-888-777 (WhatsApp)' },
-                { Icon: Mail, gradient: 'from-purple-500 to-pink-500', title: t('about.email'), content: 'contato@mer.co.ao\npastoral@mer.co.ao' },
+                { Icon: MapPin, gradient: 'from-primary to-accent', title: t('about.address'), content: 'Bairro Tchioco - defronte a paragem da Huíla, Lubango' },
+                { Icon: Phone, gradient: 'from-blue-500 to-cyan-500', title: t('about.phone'), content: '(+244) xxx-xxx-xxx\n(+244) xxx-xxx-xxx (WhatsApp)'},
+                { Icon: Mail, gradient: 'from-purple-500 to-pink-500', title: t('about.email'), content: 'mmerlubango@gmail.com'},
               ].map(({ Icon, gradient, title, content }) => (
                 <div key={title} className="flex items-start gap-3">
                   <div className={`p-2.5 bg-gradient-to-br ${gradient} rounded-xl shadow-md flex-shrink-0`}>
