@@ -72,20 +72,20 @@ const LogosAIPage = () => {
   }, [currentChat?.messages])
 
   useEffect(() => {
-    if (!isGuest) loadUsageStats()
-  }, [])
-
+  if (!isGuest) loadUsageStats()
+}, [isGuest, user])  // ← ADD user TO THIS ARRAY
+  
   const loadUsageStats = async () => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const { count } = await supabase
-      .from('logos_usage')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user!.id)
-      .gte('created_at', today.toISOString())
-    setUsageStats({ used: count || 0, limit: 50, remaining: 50 - (count || 0) })
-  }
-
+  if (!user) return  // ← ADD THIS LINE
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const { count } = await supabase
+    .from('logos_usage')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', user.id)  // ← REMOVE the ! (non-null assertion)
+    .gte('created_at', today.toISOString())
+  setUsageStats({ used: count || 0, limit: 50, remaining: 50 - (count || 0) })
+}
   const createNewChat = () => {
     const id = Date.now().toString()
     setChats(prev => [{ id, title: 'Nova Conversa', messages: [], lastUpdated: new Date() }, ...prev])
