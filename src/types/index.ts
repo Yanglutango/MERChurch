@@ -113,6 +113,15 @@ export interface Course {
   createdAt: string
 }
 
+// ✅ CORREÇÃO #7 & #8: Adicionar tipos para LMS completo
+export interface Enrollment {
+  id: string
+  userId: string
+  courseId: string
+  enrolledAt: string
+  completedAt?: string
+}
+
 export interface Lesson {
   id: string
   courseId: string
@@ -122,6 +131,87 @@ export interface Lesson {
   orderIndex: number
   durationMinutes?: number
   createdAt: string
+}
+
+export interface CourseProgress {
+  id: string
+  userId: string
+  courseId: string
+  completedLessonsCount: number
+  totalLessonsCount: number
+  progressPercentage: number
+  lastAccessedAt: string
+}
+
+export interface LessonProgress {
+  id: string
+  courseId: string
+  lessonId: string
+  userId: string
+  completedAt?: string
+  videoWatchedPercentage?: number
+}
+
+// ✅ CORREÇÃO #9: Sistema de Certificados
+export interface CourseCertificate {
+  id: string
+  userId: string
+  courseId: string
+  issuedAt: string
+  certificateUrl: string
+  verificationCode: string
+}
+
+// ✅ CORREÇÃO #10: Sistema de Quizzes
+export interface Quiz {
+  id: string
+  lessonId: string
+  title: string
+  passingScore: number
+  createdAt: string
+}
+
+export interface QuizQuestion {
+  id: string
+  quizId: string
+  question: string
+  options: string[]
+  correctAnswer: number
+  orderIndex: number
+}
+
+export interface QuizAttempt {
+  id: string
+  quizId: string
+  userId: string
+  score: number
+  attempts: number
+  completedAt?: string
+}
+
+// ✅ CORREÇÃO #14: Pontuação e Ranking
+export interface UserLearningStats {
+  userId: string
+  totalPointsEarned: number
+  coursesCompleted: number
+  lessonsCompleted: number
+  currentStreak: number
+  badges: string[]
+  lastActivityAt?: string
+}
+
+// ✅ CORREÇÃO #16: Discussões
+export interface CourseDiscussion {
+  id: string
+  courseId: string
+  userId: string
+  title: string
+  message: string
+  createdAt: string
+  user?: {
+    username: string
+    avatar?: string
+  }
 }
 
 export interface CommunityPost {
