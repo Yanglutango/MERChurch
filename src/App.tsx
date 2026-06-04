@@ -76,20 +76,7 @@ function App() {
 
     applyInitialTheme()
 
-    // Apply stored accent color to CSS variable
-    const storedAccent = localStorage.getItem('accent-color')
-    if (storedAccent && /^#[0-9A-Fa-f]{6}$/.test(storedAccent)) {
-      const r = parseInt(storedAccent.slice(1,3),16)/255
-      const g = parseInt(storedAccent.slice(3,5),16)/255
-      const b = parseInt(storedAccent.slice(5,7),16)/255
-      const max = Math.max(r,g,b), min = Math.min(r,g,b), l = (max+min)/2
-      if (max !== min) {
-        const d = max-min, s = l > 0.5 ? d/(2-max-min) : d/(max+min)
-        let h = max===r ? ((g-b)/d+(g<b?6:0))/6 : max===g ? ((b-r)/d+2)/6 : ((r-g)/d+4)/6
-        document.documentElement.style.setProperty('--accent',
-          `${Math.round(h*360)} ${Math.round(s*100)}% ${Math.round(l*100)}%`)
-      }
-    }
+
   }, [])
 
   if (loading) {

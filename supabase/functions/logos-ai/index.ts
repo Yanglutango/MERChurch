@@ -1,23 +1,11 @@
-// Logos AI - Christian AI Assistant powered by OpenAI
+// Logos AI - Christian AI Assistant powered by OnSpace AI
 // Exclusively based on Biblical Scripture
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
 
-const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')
-const supabaseUrl = Deno.env.get('SUPABASE_URL')
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-
-// Adicionar validação logo abaixo:
-Deno.serve(async (req) => {
-  if (!OPENAI_API_KEY || !supabaseUrl || !supabaseServiceKey) {
-    return new Response(
-      JSON.stringify({ error: 'Serviço de IA não configurado. Contacte o administrador.' }),
-      { status: 503, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-    )
-  }
-  // ... resto da função inalterado
-  const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions'
+const ONSPACE_AI_API_KEY = Deno.env.get('ONSPACE_AI_API_KEY')
+const ONSPACE_AI_BASE_URL = Deno.env.get('ONSPACE_AI_BASE_URL')
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
@@ -97,39 +85,35 @@ interface RequestBody {
   stream?: boolean
 }
 
-// Check daily usage limit
 async function checkUsageLimit(userId: string): Promise<{ allowed: boolean; used: number; limit: number }> {
   const supabase = createClient(supabaseUrl, supabaseServiceKey)
-  
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  
-  const { count, error } = await supabase
+  const { count } = await supabase
     .from('logos_usage')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', userId)
     .gte('created_at', today.toISOString())
-  
   const used = count || 0
-  const allowed = used < DAILY_LIMIT
-  
-  return { allowed, used, limit: DAILY_LIMIT }
+  return { allowed: used < DAILY_LIMIT, used, limit: DAILY_LIMIT }
 }
 
-// Log usage for analytics (without storing message content)
 async function logUsage(userId: string, topic: string) {
   const supabase = createClient(supabaseUrl, supabaseServiceKey)
-  
-  await supabase.from('logos_usage').insert({
-    user_id: userId,
-    topic: topic, // Just the topic/category, not the full message
-  })
+  await supabase.from('logos_usage').insert({ user_id: userId, topic })
 }
 
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
+  }
+
+  if (!ONSPACE_AI_API_KEY || !ONSPACE_AI_BASE_URL) {
+    return new Response(
+      JSON.stringify({ error: 'Serviço de IA não configurado. Contacte o administrador.' }),
+      { status: 503, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+    )
   }
 
   try {
@@ -146,11 +130,11 @@ Deno.serve(async (req) => {
     const usageStatus = await checkUsageLimit(userId)
     if (!usageStatus.allowed) {
       return new Response(
-        JSON.stringify({ 
-          error: `Limite diário atingido (${usageStatus.limit} mensagens/dia). Tente novamente amanhã ou contate a administração.`,
+        JSON.stringify({
+          error: `Limite diário atingido (${usageStatus.limit} mensagens/dia). Tente novamente amanhã.`,
           usageLimit: true,
           used: usageStatus.used,
-          limit: usageStatus.limit
+          limit: usageStatus.limit,
         }),
         { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
@@ -159,54 +143,37 @@ Deno.serve(async (req) => {
     // Prepare messages with system prompt
     const apiMessages = [
       { role: 'system', content: SYSTEM_PROMPT },
-      ...messages.slice(-10), // Keep last 10 messages for context
+      ...messages.slice(-10),
     ]
 
     const lastUserMessage = messages[messages.length - 1]?.content || 'geral'
-    const topic = lastUserMessage.slice(0, 50) // First 50 chars for analytics
+    const topic = lastUserMessage.slice(0, 50)
 
     console.log(`[Logos AI] Request from user ${userId}, messages: ${messages.length}, used: ${usageStatus.used}/${usageStatus.limit}`)
 
-    // Call OpenAI API
-    const response = await fetch(OPENAI_API_URL, {
+    // Call OnSpace AI
+    const response = await fetch(`${ONSPACE_AI_BASE_URL}/chat/completions`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Authorization': `Bearer ${ONSPACE_AI_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini', // Cost-effective and high quality
+        model: 'google/gemini-3-flash-preview',
         messages: apiMessages,
-        temperature: 0.7, // Balanced creativity and consistency
-        max_tokens: 1500,
-        top_p: 0.9,
-        frequency_penalty: 0.3,
-        presence_penalty: 0.3,
-        stream: stream,
+        stream,
       }),
     })
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('[Logos AI] OpenAI API error:', response.status, errorText)
-      
-      // Handle specific error codes
-      if (response.status === 429) {
-        throw new Error('OpenAI: Limite de uso excedido. Por favor, verifique sua quota/créditos em platform.openai.com ou aguarde alguns minutos.')
-      } else if (response.status === 401) {
-        throw new Error('OpenAI: Chave API inválida ou expirada.')
-      } else if (response.status === 500 || response.status === 503) {
-        throw new Error('OpenAI: Serviço temporariamente indisponível. Tente novamente em alguns instantes.')
-      } else {
-        throw new Error(`OpenAI API error: ${response.status} - ${errorText}`)
-      }
+      console.error('[Logos AI] OnSpace AI error:', response.status, errorText)
+      throw new Error(`OnSpace AI error: ${response.status} - ${errorText}`)
     }
 
-    // If streaming, return the stream
+    // Streaming response
     if (stream) {
-      // Log usage
       await logUsage(userId, topic)
-      
       return new Response(response.body, {
         headers: {
           ...corsHeaders,
@@ -219,9 +186,8 @@ Deno.serve(async (req) => {
 
     // Non-streaming response
     const data = await response.json()
-    const assistantMessage = data.choices[0].message.content
+    const assistantMessage = data.choices?.[0]?.message?.content || ''
 
-    // Log usage
     await logUsage(userId, topic)
 
     console.log(`[Logos AI] Response generated successfully`)
@@ -238,22 +204,13 @@ Deno.serve(async (req) => {
           remaining: usageStatus.limit - usageStatus.used - 1,
         },
       }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
     console.error('[Logos AI] Error:', error)
-    
-    // Return user-friendly error message
-    const errorMessage = error.message || 'Erro ao processar sua pergunta. Por favor, tente novamente.'
-    
+    const errorMessage = error.message || 'Erro ao processar sua pergunta. Tente novamente.'
     return new Response(
-      JSON.stringify({ 
-        error: errorMessage,
-        timestamp: new Date().toISOString()
-      }),
+      JSON.stringify({ error: errorMessage, timestamp: new Date().toISOString() }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
