@@ -45,11 +45,7 @@ const LivePage = () => {
   const isAdmin = user?.role === 'admin'
 
   useEffect(() => {
-    loadSession(
-      supabase.from('prayer_requests')
-  .select('id', { count: 'exact', head: true })
-  .gte('created_at', new Date(new Date().setHours(0, 0, 0, 0)).toISOString()),
-    )
+    loadSession()
     loadMessages()
     const interval = setInterval(() => { loadMessages(); loadSession() }, 15000)
     return () => { clearInterval(interval) }

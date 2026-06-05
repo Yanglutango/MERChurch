@@ -79,13 +79,13 @@ const CommunityPage = () => {
 
   const deletePost = async () => {
     if (!deletePostId) return
-      const { error } = await supabase.from('community_posts').delete().eq('id', deletePostId)
-        setDeletePostId(null)
-  
+    const { data, error } = await supabase.from('community_posts').delete().eq('id', deletePostId).select('id')
+    setDeletePostId(null)
     if (error) { toast.error('Erro ao excluir'); return }
+    if (!data || data.length === 0) { toast.error('Sem permissão para remover esta publicação'); return }
     setPosts(prev => prev.filter(p => p.id !== deletePostId))
-      toast.success('Publicação removida')
-}
+    toast.success('Publicação removida')
+  }
   
   const toggleLike = async (postId: string) => {
     // Try to insert like; if unique constraint fails, remove it
@@ -108,7 +108,7 @@ const CommunityPage = () => {
 
   return (
     <Layout title="Comunidade">
-      <div className="max-w-3xl mx-auto space-y-6">
+      <div className="space-y-6">
         {/* Hero Banner - Contextual */}
         <Card className="relative overflow-hidden border-0 shadow-2xl rounded-2xl elevation-3">
           <div className="absolute inset-0">

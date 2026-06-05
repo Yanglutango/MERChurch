@@ -12,7 +12,7 @@ import {
 import { toast } from 'sonner'
 import { LoadingState } from '../components/shared/LoadingState'
 import { EmptyState } from '../components/shared/EmptyState'
-import type { Lesson, CourseProgress, CourseCertificate, UserLearningStats, CourseDiscussion } from '../types'
+import type { CourseProgress, CourseCertificate, UserLearningStats, CourseDiscussion } from '../types'
 
 // ✅ CORREÇÃO #21: Mensagens constantes
 const COURSE_MESSAGES = {
@@ -28,7 +28,8 @@ const COURSE_MESSAGES = {
 
 interface Lesson {
   id: string
-  course_id: string
+  courseId?: string
+  course_id?: string
   title: string
   content: string | null
   video_url: string | null

@@ -140,7 +140,7 @@ const NotificationsPage = () => {
 
   return (
     <Layout title="Notificações">
-      <div className="space-y-6 max-w-4xl mx-auto">
+      <div className="space-y-6">
         {/* Hero */}
         <Card className="relative overflow-hidden border-0 shadow-2xl rounded-2xl">
           <div className="absolute inset-0">
