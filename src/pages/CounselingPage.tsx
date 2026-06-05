@@ -106,7 +106,7 @@ const CounselingPage = () => {
 
   return (
     <Layout title="Aconselhamento Pastoral">
-      <div className="space-y-6">
+      <div className="p4 md:p-6">
         {/* Hero */}
         <Card className="relative overflow-hidden border-0 shadow-2xl rounded-2xl">
           <div className="absolute inset-0">
