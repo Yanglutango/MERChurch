@@ -1,7 +1,7 @@
 {
-  "name": "vite_react_shadcn_ts",
+  "name": "kairos-mer",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -89,8 +89,8 @@
     "typescript-eslint": "^8.0.1",
     "vite": "^5.4.1"
   },
-  "description": "There are several ways of editing your application.",
-  "main": "eslint.config.js",
+  "description": "Plataforma digital da Missão Evangélica da Reconciliação — KAIRÓS.",
+  "main": "src/main.tsx",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Yanglutango/MERChurch.git"
