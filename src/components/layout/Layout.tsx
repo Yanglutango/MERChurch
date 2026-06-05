@@ -213,7 +213,7 @@ const Layout = ({ children, title }: LayoutProps) => {
 
       {/* ── Main Content ─────────────────────────────────────────────── */}
       <main className="pt-14 lg:pl-56 min-h-screen pb-20 lg:pb-0">
-        <div className="p-4 md:p-5">{children}</div>
+        {children}
         <Footer />
       </main>
 
