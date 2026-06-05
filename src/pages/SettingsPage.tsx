@@ -115,15 +115,42 @@ const SettingsPage = () => {
   }
 
   const changePassword = async () => {
-    if (!passwords.new || passwords.new !== passwords.confirm) { toast.error('As senhas não coincidem'); return }
-    if (passwords.new.length < 6) { toast.error('Senha deve ter no mínimo 6 caracteres'); return }
-    setLoading(true)
-    const { error } = await supabase.auth.updateUser({ password: passwords.new })
-    if (error) { toast.error(error.message); setLoading(false); return }
-    toast.success('Senha alterada com sucesso!')
-    setPasswords({ current: '', new: '', confirm: '' })
-    setLoading(false)
+  if (!passwords.current) {
+    toast.error('Insira a senha actual')
+    return
   }
+  if (!passwords.new || passwords.new.length < 6) {
+    toast.error('A nova senha deve ter pelo menos 6 caracteres')
+    return
+  }
+  if (passwords.new !== passwords.confirm) {
+    toast.error('As senhas não coincidem')
+    return
+  }
+  setLoading(true)
+
+  /*Verificar senha actual antes de qualquer alteração*/
+  const { error: signInError } = await supabase.auth.signInWithPassword({
+    email: user!.email,
+    password: passwords.current,
+  })
+  if (signInError) {
+    toast.error('Senha actual incorrecta')
+    setLoading(false)
+    return
+  }
+
+  const { error } = await supabase.auth.updateUser({ password: passwords.new })
+  if (error) {
+    toast.error(error.message)
+    setLoading(false)
+    return
+  }
+
+  toast.success('Senha alterada com sucesso!')
+  setPasswords({ current: '', new: '', confirm: '' })
+  setLoading(false)
+}
 
   const TABS: { id: Tab; label: string; icon: any }[] = [
     { id: 'profile', label: 'Perfil', icon: User },
