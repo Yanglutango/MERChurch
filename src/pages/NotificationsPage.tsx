@@ -115,6 +115,7 @@ const NotificationsPage = () => {
   if (isGuest) {
     return (
       <Layout title="Notificações">
+        <div className="p4 md:p-6">
         <div className="max-w-2xl mx-auto py-12 md:py-20">
           <Card className="p-10 md:p-14 text-center border-2 shadow-xl">
             <div className="max-w-md mx-auto space-y-6">
@@ -134,13 +135,14 @@ const NotificationsPage = () => {
             </div>
           </Card>
         </div>
+        </div>
       </Layout>
     )
   }
 
   return (
     <Layout title="Notificações">
-      <div className="space-y-6">
+      <div className="p4 md:p-6">
         {/* Hero */}
         <Card className="relative overflow-hidden border-0 shadow-2xl rounded-2xl">
           <div className="absolute inset-0">
