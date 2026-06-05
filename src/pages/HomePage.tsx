@@ -60,7 +60,7 @@ const HomePage = () => {
       setActiveCells(cellsRes.count || 0)
       if (eventRes.data) setUpcomingEvent(eventRes.data)
       if (sermonRes.data) setRecentSermon(sermonRes.data)
-      if (liveRes.data && liveRes.data.length > 0) setIsLive(true)
+      if (liveRes.data) setIsLive(true)
       setStatsLoading(false)
 
     }
