@@ -167,6 +167,7 @@ const LogosAIPage = () => {
   if (isGuest) {
     return (
       <Layout title="Logos by KAIRÓS">
+        <div className="p-4 md:p-6">
         <div className="max-w-xl mx-auto py-12 px-4 text-center space-y-8">
           <div className="space-y-3">
             <div className="inline-flex p-3 bg-[#0A2E4A] rounded-xl">
@@ -202,6 +203,7 @@ const LogosAIPage = () => {
             ))}
           </div>
         </div>
+        </div>
       </Layout>
     )
   }
@@ -209,6 +211,7 @@ const LogosAIPage = () => {
   // ── MEMBER / ADMIN ───────────────────────────────────────────────────────
   return (
     <Layout title="Logos by KAIRÓS">
+      <div className="p-4 md:p-6">
       {/* Cabeçalho compacto */}
       <div className="flex items-center justify-between gap-3 pb-3 mb-4 border-b border-border">
         <div className="flex items-center gap-2.5">
@@ -434,6 +437,7 @@ const LogosAIPage = () => {
             </p>
           </div>
         </Card>
+      </div>
       </div>
     </Layout>
   )
