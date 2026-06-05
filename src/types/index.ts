@@ -113,7 +113,7 @@ export interface Course {
   createdAt: string
 }
 
-// ✅ CORREÇÃO #7 & #8: Adicionar tipos para LMS completo
+/CORREÇÃO #7 & #8: Adicionar tipos para LMS completo
 export interface Enrollment {
   id: string
   userId: string
@@ -152,7 +152,7 @@ export interface LessonProgress {
   videoWatchedPercentage?: number
 }
 
-// ✅ CORREÇÃO #9: Sistema de Certificados
+/CORREÇÃO #9: Sistema de Certificados
 export interface CourseCertificate {
   id: string
   userId: string
@@ -162,7 +162,7 @@ export interface CourseCertificate {
   verificationCode: string
 }
 
-// ✅ CORREÇÃO #10: Sistema de Quizzes
+/CORREÇÃO #10: Sistema de Quizzes
 export interface Quiz {
   id: string
   lessonId: string
@@ -189,7 +189,7 @@ export interface QuizAttempt {
   completedAt?: string
 }
 
-// ✅ CORREÇÃO #14: Pontuação e Ranking
+/CORREÇÃO #14: Pontuação e Ranking
 export interface UserLearningStats {
   userId: string
   totalPointsEarned: number
@@ -200,7 +200,7 @@ export interface UserLearningStats {
   lastActivityAt?: string
 }
 
-// ✅ CORREÇÃO #16: Discussões
+/CORREÇÃO #16: Discussões
 export interface CourseDiscussion {
   id: string
   courseId: string
@@ -315,4 +315,22 @@ export interface GroupMeeting {
   location?: string
   createdBy?: string
   createdAt: string
+}
+
+export interface Badge {
+  id: string
+  name: string
+  description: string
+  icon_url?: string
+  color?: string
+  points_required?: number
+  created_at?: string
+}
+
+export interface UserBadge {
+  id: string
+  user_id: string
+  badge_id: string
+  earned_at: string
+  badge?: Badge
 }
