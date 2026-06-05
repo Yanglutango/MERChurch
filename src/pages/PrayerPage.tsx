@@ -117,7 +117,7 @@ const PrayerPage = () => {
 
   return (
     <Layout title="Muro de Oração">
-      <div className="space-y-5">
+      <div className="p-4 md:p-6 space-y-5">
         {/* Compact page header */}
         <div className="flex items-center justify-between gap-3 pb-1 border-b border-border">
           <div>
