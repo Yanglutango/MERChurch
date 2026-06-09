@@ -70,6 +70,7 @@ export interface PrayerRequest {
   user?: {
     username: string
     avatar?: string
+    avatar_url?: string
   }
 }
 
@@ -95,7 +96,7 @@ export interface Transaction {
   method: 'credit_card' | 'debit_card' | 'pix' | 'transfer' | 'multicaixa'
   status: 'pending' | 'completed' | 'failed'
   paymentReference?: string
-  multicaixaTransactionId: string
+  multicaixaTransactionId?: string
   description?: string
   projectId?: string
   createdAt: string
@@ -113,7 +114,6 @@ export interface Course {
   createdAt: string
 }
 
-/CORREÇÃO #7 & #8: Adicionar tipos para LMS completo
 export interface Enrollment {
   id: string
   userId: string
@@ -152,7 +152,6 @@ export interface LessonProgress {
   videoWatchedPercentage?: number
 }
 
-/CORREÇÃO #9: Sistema de Certificados
 export interface CourseCertificate {
   id: string
   userId: string
@@ -162,7 +161,6 @@ export interface CourseCertificate {
   verificationCode: string
 }
 
-/CORREÇÃO #10: Sistema de Quizzes
 export interface Quiz {
   id: string
   lessonId: string
@@ -189,7 +187,6 @@ export interface QuizAttempt {
   completedAt?: string
 }
 
-/CORREÇÃO #14: Pontuação e Ranking
 export interface UserLearningStats {
   userId: string
   totalPointsEarned: number
@@ -200,7 +197,6 @@ export interface UserLearningStats {
   lastActivityAt?: string
 }
 
-/CORREÇÃO #16: Discussões
 export interface CourseDiscussion {
   id: string
   courseId: string
@@ -225,6 +221,7 @@ export interface CommunityPost {
   user?: {
     username: string
     avatar?: string
+    avatar_url?: string
   }
 }
 

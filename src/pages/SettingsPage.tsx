@@ -422,6 +422,7 @@ const SettingsPage = () => {
               <h3 className="font-bold text-foreground">Alterar Senha</h3>
 
               {[
+                { key: 'current', label: 'Senha Actual', placeholder: 'Sua senha actual' },
                 { key: 'new', label: 'Nova Senha', placeholder: 'Mínimo 6 caracteres' },
                 { key: 'confirm', label: 'Confirmar Nova Senha', placeholder: 'Repita a nova senha' },
               ].map(({ key, label, placeholder }) => (

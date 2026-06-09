@@ -4,6 +4,7 @@ import { Toaster } from 'sonner'
 import { useAuth } from './hooks/useAuth'
 import { RealTimeContext, useRealTimeProvider } from './hooks/useRealTime'
 import TestimoniesPage from './pages/TestimoniesPage'
+import MemberProfilePage from './pages/MemberProfilePage'
 import CourseDetailPage from './pages/CourseDetailPage'
 import ResourcesPage from './pages/ResourcesPage'
 import GroupsPage from './pages/GroupsPage'
@@ -122,6 +123,7 @@ function App() {
         <Route path="/resources" element={user ? <ResourcesPage /> : <Navigate to="/auth" />} />
         <Route path="/groups" element={user ? <GroupsPage /> : <Navigate to="/auth" />} />
         <Route path="/academy/:courseId" element={user ? <CourseDetailPage /> : <Navigate to="/auth" />} />
+        <Route path="/profile/:userId" element={user ? <MemberProfilePage /> : <Navigate to="/auth" />} />
       </Routes>
       <Toaster position="top-center" richColors closeButton />
     </BrowserRouter>

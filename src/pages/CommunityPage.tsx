@@ -9,6 +9,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useAppStore } from '../stores/appStore'
 import { MessageCircle, Heart, Send, Trash2, Image as ImageIcon, Shield, UserPlus, TrendingUp, Pin, Ban, Sparkles } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import type { CommunityPost } from '../types'
 import { EmptyState } from '../components/shared/EmptyState'
@@ -257,17 +258,21 @@ const CommunityPage = () => {
               <Card key={post.id} className="group p-5 md:p-6 border-2 hover:border-primary/30 transition-all elevation-1">
                 <div className="flex gap-4">
                   {post.user?.avatar ? (
-                    <img src={post.user.avatar} alt={post.user.username} className="h-12 w-12 rounded-full flex-shrink-0 border-2 border-primary/20" />
+                    <Link to={`/profile/${post.userId}`}>
+                      <img src={post.user.avatar} alt={post.user.username} className="h-12 w-12 rounded-full flex-shrink-0 border-2 border-primary/20 hover:opacity-80 transition-opacity" />
+                    </Link>
                   ) : (
-                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold flex-shrink-0 shadow-md">
-                      {post.user?.username?.charAt(0).toUpperCase() || 'U'}
-                    </div>
+                    <Link to={`/profile/${post.userId}`}>
+                      <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold flex-shrink-0 shadow-md hover:opacity-80 transition-opacity">
+                        {post.user?.username?.charAt(0).toUpperCase() || 'U'}
+                      </div>
+                    </Link>
                   )}
 
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start mb-3">
                       <div>
-                        <div className="font-bold text-base text-foreground">{post.user?.username || 'Usuário'}</div>
+                        <Link to={`/profile/${post.userId}`} className="font-bold text-base text-foreground hover:text-primary transition-colors">{post.user?.username || 'Usuário'}</Link>
                         <div className="text-sm text-muted-foreground">
                           {new Date(post.createdAt).toLocaleDateString('pt-BR', {
                             day: '2-digit',

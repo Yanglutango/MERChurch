@@ -5,7 +5,7 @@ import { Card } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
-import { exportToCSV } from '../lib/reportExporter'
+import { exportToCSV, exportFinancialReport } from '../lib/reportExporter'
 import {
   LayoutDashboard, Users, BookOpen, Calendar, Heart, DollarSign,
   TrendingUp, Activity, UserCheck, UserPlus, ArrowUpRight, Zap,
@@ -50,6 +50,11 @@ const DashboardPage = () => {
   const handleExportReport = async (period: 'month' | 'year') => {
     try { await exportToCSV(period); toast.success('Relatório exportado!') }
     catch { toast.error('Erro ao exportar relatório') }
+  }
+
+  const handleExportFinancial = async (period: 'month' | 'quarter' | 'year' | 'all') => {
+    try { await exportFinancialReport(period); toast.success('Relatório financeiro exportado!') }
+    catch { toast.error('Erro ao exportar') }
   }
 
   const loadStats = async () => {
@@ -189,10 +194,13 @@ setContributionData(hasContributions ? rawContributions : [])
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button onClick={() => handleExportReport('month')} variant="outline" size="sm" className="text-xs">
-              <Download className="h-3.5 w-3.5 mr-1.5" />Exportar Mensal
+              <Download className="h-3.5 w-3.5 mr-1.5" />Mensal
             </Button>
             <Button onClick={() => handleExportReport('year')} variant="outline" size="sm" className="text-xs">
-              <FileSpreadsheet className="h-3.5 w-3.5 mr-1.5" />Exportar Anual
+              <FileSpreadsheet className="h-3.5 w-3.5 mr-1.5" />Anual
+            </Button>
+            <Button onClick={() => handleExportFinancial('month')} variant="outline" size="sm" className="text-xs border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/20">
+              <DollarSign className="h-3.5 w-3.5 mr-1.5" />Financeiro
             </Button>
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded-lg">
               <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
