@@ -8,7 +8,7 @@ const Footer = () => {
   const { t } = useAppStore()
 
   return (
-    <footer className="mt-16 border-t border-border/60 bg-muted/20">
+    <footer className="mt-10 border-t border-border/60 bg-muted/20">
       <div className="container-custom py-10">
         <div className="grid md:grid-cols-3 gap-8 mb-8 pb-8 border-b border-border/50">
           {/* Brand */}
