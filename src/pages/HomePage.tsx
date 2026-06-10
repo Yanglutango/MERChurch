@@ -96,7 +96,7 @@ const HomePage = () => {
 
   return (
     <Layout title={t('nav.home')}>
-      <div className="space-y-5">
+      <div className="p-4 space-y-5">
 
         {/* ── 1. Hero Card ──────────────────────────────────────────────── */}
         <Card className="relative overflow-hidden border-0 shadow-xl rounded-2xl max-h-[220px] md:max-h-none">
