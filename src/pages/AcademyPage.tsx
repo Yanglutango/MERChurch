@@ -16,7 +16,6 @@ import { AdminAction } from '../components/shared/AdminAction'
 import { GuestPrompt } from '../components/shared/GuestPrompt'
 import { CourseEditor } from '../components/admin/CourseEditor'
 
-// ✅ CORREÇÃO #19: Extrair magic strings em constantes
 const ACADEMY_MESSAGES = {
   DELETE_CONFIRM: 'Tem certeza que deseja excluir este curso?',
   DELETE_ERROR: 'Erro ao excluir curso',
@@ -34,7 +33,6 @@ const AcademyPage = () => {
   const { user } = useAuth()
   const { t } = useAppStore()
   
-  // ✅ CORREÇÃO #5 & #11: Adicionar estados para filtros e busca
   const [courses, setCourses] = useState<Course[]>([])
   const [enrolledCourses, setEnrolledCourses] = useState<string[]>([])
   const [courseProgress, setCourseProgress] = useState<Record<string, CourseProgress>>({})
@@ -50,12 +48,12 @@ const AcademyPage = () => {
   const isMember = user?.role === 'member'
   const isAdmin = user?.role === 'admin'
 
-  // ✅ CORREÇÃO #3: Adicionar dependências corretas ao useEffect
+  
   useEffect(() => {
     loadInitialData()
   }, [isGuest, user?.id])
 
-  // ✅ CORREÇÃO #17: Combinar múltiplas queries em uma única chamada
+  
   const loadInitialData = useCallback(async () => {
     setLoading(true)
     try {
@@ -85,8 +83,7 @@ const AcademyPage = () => {
           : Promise.resolve({ count: 0 }),
       ])
 
-      // ✅ CORREÇÃO #6: Melhorar tratamento de erros
-      if (coursesRes.error) {
+        if (coursesRes.error) {
         toast.error(ACADEMY_MESSAGES.LOAD_COURSES_ERROR)
         console.error('Error loading courses:', coursesRes.error)
         setLoading(false)
@@ -97,8 +94,7 @@ const AcademyPage = () => {
         toast.error(ACADEMY_MESSAGES.LOAD_ENROLLMENTS_ERROR)
         console.error('Error loading enrollments:', enrollmentsRes.error)
       }
-
-      // Processar dados
+      
       const coursesData = coursesRes.data || []
       const enrollmentsData = enrollmentsRes.data || []
       const progressData = progressRes.data || []
@@ -107,7 +103,6 @@ const AcademyPage = () => {
       setCourses(coursesData)
       setEnrolledCourses(enrollmentsData.map((e: Enrollment) => e.course_id))
       
-      // ✅ CORREÇÃO #5: Carregar progresso real dos cursos
       const progressMap: Record<string, CourseProgress> = {}
       progressData.forEach((p: CourseProgress) => {
         progressMap[p.courseId] = p
@@ -126,24 +121,20 @@ const AcademyPage = () => {
     }
   }, [isGuest, user?.id, isAdmin])
 
-  // ✅ CORREÇÃO #11: Implementar filtros e busca com useMemo
   const filteredAndSortedCourses = useMemo(() => {
     let filtered = courses.filter(c => c.isPublished || isAdmin)
 
-    // Aplicar busca
     if (searchQuery) {
       filtered = filtered.filter(c =>
         c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         c.description?.toLowerCase().includes(searchQuery.toLowerCase())
       )
     }
-
-    // Aplicar filtro de nível
+    
     if (filterLevel) {
       filtered = filtered.filter(c => c.level === filterLevel)
     }
-
-    // Aplicar ordenação
+    
     filtered.sort((a, b) => {
       if (sortBy === 'created_at') {
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -172,7 +163,7 @@ const AcademyPage = () => {
     setEditorOpen(true)
   }, [])
 
-  // ✅ CORREÇÃO #20: Adicionar validação de permissões
+  
   const handleDelete = useCallback(async (id: string) => {
     if (!isAdmin) {
       toast.error(ACADEMY_MESSAGES.NO_PERMISSION)
@@ -197,7 +188,7 @@ const AcademyPage = () => {
     }
   }, [isAdmin, loadInitialData])
 
-  // ✅ CORREÇÃO #4: Validar user antes de usar
+  
   const enrollCourse = useCallback(async (courseId: string) => {
     if (!user) {
       toast.error(ACADEMY_MESSAGES.NOT_AUTHENTICATED)
@@ -239,7 +230,7 @@ const AcademyPage = () => {
 
   return (
     <Layout title="MER Academy">
-      <div className="space-y-6">
+      <div className="p-4 space-y-6">
         {/* Hero Banner - Contextual */}
         <Card className="relative overflow-hidden border-0 shadow-2xl rounded-2xl elevation-3">
           <div className="absolute inset-0">
