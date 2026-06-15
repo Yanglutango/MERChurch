@@ -217,7 +217,7 @@ const ResourcesPage = () => {
 
   return (
     <Layout title="Recursos Espirituais">
-      <div className="space-y-6">
+      <div className="p-4 space-y-6">
         {/* Hero */}
         <Card className="relative overflow-hidden border-0 shadow-2xl rounded-2xl elevation-3">
           <div className="absolute inset-0 bg-gradient-to-br from-indigo-700/96 via-purple-700/94 to-pink-700/92" />
