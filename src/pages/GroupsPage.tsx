@@ -178,7 +178,7 @@ const GroupsPage = () => {
 
   return (
     <Layout title="Grupos & Células">
-      <div className="space-y-5">
+      <div className="p-4 space-y-5">
         {/* Compact page header */}
         <div className="flex items-center justify-between gap-3 pb-1 border-b border-border">
           <div>
