@@ -163,7 +163,7 @@ const AgendaPage = () => {
   
   return (
     <Layout title="Agenda">
-      <div className="space-y-6">
+      <div className="p-4 space-y-6">
         {/* Compact page header */}
         <div className="flex items-center justify-between gap-3 pb-1 border-b border-border">
           <div>
