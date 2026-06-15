@@ -96,7 +96,7 @@ const AboutPage = () => {
 
   return (
     <Layout title={t('nav.about')}>
-      <div className="space-y-6 md:space-y-8">
+      <div className="p-4 space-y-6 md:space-y-8">
         {/* Hero */}
         <Card className="relative overflow-hidden border-0 shadow-2xl rounded-2xl">
           <div className="absolute inset-0">
