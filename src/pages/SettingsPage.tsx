@@ -177,7 +177,7 @@ const SettingsPage = () => {
 
   return (
     <Layout title={t('settings.title')}>
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="max-w-4xl p-4 mx-auto space-y-6">
         {/* Header */}
         <Card className="p-5 md:p-8 border-2 bg-gradient-to-r from-primary via-secondary to-accent text-white shadow-2xl">
           <div className="flex items-center gap-3 md:gap-4">
