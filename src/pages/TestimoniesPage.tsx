@@ -114,7 +114,7 @@ const TestimoniesPage = () => {
 
   return (
     <Layout title="Testemunhos">
-      <div className="space-y-5">
+      <div className="p-4 space-y-5">
         {/* Compact header */}
         <div className="flex items-center justify-between gap-3 pb-1 border-b border-border">
           <div>
