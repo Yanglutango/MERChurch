@@ -276,7 +276,7 @@ const TreasuryPage = () => {
 
   return (
     <Layout title="Tesouraria">
-      <div className="space-y-6">
+      <div className="p-4 space-y-6">
 
         {/* ── Hero ─────────────────────────────────────────────────────────── */}
         <Card className="relative overflow-hidden border-0 shadow-2xl rounded-2xl">
