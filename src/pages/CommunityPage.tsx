@@ -360,14 +360,18 @@ const CommunityPage = () => {
                     {!isGuest && (
                       <div className="flex gap-4 pt-2 border-t border-border/50">
                         <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleLike(post.id)}
-                          className="text-muted-foreground hover:text-red-600 font-medium"
-                        >
-                          <Heart className="h-4 w-4 mr-1.5" />
-                          {post.likesCount || 0}
-                        </Button>
+  variant="ghost"
+  size="sm"
+  onClick={() => toggleLike(post.id)}
+  className={`font-medium transition-colors ${
+    post.isLiked 
+      ? 'text-red-600 hover:text-red-700 bg-red-50 dark:bg-red-950/30' 
+      : 'text-muted-foreground hover:text-red-600'
+  }`}
+>
+  <Heart className={`h-4 w-4 mr-1.5 transition-transform active:scale-125 ${post.isLiked ? 'fill-red-600 text-red-600' : ''}`} />
+  {post.likesCount || 0}
+</Button>
 
                         <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary font-medium">
                           <MessageCircle className="h-4 w-4 mr-1.5" />
