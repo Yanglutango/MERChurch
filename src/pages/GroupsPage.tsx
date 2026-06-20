@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/layout/Layout'
@@ -8,15 +7,14 @@ import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { Textarea } from '../components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useRealTime } from '../hooks/useRealTime'
 import { logActivity } from '../lib/activityLogger'
 import {
   Users, MapPin, Plus, LogIn, LogOut, MessageCircle, Calendar,
-  Send, Search, UserPlus, X, Clock, ArrowLeft, // <-- Missing a comma here
-} from 'lucide-react' // <-- This line was missing
+  Send, Search, UserPlus, X, Clock, ArrowLeft,
+} from 'lucide-react'
 
 import { toast } from 'sonner'
 import { EmptyState } from '../components/shared/EmptyState'
@@ -66,21 +64,18 @@ const GroupsPage = () => {
   const [newGroup, setNewGroup] = useState({ name: '', description: '', category: '', region: '', meeting_schedule: '' })
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // Mobile-first two-screen pattern
   const [mobileView, setMobileView] = useState<'list' | 'chat'>('list')
-
   const isGuest = user?.role === 'guest'
 
   useEffect(() => { loadGroups(); if (!isGuest) loadMyGroups() }, [])
 
   useEffect(() => {
     if (selectedGroup) {
-      // Clear messages immediately to avoid showing stale data from previous group
       setMessages([])
       loadMessages(selectedGroup.id)
       loadMeetings(selectedGroup.id)
     }
-  }, [selectedGroup?.id, version]) // version from useRealTime replaces polling interval
+  }, [selectedGroup?.id, version])
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
 
@@ -179,7 +174,6 @@ const GroupsPage = () => {
   return (
     <Layout title="Grupos & Células">
       <div className="p-4 space-y-5">
-        {/* Compact page header */}
         <div className="flex items-center justify-between gap-3 pb-1 border-b border-border">
           <div>
             <h1 className="text-xl font-bold text-foreground">Grupos & Células</h1>
@@ -200,9 +194,7 @@ const GroupsPage = () => {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-5">
-          {/* ── Groups List ── hidden on mobile when chat view */}
           <div className={`lg:col-span-1 space-y-3 ${mobileView === 'chat' ? 'hidden lg:block' : 'block'}`}>
-            {/* Search & Filter */}
             <Card className="p-3 border">
               <div className="space-y-2">
                 <div className="relative">
@@ -218,7 +210,6 @@ const GroupsPage = () => {
               </div>
             </Card>
 
-            {/* Group cards */}
             <div className="space-y-2">
               {filteredGroups.length === 0
                 ? <EmptyState icon={Users} title="Nenhum grupo encontrado" description="Aguarde novos grupos ou crie o primeiro" />
@@ -260,7 +251,6 @@ const GroupsPage = () => {
             )}
           </div>
 
-          {/* ── Chat Panel ── hidden on mobile when list view */}
           <div className={`lg:col-span-2 ${mobileView === 'list' ? 'hidden lg:block' : 'block'}`}>
             {!selectedGroup ? (
               <Card className="h-full min-h-[400px] flex items-center justify-center border border-dashed">
@@ -276,10 +266,8 @@ const GroupsPage = () => {
               </Card>
             ) : (
               <Card className="flex flex-col border shadow-md" style={{ height: 'calc(100vh - 200px)', minHeight: '500px' }}>
-                {/* Group header */}
                 <div className="p-3 border-b border-border flex items-center justify-between gap-2 bg-muted/30">
                   <div className="flex items-center gap-2">
-                    {/* Back button (mobile only) */}
                     <button onClick={goBack} className="lg:hidden p-1.5 hover:bg-muted rounded-lg transition-colors" aria-label="Voltar">
                       <ArrowLeft className="h-4 w-4 text-muted-foreground" />
                     </button>
@@ -323,11 +311,16 @@ const GroupsPage = () => {
                         </div>
                       ) : messages.map(msg => {
                         const isOwn = msg.user_id === user?.id
+                        const hasAvatar = !!msg.user?.avatar_url
                         return (
                           <div key={msg.id} className={`flex gap-2 ${isOwn ? 'flex-row-reverse' : ''}`}>
-                            <div className={`h-7 w-7 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-bold ${isOwn ? 'bg-[#0A2E4A]' : 'bg-[#4A90A4]'}`}>
-                              {msg.user?.username?.charAt(0).toUpperCase() || 'U'}
-                            </div>
+                            {hasAvatar ? (
+                              <img src={msg.user!.avatar_url!} alt={msg.user!.username} className="h-7 w-7 rounded-full flex-shrink-0 object-cover border" />
+                            ) : (
+                              <div className={`h-7 w-7 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-bold ${isOwn ? 'bg-[#0A2E4A]' : 'bg-[#4A90A4]'}`}>
+                                {msg.user?.username?.charAt(0).toUpperCase() || 'U'}
+                              </div>
+                            )}
                             <div className={`max-w-[75%] flex flex-col gap-0.5 ${isOwn ? 'items-end' : 'items-start'}`}>
                               {!isOwn && <span className="text-[10px] font-semibold text-muted-foreground px-1">{msg.user?.username}</span>}
                               <div className={`px-3 py-1.5 rounded-2xl text-sm leading-relaxed ${isOwn ? 'bg-[#0A2E4A] text-white rounded-tr-sm' : 'bg-muted text-foreground rounded-tl-sm'}`}>
@@ -385,7 +378,6 @@ const GroupsPage = () => {
         </div>
       </div>
 
-      {/* Create Group Dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader><DialogTitle className="text-lg font-bold">Criar Novo Grupo</DialogTitle></DialogHeader>
