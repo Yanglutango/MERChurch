@@ -207,6 +207,7 @@ export interface CourseDiscussion {
   user?: {
     username: string
     avatar?: string
+    avatar_url?: string
   }
 }
 
@@ -233,6 +234,7 @@ export interface LiveMessage {
   user?: {
     username: string
     avatar?: string
+    avatar_url?: string
   }
 }
 
@@ -277,9 +279,11 @@ export interface SmallGroup {
   meetingSchedule?: string
   isActive: boolean
   createdAt: string
+  memberCount?: number // Mantido utilitário injetado dinamicamente pelas queries
   leader?: {
     username: string
     avatar?: string
+    avatar_url?: string
   }
 }
 
@@ -300,6 +304,7 @@ export interface GroupMessage {
   user?: {
     username: string
     avatar?: string
+    avatar_url?: string
   }
 }
 
@@ -318,16 +323,16 @@ export interface Badge {
   id: string
   name: string
   description: string
-  icon_url?: string
+  iconUrl?: string
   color?: string
-  points_required?: number
-  created_at?: string
+  pointsRequired?: number
+  createdAt?: string
 }
 
 export interface UserBadge {
   id: string
-  user_id: string
-  badge_id: string
-  earned_at: string
+  userId: string
+  badgeId: string
+  earnedAt: string
   badge?: Badge
 }
