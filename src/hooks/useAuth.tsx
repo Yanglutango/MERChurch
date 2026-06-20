@@ -35,18 +35,41 @@ export const useAuth = () => {
     let mounted = true
 
     // Safety #1: Check existing session (page refresh)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (mounted && session?.user) {
-        fetchAndMapUser(session.user.id, session.user).then(mapped => {
-          if (mounted) {
-            login(mapped)
-            setLoading(false)
-          }
-        })
-      } else if (mounted) {
-        setLoading(false)
-      }
-    })
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        if (!mounted) return
+
+        if (session?.user) {
+          fetchAndMapUser(session.user.id, session.user)
+            .then(mapped => {
+              if (mounted) {
+                login(mapped)
+              }
+            })
+            .catch(() => {
+              // Fallback para não travar o app caso a tabela de perfis falhe
+              if (mounted) {
+                login({
+                  id: session.user.id,
+                  email: session.user.email!,
+                  username: session.user.user_metadata?.username || session.user.email!.split('@')[0],
+                  avatar: session.user.user_metadata?.avatar_url,
+                  role: 'member',
+                  phone: session.user.user_metadata?.phone,
+                  themeMode: 'system',
+                })
+              }
+            })
+            .finally(() => {
+              if (mounted) setLoading(false)
+            })
+        } else {
+          setLoading(false)
+        }
+      })
+      .catch(() => {
+        if (mounted) setLoading(false)
+      })
 
     // Safety #2: Listen to auth state changes
     const {
@@ -54,20 +77,24 @@ export const useAuth = () => {
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return
 
-      if (event === 'SIGNED_IN' && session?.user) {
+      if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
+        // Evita re-buscar se os dados essenciais da sessão atual já forem idênticos aos salvos
+        if (user?.id === session.user.id && event === 'SIGNED_IN') {
+          setLoading(false)
+          return
+        }
+
         fetchAndMapUser(session.user.id, session.user).then(mapped => {
           if (mounted) {
             login(mapped)
             setLoading(false)
           }
+        }).catch(() => {
+          if (mounted) setLoading(false)
         })
       } else if (event === 'SIGNED_OUT') {
         logout()
         setLoading(false)
-      } else if (event === 'TOKEN_REFRESHED' && session?.user) {
-        fetchAndMapUser(session.user.id, session.user).then(mapped => {
-          if (mounted) login(mapped)
-        })
       }
     })
 
@@ -75,7 +102,7 @@ export const useAuth = () => {
       mounted = false
       subscription.unsubscribe()
     }
-  }, [login, logout, setLoading])
+  }, [login, logout, setLoading, user?.id])
 
   return { user, loading, logout }
 }
