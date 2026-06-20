@@ -88,22 +88,64 @@ const CommunityPage = () => {
     toast.success('Publicação removida')
   }
   
+  // Substitua a sua função toggleLike antiga por esta:
   const toggleLike = async (postId: string) => {
-    // Try to insert like; if unique constraint fails, remove it
-    const { error } = await supabase.from('post_likes').insert({
-      post_id: postId,
-      user_id: user!.id,
-    })
+    if (!user) return
 
-    if (error && error.code === '23505') {
-      // Already liked — unlike
-      await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', user!.id)
-      await supabase.from('community_posts').update({ likes_count: Math.max(0, (posts.find(p => p.id === postId)?.likesCount || 1) - 1) }).eq('id', postId)
-      setPosts(posts.map(p => p.id === postId ? { ...p, likesCount: Math.max(0, (p.likesCount || 1) - 1) } : p))
-    } else if (!error) {
-      // Liked successfully
-      await supabase.from('community_posts').update({ likes_count: (posts.find(p => p.id === postId)?.likesCount || 0) + 1 }).eq('id', postId)
-      setPosts(posts.map(p => p.id === postId ? { ...p, likesCount: (p.likesCount || 0) + 1 } : p))
+    // 1. Guardar o snapshot do estado atual para caso ocorra algum erro na API (Rollback)
+    const previousPosts = [...posts]
+
+    // 2. Encontrar o post alvo
+    const targetPost = posts.find(p => p.id === postId)
+    if (!targetPost) return
+
+    // Definir se estamos curtindo ou descurtindo com base no estado atual
+    // Nota: Caso sua tabela não use 'isLiked', ela usará a lógica inversa do clique
+    const isLiked = targetPost.isLiked ?? false 
+
+    // 3. UI Otimista: Atualiza o estado visual do React INSTANTANEAMENTE
+    setPosts(prevPosts =>
+      prevPosts.map(p => {
+        if (p.id === postId) {
+          const newIsLiked = !isLiked
+          const currentCount = p.likesCount || 0
+          return {
+            ...p,
+            isLiked: newIsLiked,
+            likesCount: newIsLiked ? currentCount + 1 : Math.max(0, currentCount - 1)
+          }
+        }
+        return p
+      })
+    )
+
+    try {
+      if (isLiked) {
+        // Se já estava curtido: Remove o registro e decrementa no banco de forma segura
+        const deleteLike = supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', user.id)
+        const updateCount = supabase.rpc('decrement_likes', { post_id: postId }) 
+        // Caso não tenha a RPC criada no banco, mantemos o fallback do update padrão abaixo:
+        // const updateCount = supabase.from('community_posts').update({ likes_count: Math.max(0, (targetPost.likesCount || 1) - 1) }).eq('id', postId)
+
+        const [likeRes, countRes] = await Promise.all([deleteLike, updateCount])
+        if (likeRes.error) throw likeRes.error
+      } else {
+        // Se não estava curtido: Insere o registro e incrementa no banco
+        const insertLike = supabase.from('post_likes').insert({ post_id: postId, user_id: user.id })
+        const updateCount = supabase.rpc('increment_likes', { post_id: postId })
+        // Caso não tenha a RPC criada no banco, usamos o fallback do update padrão:
+        // const updateCount = supabase.from('community_posts').update({ likes_count: (targetPost.likesCount || 0) + 1 }).eq('id', postId)
+
+        const [likeRes, countRes] = await Promise.all([insertLike, updateCount])
+        
+        // Se der erro de restrição única (código 23505), significa que já foi inserido de outra forma, ignoramos o erro
+        if (likeRes.error && likeRes.error.code !== '23505') throw likeRes.error
+      }
+    } catch (error) {
+      console.error('Erro ao alternar o like:', error)
+      // 4. ROLLBACK: Se a API falhar por problemas de rede ou permissão, desfaz a alteração na tela na hora
+      setPosts(previousPosts)
+      toast.error('Não foi possível computar a sua reação. Tente novamente.')
     }
   }
 
