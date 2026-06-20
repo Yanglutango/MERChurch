@@ -1,7 +1,6 @@
 /**
  * Activity Logger — platform-wide event logging utility
- * 
- * Call logActivity() from any page to record user actions in the
+ * * Call logActivity() from any page to record user actions in the
  * platform_activity table. Dashboard and HomePage consume this feed.
  */
 
@@ -18,6 +17,8 @@ export type ActivityType =
   | 'group_created'
   | 'ministry_joined'
   | 'donation_made'
+  | 'admin_action'       // Adicionado: Para o componente AdminAction
+  | 'ministry_activity'  // Adicionado: Para o campo activities de Ministry
 
 export interface LogActivityParams {
   type: ActivityType
@@ -65,6 +66,8 @@ export function getActivityLabel(type: ActivityType | string): string {
     group_created: '👥 Grupo criado',
     ministry_joined: '⛪ Entrou num ministério',
     donation_made: '💰 Contribuição realizada',
+    admin_action: '🛡️ Ação administrativa', // Adicionado
+    ministry_activity: '⚡ Atividade de ministério', // Adicionado
   }
   return labels[type] || `📌 ${type}`
 }
@@ -84,6 +87,8 @@ export function getActivityColor(type: ActivityType | string): string {
     group_created: 'text-violet-600 dark:text-violet-400',
     ministry_joined: 'text-emerald-600 dark:text-emerald-400',
     donation_made: 'text-yellow-600 dark:text-yellow-400',
+    admin_action: 'text-red-600 dark:text-red-400', // Adicionado (vermelho de admin)
+    ministry_activity: 'text-cyan-600 dark:text-cyan-400', // Adicionado
   }
   return colors[type] || 'text-muted-foreground'
 }
