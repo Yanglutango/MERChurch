@@ -245,64 +245,66 @@ const MinistriesPage = () => {
   }
 
   const toggleJoin = async (ministryId: string) => {
-    if (pendingJoinIds.has(ministryId)) return 
-    const isJoined = joinedMinistries.includes(ministryId)
+  if (pendingJoinIds.has(ministryId)) return // evita duplo clique / duplo insert
+  const isJoined = joinedMinistries.includes(ministryId)
 
-    setPendingJoinIds(prev => new Set(prev).add(ministryId))
-    try {
-      if (isJoined) {
-        const { error } = await supabase
-          .from('ministry_members')
-          .delete()
-          .eq('ministry_id', ministryId)
-          .eq('user_id', user!.id)
+  setPendingJoinIds(prev => new Set(prev).add(ministryId))
+  try {
+    if (isJoined) {
+      const { error } = await supabase
+        .from('ministry_members')
+        .delete()
+        .eq('ministry_id', ministryId)
+        .eq('user_id', user!.id)
 
-        if (error) { toast.error(error.message || 'Erro ao sair do ministério'); return }
+      if (error) { toast.error(error.message || 'Erro ao sair do ministério'); return }
 
-        setJoinedMinistries(prev => prev.filter(id => id !== ministryId))
-        setMinistries(prev => prev.map(m =>
-          m.id === ministryId ? { ...m, memberCount: Math.max(0, (m.memberCount || 1) - 1) } : m
-        ))
-        toast.success('Você saiu do ministério')
-      } else {
-        const { error } = await supabase
-          .from('ministry_members')
-          .insert({ ministry_id: ministryId, user_id: user!.id })
+      setJoinedMinistries(prev => prev.filter(id => id !== ministryId))
+      setMinistries(prev => prev.map(m =>
+        m.id === ministryId ? { ...m, memberCount: Math.max(0, (m.memberCount || 1) - 1) } : m
+      ))
+      toast.success('Você saiu do ministério')
+    } else {
+      const { error } = await supabase
+        .from('ministry_members')
+        .insert({ ministry_id: ministryId, user_id: user!.id })
 
-        if (error) { toast.error(error.message || 'Erro ao entrar no ministério'); return }
+      if (error) { toast.error(error.message || 'Erro ao entrar no ministério'); return }
 
-        setJoinedMinistries(prev => [...prev, ministryId])
-        setMinistries(prev => prev.map(m =>
-          m.id === ministryId ? { ...m, memberCount: (m.memberCount || 0) + 1 } : m
-        ))
-        toast.success('Bem-vindo ao ministério! 🙏')
+      // Atualiza os estados locais primeiro para garantir a resposta visual imediata ao usuário
+      setJoinedMinistries(prev => [...prev, ministryId])
+      setMinistries(prev => prev.map(m =>
+        m.id === ministryId ? { ...m, memberCount: (m.memberCount || 0) + 1 } : m
+      ))
+      toast.success('Bem-vindo ao ministério! 🙏')
 
-        try {
-          const ministry = ministries.find(m => m.id === ministryId)
-          await logActivity({
-            type: 'ministry_joined',
-            actorId: user!.id,
-            actorName: user!.username,
-            title: ministry?.name || 'Ministério',
-            referenceId: ministryId,
-            referenceType: 'ministry',
-          })
-        } catch (logErr) {
-          console.error('Falha não crítica ao registrar log de atividade:', logErr)
-        }
+      // Executa o log de atividade de forma segura e isolada
+      try {
+        const ministry = ministries.find(m => m.id === ministryId)
+        await logActivity({
+          type: 'ministry_joined',
+          actorId: user!.id,
+          actorName: user!.username,
+          title: ministry?.name || 'Ministério',
+          referenceId: ministryId,
+          referenceType: 'ministry',
+        })
+      } catch (logErr) {
+        // Apenas reporta no console para não interromper a navegação do usuário
+        console.error('Falha não crítica ao registrar log de atividade:', logErr)
       }
-    } catch (err) {
-      console.error('Erro inesperado:', err)
-      toast.error('Erro inesperado ao processar solicitação')
-    } finally {
-      setPendingJoinIds(prev => {
-        const next = new Set(prev)
-        next.delete(ministryId)
-        return next
-      })
     }
+  } catch (err) {
+    console.error('Erro inesperado:', err)
+    toast.error('Erro inesperado ao processar solicitação')
+  } finally {
+    setPendingJoinIds(prev => {
+      const next = new Set(prev)
+      next.delete(ministryId)
+      return next
+    })
   }
-
+}
   const filteredMinistries = useMemo(() => {
     let list = ministries
     if (filterMine) list = list.filter(m => joinedMinistries.includes(m.id))
