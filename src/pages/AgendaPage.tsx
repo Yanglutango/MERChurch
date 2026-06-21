@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/layout/Layout'
 import { Card } from '../components/ui/card'
@@ -16,17 +16,16 @@ import {
 } from '../components/ui/dropdown-menu'
 import { 
   Calendar, Clock, MapPin, Plus, Edit2, Trash2, 
-  CheckCircle2, Circle, Flame, Shield, UserPlus, 
-  Download, ExternalLink, Copy, TrendingUp, Filter, Share2 
+  CheckCircle2, Circle, Flame, UserPlus, 
+  Download, ExternalLink, Copy, TrendingUp, Share2 
 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Event } from '../types'
 import { EmptyState } from '../components/shared/EmptyState'
 import { LoadingState } from '../components/shared/LoadingState'
-import { AdminAction } from '../components/shared/AdminAction'
-import { GuestPrompt } from '../components/shared/GuestPrompt'
 import { EventEditor } from '../components/admin/EventEditor'
 import { downloadICS, getGoogleCalendarUrl, getOutlookUrl } from '../lib/calendarExporter'
+import { GuestPrompt } from '../components/shared/GuestPrompt'
 
 const AgendaPage = () => {
   const navigate = useNavigate()
@@ -46,19 +45,8 @@ const AgendaPage = () => {
   const isMember = user?.role === 'member'
   const isAdmin = user?.role === 'admin'
 
-  useEffect(() => {
-    const initPage = async () => {
-      setLoading(true)
-      await loadEvents()
-      if (user && !isGuest) {
-        await loadRegistrations()
-      }
-      setLoading(false)
-    }
-    initPage()
-  }, [user])
-
-  const loadEvents = async () => {
+  // Funções envolvidas em useCallback para evitar recriação de referências em loops de render
+  const loadEvents = useCallback(async () => {
     const { data, error } = await supabase
       .from('events')
       .select('*')
@@ -71,10 +59,10 @@ const AgendaPage = () => {
       return
     }
     setEvents(data || [])
-  }
+  }, [])
 
-  const loadRegistrations = async () => {
-    if (!user || isGuest) return
+  const loadRegistrations = useCallback(async () => {
+    if (!user?.id || user?.role === 'guest') return
     const { data, error } = await supabase
       .from('event_attendees')
       .select('event_id')
@@ -85,7 +73,27 @@ const AgendaPage = () => {
       return
     }
     setRegisteredEvents(data.map((r) => r.event_id))
-  }
+  }, [user?.id, user?.role])
+
+  // useEffect corrigido utilizando user?.id para travar o loop de renderização infinita
+  useEffect(() => {
+    let isMounted = true
+
+    const initPage = async () => {
+      setLoading(true)
+      await loadEvents()
+      if (user?.id && user?.role !== 'guest') {
+        await loadRegistrations()
+      }
+      if (isMounted) setLoading(false)
+    }
+
+    initPage()
+
+    return () => {
+      isMounted = false
+    }
+  }, [user?.id, user?.role, loadEvents, loadRegistrations])
 
   const handleEditorSuccess = () => {
     loadEvents()
@@ -149,7 +157,7 @@ const AgendaPage = () => {
       } else {
         toast.success('Inscrição cancelada')
       }
-    } {
+    } else { // CORRIGIDO: Adicionado o 'else' que faltava aqui!
       const { error } = await supabase.from('event_attendees').insert({
         event_id: eventId,
         user_id: user.id,
@@ -338,15 +346,15 @@ const AgendaPage = () => {
                           <DropdownMenuContent align="start" className="w-48">
                             <DropdownMenuLabel>Sincronizar</DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => window.open(getGoogleCalendarUrl(nextEvent), '_blank')}>
+                            <DropdownMenuMenuItem onClick={() => window.open(getGoogleCalendarUrl(nextEvent), '_blank')}>
                               <ExternalLink className="mr-2 h-4 w-4 text-blue-500" /> Google Agenda
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => window.open(getOutlookUrl(nextEvent), '_blank')}>
+                            </DropdownMenuMenuItem>
+                            <DropdownMenuMenuItem onClick={() => window.open(getOutlookUrl(nextEvent), '_blank')}>
                               <Copy className="mr-2 h-4 w-4 text-orange-500" /> Outlook Web
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => downloadICS(nextEvent)}>
+                            </DropdownMenuMenuItem>
+                            <DropdownMenuMenuItem onClick={() => downloadICS(nextEvent)}>
                               <Download className="mr-2 h-4 w-4 text-emerald-500" /> Arquivo .iCal
-                            </DropdownMenuItem>
+                            </DropdownMenuMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       )}
@@ -488,15 +496,15 @@ const AgendaPage = () => {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-44">
-                              <DropdownMenuItem onClick={() => window.open(getGoogleCalendarUrl(event), '_blank')}>
+                              <DropdownMenuMenuItem onClick={() => window.open(getGoogleCalendarUrl(event), '_blank')}>
                                 Google Agenda
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => window.open(getOutlookUrl(event), '_blank')}>
+                              </DropdownMenuMenuItem>
+                              <DropdownMenuMenuItem onClick={() => window.open(getOutlookUrl(event), '_blank')}>
                                 Outlook Web
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => downloadICS(event)}>
+                              </DropdownMenuMenuItem>
+                              <DropdownMenuMenuItem onClick={() => downloadICS(event)}>
                                 Baixar .ics
-                              </DropdownMenuItem>
+                              </DropdownMenuMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         )}
