@@ -35,8 +35,6 @@ const COLOR_PRESETS = [
 
 const EMPTY_FORM = { name: '', description: '', color: '#4A90A4', activities: '', imageUrl: '' }
 
-// PostgREST embedded aggregate count can come back as an array or a single object
-// depending on the relation cardinality — handle both defensively.
 function extractCount(rel: unknown): number {
   if (!rel) return 0
   if (Array.isArray(rel)) return (rel[0] as any)?.count ?? 0
@@ -69,7 +67,6 @@ const MinistriesPage = () => {
     if (!isGuest && user?.id) loadJoinedMinistries()
   }, [user?.id, isGuest])
 
-  // ── Single query: ministries + leader info + member count (no N+1) ───────
   const loadMinistries = useCallback(async () => {
     setLoading(true)
     try {
@@ -166,7 +163,6 @@ const MinistriesPage = () => {
       }
 
       if (editingMinistry) {
-        // Defesa em profundidade no cliente — a regra real deve viver na RLS.
         if (!canManage(editingMinistry)) {
           toast.error('Apenas o líder ou um administrador pode editar este ministério')
           setSaving(false)
@@ -177,26 +173,34 @@ const MinistriesPage = () => {
         if (error) { toast.error(error.message || 'Erro ao atualizar ministério'); setSaving(false); return }
 
         toast.success('Ministério atualizado com sucesso!')
-        await logActivity({
-          type: 'ministry_updated',
-          actorId: user!.id,
-          actorName: user!.username,
-          title: newMinistry.name,
-          referenceId: editingMinistry.id,
-          referenceType: 'ministry',
-        })
+        try {
+          await logActivity({
+            type: 'ministry_updated',
+            actorId: user!.id,
+            actorName: user!.username,
+            title: newMinistry.name,
+            referenceId: editingMinistry.id,
+            referenceType: 'ministry',
+          })
+        } catch (logErr) {
+          console.error('Erro de log ao atualizar ministério:', logErr)
+        }
       } else {
         const { error } = await supabase.from('ministries').insert({ ...payload, leader_id: user!.id })
         if (error) { toast.error(error.message || 'Erro ao criar ministério'); setSaving(false); return }
 
         toast.success('Ministério criado com sucesso!')
-        await logActivity({
-          type: 'ministry_created',
-          actorId: user!.id,
-          actorName: user!.username,
-          title: newMinistry.name,
-          referenceType: 'ministry',
-        })
+        try {
+          await logActivity({
+            type: 'ministry_created',
+            actorId: user!.id,
+            actorName: user!.username,
+            title: newMinistry.name,
+            referenceType: 'ministry',
+          })
+        } catch (logErr) {
+          console.error('Erro de log ao criar ministério:', logErr)
+        }
       }
 
       closeEditor()
@@ -213,20 +217,23 @@ const MinistriesPage = () => {
     if (!deleteTargetId) return
     setDeleting(true)
     try {
-      // .select('id') confirma que a RLS realmente permitiu o delete
       const { data, error } = await supabase.from('ministries').delete().eq('id', deleteTargetId).select('id')
       if (error) { toast.error(error.message || 'Erro ao excluir ministério'); return }
       if (!data || data.length === 0) { toast.error('Sem permissão para excluir este ministério'); return }
 
       toast.success('Ministério excluído com sucesso!')
-      await logActivity({
-        type: 'ministry_deleted',
-        actorId: user!.id,
-        actorName: user!.username,
-        title: 'Ministério removido',
-        referenceId: deleteTargetId,
-        referenceType: 'ministry',
-      })
+      try {
+        await logActivity({
+          type: 'ministry_deleted',
+          actorId: user!.id,
+          actorName: user!.username,
+          title: 'Ministério removido',
+          referenceId: deleteTargetId,
+          referenceType: 'ministry',
+        })
+      } catch (logErr) {
+        console.error('Erro de log ao excluir ministério:', logErr)
+      }
       await loadMinistries()
     } catch (err) {
       console.error('Erro inesperado:', err)
@@ -238,7 +245,7 @@ const MinistriesPage = () => {
   }
 
   const toggleJoin = async (ministryId: string) => {
-    if (pendingJoinIds.has(ministryId)) return // evita duplo clique / duplo insert
+    if (pendingJoinIds.has(ministryId)) return 
     const isJoined = joinedMinistries.includes(ministryId)
 
     setPendingJoinIds(prev => new Set(prev).add(ministryId))
@@ -268,17 +275,21 @@ const MinistriesPage = () => {
         setMinistries(prev => prev.map(m =>
           m.id === ministryId ? { ...m, memberCount: (m.memberCount || 0) + 1 } : m
         ))
-
-        const ministry = ministries.find(m => m.id === ministryId)
-        await logActivity({
-          type: 'ministry_joined',
-          actorId: user!.id,
-          actorName: user!.username,
-          title: ministry?.name || 'Ministério',
-          referenceId: ministryId,
-          referenceType: 'ministry',
-        })
         toast.success('Bem-vindo ao ministério! 🙏')
+
+        try {
+          const ministry = ministries.find(m => m.id === ministryId)
+          await logActivity({
+            type: 'ministry_joined',
+            actorId: user!.id,
+            actorName: user!.username,
+            title: ministry?.name || 'Ministério',
+            referenceId: ministryId,
+            referenceType: 'ministry',
+          })
+        } catch (logErr) {
+          console.error('Falha não crítica ao registrar log de atividade:', logErr)
+        }
       }
     } catch (err) {
       console.error('Erro inesperado:', err)
@@ -317,7 +328,6 @@ const MinistriesPage = () => {
   return (
     <Layout title="Ministérios">
       <div className="p-4 space-y-5">
-        {/* Compact header */}
         <div className="flex flex-wrap items-center justify-between gap-3 pb-1 border-b border-border">
           <div>
             <h1 className="text-xl font-bold text-foreground">Ministérios</h1>
@@ -340,7 +350,6 @@ const MinistriesPage = () => {
           </div>
         </div>
 
-        {/* Search & filter */}
         {ministries.length > 0 && (
           <div className="flex flex-col sm:flex-row gap-2.5">
             <div className="relative flex-1">
@@ -365,7 +374,6 @@ const MinistriesPage = () => {
           </div>
         )}
 
-        {/* Ministry Grid */}
         {ministries.length === 0 ? (
           <EmptyState
             icon={Users}
@@ -396,7 +404,6 @@ const MinistriesPage = () => {
                   key={ministry.id}
                   className="group relative overflow-hidden border hover:shadow-lg transition-all hover:-translate-y-0.5 duration-200"
                 >
-                  {/* Banner */}
                   <div
                     className="h-24 relative flex items-center justify-center"
                     style={ministry.imageUrl ? undefined : { backgroundColor: `${ministry.color}15` }}
@@ -415,7 +422,6 @@ const MinistriesPage = () => {
                   </div>
 
                   <div className="p-4 space-y-3">
-                    {/* Title + admin/leader actions (always visible — not hover-only, funciona em mobile) */}
                     <div className="flex items-start justify-between gap-2">
                       <h3 className="font-bold text-foreground leading-tight group-hover:text-primary transition-colors">
                         {ministry.name}
@@ -440,7 +446,6 @@ const MinistriesPage = () => {
                       )}
                     </div>
 
-                    {/* Leader */}
                     {ministry.leader?.username && (
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                         <Crown className="h-3 w-3 text-amber-500 flex-shrink-0" />
@@ -448,7 +453,6 @@ const MinistriesPage = () => {
                       </div>
                     )}
 
-                    {/* Description with expand */}
                     {ministry.description && (
                       <div>
                         <p className={`text-xs text-muted-foreground leading-relaxed ${isExpanded ? '' : 'line-clamp-2'}`}>
@@ -512,7 +516,7 @@ const MinistriesPage = () => {
                   </div>
                 </Card>
               )
-            })}
+            )}
           </div>
         )}
 
@@ -526,7 +530,6 @@ const MinistriesPage = () => {
         )}
       </div>
 
-      {/* Create / Edit Dialog */}
       <Dialog open={editorOpen} onOpenChange={open => { if (!open) closeEditor() }}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -629,7 +632,6 @@ const MinistriesPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete confirmation */}
       <AlertDialog open={!!deleteTargetId} onOpenChange={open => { if (!open) setDeleteTargetId(null) }}>
         <AlertDialogContent>
           <AlertDialogHeader>
