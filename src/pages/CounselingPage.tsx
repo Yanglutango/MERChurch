@@ -77,18 +77,19 @@ const CounselingPage = () => {
   }, [user?.id])
 
   const loadAdminRequests = useCallback(async () => {
-    try {
-      const { data, error } = await supabase
-        .from('counseling_requests')
-        .select('*, user:user_profiles(username, email)')
-        .order('created_at', { ascending: false })
-      
-      if (error) throw error
-      setAdminRequests(data || [])
-    } catch (err: any) {
-      toast.error('Erro ao carregar painel administrativo: ' + err.message)
-    }
-  }, [])
+  try {
+    // Adicionada a exclamação e o nome da coluna fk exata: !user_id
+    const { data, error } = await supabase
+      .from('counseling_requests')
+      .select('*, user:user_profiles!user_id(username, email)')
+      .order('created_at', { ascending: false })
+    
+    if (error) throw error
+    setAdminRequests(data || [])
+  } catch (err: any) {
+    toast.error('Erro ao carregar painel administrativo: ' + err.message)
+  }
+}, [])
 
   useEffect(() => {
     if (!isGuest && user?.id) {
