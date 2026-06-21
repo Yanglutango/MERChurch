@@ -516,7 +516,7 @@ const MinistriesPage = () => {
                   </div>
                 </Card>
               )
-            )}
+            })}
           </div>
         )}
 
