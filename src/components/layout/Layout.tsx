@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useAuth } from '../../hooks/useAuth'
 import {
   Home, Radio, BookOpen, Calendar, Bell, Sparkles, Users, GraduationCap,
@@ -22,83 +22,88 @@ interface NavItem { icon: React.ElementType; label: string; path: string }
 interface NavSection { heading?: string; items: NavItem[] }
 
 function useNavSections(role: string | undefined, t: (k: string) => string): NavSection[] {
-  const core: NavItem[] = [
-    { icon: Home,      label: t('nav.home'),    path: '/home' },
-    { icon: Radio,     label: t('nav.live'),    path: '/live' },
-    { icon: BookOpen,  label: t('nav.sermons'), path: '/sermons' },
-    { icon: Calendar,  label: t('nav.agenda'),  path: '/agenda' },
-  ]
-  const community: NavItem[] = [
-    { icon: MessageCircle, label: t('nav.community'),  path: '/community' },
-    { icon: Users2,        label: 'Grupos & Células',  path: '/groups' },
-    { icon: Users,         label: t('nav.ministries'), path: '/ministries' },
-    { icon: Heart,         label: t('nav.prayer'),     path: '/prayer' },
-    { icon: ScrollText,    label: 'Testemunhos',       path: '/testimonies' },
-  ]
-  const growth: NavItem[] = [
-    { icon: GraduationCap, label: t('nav.academy'), path: '/academy' },
-    { icon: LibraryBig,    label: 'Recursos',       path: '/resources' },
-    { icon: Sparkles,      label: 'Logos by KAIRÓS', path: '/ai' },
-  ]
-  const support: NavItem[] = [
-    { icon: DollarSign,     label: t('nav.treasury'),     path: '/treasury' },
-    { icon: HeadphonesIcon, label: t('nav.counseling'),   path: '/counseling' },
-    { icon: Bell,           label: t('nav.notifications'), path: '/notifications' },
-    { icon: Info,           label: t('nav.about'),        path: '/about' },
-    { icon: Settings,       label: t('nav.settings'),     path: '/settings' },
-  ]
-
-  if (role === 'admin') {
-    return [
-      { items: [{ icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' }] },
-      { heading: 'Conteúdo',    items: core },
-      { heading: 'Comunidade',  items: community },
-      { heading: 'Crescimento', items: growth },
-      { heading: 'Gestão',      items: support },
+  return useMemo(() => {
+    const core: NavItem[] = [
+      { icon: Home,      label: t('nav.home'),    path: '/home' },
+      { icon: Radio,     label: t('nav.live'),    path: '/live' },
+      { icon: BookOpen,  label: t('nav.sermons'), path: '/sermons' },
+      { icon: Calendar,  label: t('nav.agenda'),  path: '/agenda' },
     ]
-  }
-  if (role === 'guest') {
+    const community: NavItem[] = [
+      { icon: MessageCircle, label: t('nav.community'),  path: '/community' },
+      { icon: Users2,        label: 'Grupos & Células',  path: '/groups' },
+      { icon: Users,         label: t('nav.ministries'), path: '/ministries' },
+      { icon: Heart,         label: t('nav.prayer'),     path: '/prayer' },
+      { icon: ScrollText,    label: 'Testemunhos',       path: '/testimonies' },
+    ]
+    const growth: NavItem[] = [
+      { icon: GraduationCap, label: t('nav.academy'), path: '/academy' },
+      { icon: LibraryBig,    label: 'Recursos',       path: '/resources' },
+      { icon: Sparkles,      label: 'Logos by KAIRÓS', path: '/ai' },
+    ]
+    const support: NavItem[] = [
+      { icon: DollarSign,     label: t('nav.treasury'),     path: '/treasury' },
+      { icon: HeadphonesIcon, label: t('nav.counseling'),   path: '/counseling' },
+      { icon: Bell,           label: t('nav.notifications'), path: '/notifications' },
+      { icon: Info,           label: t('nav.about'),        path: '/about' },
+      { icon: Settings,       label: t('nav.settings'),     path: '/settings' },
+    ]
+
+    if (role === 'admin') {
+      return [
+        { items: [{ icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' }] },
+        { heading: 'Conteúdo',    items: core },
+        { heading: 'Comunidade',  items: community },
+        { heading: 'Crescimento', items: growth },
+        { heading: 'Gestão',      items: support },
+      ]
+    }
+    if (role === 'guest') {
+      return [
+        { items: core },
+        { heading: 'Comunidade', items: [
+          { icon: Heart,      label: t('nav.prayer'),   path: '/prayer' },
+          { icon: ScrollText, label: 'Testemunhos',     path: '/testimonies' },
+          { icon: Info,       label: t('nav.about'),    path: '/about' },
+        ]},
+        { heading: 'Conta', items: [
+          { icon: Settings, label: t('nav.settings'), path: '/settings' },
+        ]},
+      ]
+    }
+    
+    // Member
     return [
       { items: core },
-      { heading: 'Comunidade', items: [
-        { icon: Heart,      label: t('nav.prayer'),   path: '/prayer' },
-        { icon: ScrollText, label: 'Testemunhos',     path: '/testimonies' },
-        { icon: Info,       label: t('nav.about'),    path: '/about' },
-      ]},
-      { heading: 'Conta', items: [
-        { icon: Settings, label: t('nav.settings'), path: '/settings' },
-      ]},
+      { heading: 'Comunidade',  items: community },
+      { heading: 'Crescimento', items: growth },
+      { heading: 'Suporte',     items: support },
     ]
-  }
-  // Member
-  return [
-    { items: core },
-    { heading: 'Comunidade',  items: community },
-    { heading: 'Crescimento', items: growth },
-    { heading: 'Suporte',     items: support },
-  ]
+  }, [role, t])
 }
 
-// ── Bottom tabs: 4 role-specific + "More" ─────────────────────────────────
 function useBottomTabs(role: string | undefined, t: (k: string) => string) {
-  if (role === 'admin') return [
-    { icon: Home,            label: 'Início',    path: '/home' },
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-    { icon: Radio,           label: 'Ao Vivo',   path: '/live' },
-    { icon: MessageCircle,   label: 'Comunidade', path: '/community' },
-  ]
-  if (role === 'guest') return [
-    { icon: Home,    label: 'Início',  path: '/home' },
-    { icon: Radio,   label: 'Ao Vivo', path: '/live' },
-    { icon: Info,    label: 'Sobre',   path: '/about' },
-  ]
-  // Member — 4 tabs
-  return [
-    { icon: Home,          label: 'Início',    path: '/home' },
-    { icon: Radio,         label: 'Ao Vivo',   path: '/live' },
-    { icon: MessageCircle, label: 'Comunidade', path: '/community' },
-    { icon: Heart,         label: 'Oração',    path: '/prayer' },
-  ]
+  return useMemo(() => {
+    if (role === 'admin') return [
+      { icon: Home,            label: 'Início',    path: '/home' },
+      { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+      { icon: Radio,           label: 'Ao Vivo',   path: '/live' },
+      { icon: MessageCircle,   label: 'Comunidade', path: '/community' },
+    ]
+    if (role === 'guest') return [
+      { icon: Home,    label: 'Início',  path: '/home' },
+      { icon: Radio,   label: 'Ao Vivo', path: '/live' },
+      { icon: Info,    label: 'Sobre',   path: '/about' },
+    ]
+    
+    // Member — 4 tabs
+    return [
+      { icon: Home,          label: 'Início',    path: '/home' },
+      { icon: Radio,         label: 'Ao Vivo',   path: '/live' },
+      { icon: MessageCircle, label: 'Comunidade', path: '/community' },
+      { icon: Heart,         label: 'Oração',    path: '/prayer' },
+    ]
+  }, [role, t])
 }
 
 const Layout = ({ children, title }: LayoutProps) => {
@@ -119,7 +124,7 @@ const Layout = ({ children, title }: LayoutProps) => {
   const isActive = (path: string) => location.pathname === path
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background scroll-smooth selection:bg-[#0A2E4A]/20">
       {/* ── Top Header ───────────────────────────────────────────────── */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-card/98 backdrop-blur-lg border-b border-border/50 h-14">
         <div className="flex items-center justify-between px-3 h-full gap-2">
@@ -158,8 +163,9 @@ const Layout = ({ children, title }: LayoutProps) => {
       </header>
 
       {/* ── Sidebar (lg+ only) ───────────────────────────────────────── */}
+      {/* Adicionado 'scrollbar-none' e 'scroll-smooth' */}
       <aside
-        className="hidden lg:flex fixed top-14 left-0 bottom-0 w-56 bg-card border-r border-border/50 z-40 flex-col overflow-y-auto"
+        className="hidden lg:flex fixed top-14 left-0 bottom-0 w-56 bg-card border-r border-border/50 z-40 flex-col overflow-y-auto scrollbar-none scroll-smooth"
         aria-label="Navegação principal"
       >
         <nav className="flex-1 p-2 space-y-4">
@@ -271,7 +277,8 @@ const Layout = ({ children, title }: LayoutProps) => {
           />
 
           {/* Drawer Content */}
-          <div className="lg:hidden fixed bottom-16 left-0 right-0 z-50 max-h-[60vh] bg-card border-t border-border/50 overflow-y-auto rounded-t-lg">
+          {/* Adicionado 'scrollbar-none' e 'scroll-smooth' */}
+          <div className="lg:hidden fixed bottom-16 left-0 right-0 z-50 max-h-[60vh] bg-card border-t border-border/50 overflow-y-auto rounded-t-lg scrollbar-none scroll-smooth">
             <div className="p-2 space-y-4">
               {/* Header + Close button */}
               <div className="flex items-center justify-between px-3 pt-2">
