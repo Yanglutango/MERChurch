@@ -245,11 +245,21 @@ const MinistriesPage = () => {
   }
 
   const toggleJoin = async (ministryId: string) => {
-  if (pendingJoinIds.has(ministryId)) return // evita duplo clique / duplo insert
+  if (pendingJoinIds.has(ministryId)) return // evita duplo clique
   const isJoined = joinedMinistries.includes(ministryId)
 
   setPendingJoinIds(prev => new Set(prev).add(ministryId))
   try {
+    // Confirma que a sessão ainda é válida ANTES de escrever.
+    // Evita que um token expirado dispare um refresh silencioso
+    // que falha como "TypeError: Failed to fetch" em vez de um erro tratável.
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      toast.error('Sua sessão expirou. Faça login novamente.')
+      navigate('/auth')
+      return
+    }
+
     if (isJoined) {
       const { error } = await supabase
         .from('ministry_members')
@@ -271,32 +281,29 @@ const MinistriesPage = () => {
 
       if (error) { toast.error(error.message || 'Erro ao entrar no ministério'); return }
 
-      // Atualiza os estados locais primeiro para garantir a resposta visual imediata ao usuário
       setJoinedMinistries(prev => [...prev, ministryId])
       setMinistries(prev => prev.map(m =>
         m.id === ministryId ? { ...m, memberCount: (m.memberCount || 0) + 1 } : m
       ))
-      toast.success('Bem-vindo ao ministério! 🙏')
 
-      // Executa o log de atividade de forma segura e isolada
-      try {
-        const ministry = ministries.find(m => m.id === ministryId)
-        await logActivity({
-          type: 'ministry_joined',
-          actorId: user!.id,
-          actorName: user!.username,
-          title: ministry?.name || 'Ministério',
-          referenceId: ministryId,
-          referenceType: 'ministry',
-        })
-      } catch (logErr) {
-        // Apenas reporta no console para não interromper a navegação do usuário
-        console.error('Falha não crítica ao registrar log de atividade:', logErr)
-      }
+      const ministry = ministries.find(m => m.id === ministryId)
+      await logActivity({
+        type: 'ministry_joined',
+        actorId: user!.id,
+        actorName: user!.username,
+        title: ministry?.name || 'Ministério',
+        referenceId: ministryId,
+        referenceType: 'ministry',
+      })
+      toast.success('Bem-vindo ao ministério! 🙏')
     }
   } catch (err) {
     console.error('Erro inesperado:', err)
-    toast.error('Erro inesperado ao processar solicitação')
+    if (err instanceof TypeError) {
+      toast.error('Falha de conexão com o servidor. Verifique sua internet e tente novamente em alguns segundos.')
+    } else {
+      toast.error('Erro inesperado ao processar solicitação')
+    }
   } finally {
     setPendingJoinIds(prev => {
       const next = new Set(prev)
