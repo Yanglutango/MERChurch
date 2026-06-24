@@ -7,11 +7,11 @@ import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { Textarea } from '../components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useAppStore } from '../stores/appStore'
-import { BookOpen, Download, Search, Filter, Plus, Trash2, FileText, BookMarked, Heart, GraduationCap, Upload, X, Shield } from 'lucide-react'
+import { BookOpen, Download, Search, Plus, Trash2, FileText, BookMarked, Heart, GraduationCap, Upload, X, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { SpiritualResource } from '../types'
 import { StatCard } from '../components/shared/StatCard'
@@ -24,6 +24,7 @@ const ResourcesPage = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { t } = useAppStore()
+  
   const [resources, setResources] = useState<SpiritualResource[]>([])
   const [filteredResources, setFilteredResources] = useState<SpiritualResource[]>([])
   const [searchQuery, setSearchQuery] = useState('')
@@ -32,6 +33,8 @@ const ResourcesPage = () => {
   const [uploading, setUploading] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [isDragActive, setIsDragActive] = useState(false)
+  
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [newResource, setNewResource] = useState({
     title: '',
@@ -53,19 +56,20 @@ const ResourcesPage = () => {
 
   const loadResources = async () => {
     setLoading(true)
-    const { data, error } = await supabase
-      .from('spiritual_resources')
-      .select('*')
-      .order('created_at', { ascending: false })
+    try {
+      const { data, error } = await supabase
+        .from('spiritual_resources')
+        .select('*')
+        .order('created_at', { ascending: false })
 
-    if (error) {
+      if (error) throw error
+      setResources(data as any)
+    } catch (error: any) {
       console.error('Error loading resources:', error)
+      toast.error('Erro ao carregar repositório de recursos')
+    } finally {
       setLoading(false)
-      return
     }
-
-    setResources(data as any)
-    setLoading(false)
   }
 
   const filterResources = () => {
@@ -87,22 +91,45 @@ const ResourcesPage = () => {
     setFilteredResources(filtered)
   }
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
+  const validateAndSetFile = (file: File | undefined) => {
     if (!file) return
 
-    // Validate file size (max 10MB)
+    // Max 10MB validation
     if (file.size > 10 * 1024 * 1024) {
-      toast.error('Arquivo deve ter no máximo 10MB')
+      toast.error('O arquivo deve ter no máximo 10MB')
       return
     }
 
     setSelectedFile(file)
   }
 
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    validateAndSetFile(file)
+  }
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setIsDragActive(true)
+    } else if (e.type === "dragleave") {
+      setIsDragActive(false)
+    }
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragActive(false)
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      validateAndSetFile(e.dataTransfer.files[0])
+    }
+  }
+
   const uploadResource = async () => {
     if (!selectedFile || !newResource.title.trim()) {
-      toast.error('Preencha título e selecione um arquivo')
+      toast.error('Por favor, preencha o título e selecione um arquivo válido')
       return
     }
 
@@ -112,19 +139,16 @@ const ResourcesPage = () => {
       const fileName = `${Date.now()}-${selectedFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
       const filePath = `${fileName}`
 
-      // Upload to storage
       const { error: uploadError } = await supabase.storage
         .from('spiritual-resources')
         .upload(filePath, selectedFile)
 
       if (uploadError) throw uploadError
 
-      // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('spiritual-resources')
         .getPublicUrl(filePath)
 
-      // Create resource record
       const tags = newResource.tags.split(',').map(t => t.trim()).filter(Boolean)
       
       const { error: dbError } = await supabase
@@ -149,27 +173,37 @@ const ResourcesPage = () => {
       loadResources()
     } catch (error: any) {
       console.error('Upload error:', error)
-      toast.error(error.message || 'Erro ao fazer upload')
+      toast.error(error.message || 'Erro ao fazer upload do arquivo')
     } finally {
       setUploading(false)
     }
   }
 
   const handleDownload = async (resource: SpiritualResource) => {
-    // Increment download count
-    await supabase
-      .from('spiritual_resources')
-      .update({ downloads_count: resource.downloadsCount + 1 })
-      .eq('id', resource.id)
+    try {
+      const currentCount = resource.downloads_count || resource.downloadsCount || 0
+      
+      await supabase
+        .from('spiritual_resources')
+        .update({ downloads_count: currentCount + 1 })
+        .eq('id', resource.id)
 
-    // Open file in new tab
-    window.open(resource.fileUrl, '_blank')
-    toast.success('Download iniciado!')
-    loadResources()
+      window.open(resource.fileUrl || (resource as any).file_url, '_blank')
+      toast.success('Download iniciado!')
+      
+      // Local state update prevents unnecessary loading spinners across the screen
+      setResources(prev => prev.map(item => 
+        item.id === resource.id 
+          ? { ...item, downloads_count: currentCount + 1, downloadsCount: currentCount + 1 } 
+          : item
+      ))
+    } catch (err) {
+      console.error(err)
+    }
   }
 
   const deleteResource = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir este recurso?')) return
+    if (!confirm('Tem certeza que deseja excluir permanentemente este recurso?')) return
 
     const { error } = await supabase
       .from('spiritual_resources')
@@ -181,7 +215,7 @@ const ResourcesPage = () => {
       return
     }
 
-    toast.success('Recurso excluído!')
+    toast.success('Recurso removido com sucesso!')
     loadResources()
   }
 
@@ -194,14 +228,15 @@ const ResourcesPage = () => {
   }
 
   const categoryColors = {
-    ebook: 'from-blue-500 to-cyan-500',
-    study: 'from-purple-500 to-pink-500',
-    devotional: 'from-rose-500 to-orange-500',
-    discipleship: 'from-green-500 to-emerald-500',
-    other: 'from-gray-500 to-slate-500',
+    ebook: 'from-blue-500 to-cyan-500 text-blue-500',
+    study: 'from-purple-500 to-pink-500 text-purple-500',
+    devotional: 'from-rose-500 to-orange-500 text-rose-500',
+    discipleship: 'from-green-500 to-emerald-500 text-green-500',
+    other: 'from-gray-500 to-slate-500 text-gray-500',
   }
 
   const formatFileSize = (bytes: number): string => {
+    if (!bytes) return '0 B'
     if (bytes < 1024) return `${bytes} B`
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
@@ -210,65 +245,67 @@ const ResourcesPage = () => {
   if (loading) {
     return (
       <Layout title="Recursos Espirituais">
-        <LoadingState fullScreen message="Carregando recursos..." />
+        <LoadingState fullScreen message="Carregando biblioteca de recursos..." />
       </Layout>
     )
   }
 
   return (
     <Layout title="Recursos Espirituais">
-      <div className="p-3 space-y-6">
-        {/* Hero */}
-        <Card className="relative overflow-hidden border-0 shadow-2xl rounded-2xl elevation-3">
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-700/96 via-purple-700/94 to-pink-700/92" />
+      <div className="container mx-auto p-4 max-w-7xl space-y-8 animate-fade-in">
+        
+        {/* Banner Hero */}
+        <Card className="relative overflow-hidden border-0 shadow-xl rounded-3xl">
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 opacity-95" />
+          <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-2xl pointer-events-none" />
           
-          <div className="relative z-10 p-6 md:p-10 lg:p-14 text-white">
-            <div className="max-w-4xl space-y-5 md:space-y-7">
-              <div className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-white/20 backdrop-blur-md rounded-full border border-white/30 shadow-lg">
-                <BookOpen className="h-4 w-4 md:h-5 md:w-5" />
-                <span className="text-sm md:text-base font-bold tracking-wide">BIBLIOTECA DIGITAL</span>
+          <div className="relative z-10 p-6 sm:p-10 md:p-14 text-white flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="space-y-4 max-w-2xl">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/15 backdrop-blur-md rounded-full border border-white/20">
+                <BookOpen className="h-4 w-4" />
+                <span className="text-xs font-bold uppercase tracking-widest text-indigo-50">Biblioteca de Edificação</span>
               </div>
 
-              <h1 className="text-3xl md:text-5xl lg:text-6xl font-black leading-[1.15] tracking-tight">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight leading-none">
                 Recursos{' '}
-                <span className="bg-gradient-to-r from-white via-yellow-200 to-white bg-clip-text text-transparent">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-amber-100">
                   Espirituais
                 </span>
               </h1>
               
-              <p className="text-lg md:text-xl lg:text-2xl text-white/90 font-medium leading-relaxed max-w-2xl">
+              <p className="text-base sm:text-lg text-indigo-100/90 font-medium max-w-xl">
                 {isAdmin 
-                  ? 'Gerencie e-books, estudos bíblicos, devocionais e materiais de discipulado'
-                  : 'E-books, estudos bíblicos, devocionais e materiais de discipulado para sua jornada de fé'}
+                  ? 'Painel Administrativo: Publique e gerencie e-books, estudos bíblicos, roteiros de devocionais e ferramentas de discipulado.'
+                  : 'Explore e baixe e-books, estudos bíblicos estruturados e devocionais práticos organizados para impulsionar sua caminhada cristã.'}
               </p>
-
-              {isAdmin && (
-                <AdminAction>
-                  <Button
-                    onClick={() => setDialogOpen(true)}
-                    size="lg"
-                    className="bg-white text-indigo-700 hover:bg-white/95 font-bold px-7 py-6 rounded-full shadow-2xl transform hover:scale-105 transition-all"
-                  >
-                    <Plus className="mr-2 h-5 w-5" />
-                    Adicionar Recurso
-                  </Button>
-                </AdminAction>
-              )}
             </div>
+
+            {isAdmin && (
+              <AdminAction>
+                <Button
+                  onClick={() => setDialogOpen(true)}
+                  size="lg"
+                  className="bg-white text-indigo-600 hover:bg-indigo-50 active:scale-95 font-bold px-6 py-6 rounded-2xl shadow-lg transition-all shrink-0 flex items-center gap-2"
+                >
+                  <Plus className="h-5 w-5 stroke-[2.5]" />
+                  Adicionar Material
+                </Button>
+              </AdminAction>
+            )}
           </div>
         </Card>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-5">
+        {/* Painel de Estatísticas */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             icon={BookOpen}
-            label="Total"
+            label="Total Acervo"
             value={resources.length}
-            gradient="from-indigo-500 to-purple-500"
+            gradient="from-indigo-500 to-blue-600"
           />
           <StatCard
             icon={FileText}
-            label="Estudos"
+            label="Estudos Disponíveis"
             value={resources.filter(r => r.category === 'study').length}
             gradient="from-purple-500 to-pink-500"
           />
@@ -280,104 +317,128 @@ const ResourcesPage = () => {
           />
           <StatCard
             icon={Download}
-            label="Downloads"
-            value={resources.reduce((sum, r) => sum + r.downloadsCount, 0)}
-            gradient="from-green-500 to-emerald-500"
+            label="Total de Downloads"
+            value={resources.reduce((sum, r) => sum + (r.downloads_count || r.downloadsCount || 0), 0)}
+            gradient="from-emerald-500 to-teal-600"
           />
         </div>
 
-        {/* Search & Filter */}
-        <Card className="p-4 md:p-6 border-2">
-          <div className="flex flex-col md:flex-row gap-3 md:gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Buscar recursos..."
-                  className="pl-10 h-12"
-                />
-              </div>
-            </div>
-            <div className="w-full md:w-64">
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Filtrar por categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as categorias</SelectItem>
-                  <SelectItem value="ebook">E-books</SelectItem>
-                  <SelectItem value="study">Estudos Bíblicos</SelectItem>
-                  <SelectItem value="devotional">Devocionais</SelectItem>
-                  <SelectItem value="discipleship">Discipulado</SelectItem>
-                  <SelectItem value="other">Outros</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+        {/* Barra de Filtros e Busca */}
+        <div className="flex flex-col sm:flex-row gap-3 items-center bg-card p-2 rounded-2xl border shadow-sm">
+          <div className="relative w-full flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Pesquisar por título, descrição ou tags..."
+              className="pl-10 pr-10 h-12 bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+            />
+            {searchQuery && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 hover:bg-muted"
+                onClick={() => setSearchQuery('')}
+              >
+                <X className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            )}
           </div>
-        </Card>
+          <div className="h-6 w-px bg-border hidden sm:block" />
+          <div className="w-full sm:w-64">
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="h-12 border-0 bg-transparent shadow-none focus:ring-0 focus:ring-offset-0">
+                <SelectValue placeholder="Filtrar Categoria" />
+              </SelectTrigger>
+              <SelectContent align="end" className="rounded-xl">
+                <SelectItem value="all">Todas as Categorias</SelectItem>
+                <SelectItem value="ebook">📚 E-books</SelectItem>
+                <SelectItem value="study">📝 Estudos Bíblicos</SelectItem>
+                <SelectItem value="devotional">❤️ Devocionais</SelectItem>
+                <SelectItem value="discipleship">🎓 Discipulado / Formação</SelectItem>
+                <SelectItem value="other">📂 Outros Materiais</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
-        {/* Resources Grid */}
+        {/* Grid de Cards de Recursos */}
         {filteredResources.length > 0 ? (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredResources.map((resource) => {
-              const CategoryIcon = categoryIcons[resource.category]
-              const gradient = categoryColors[resource.category]
+              const CategoryIcon = categoryIcons[resource.category] || BookOpen
+              const colorClasses = categoryColors[resource.category] || 'from-gray-500 to-slate-500 text-gray-500'
+              const gradientBg = colorClasses.split(' ')[0] + ' ' + colorClasses.split(' ')[1]
 
               return (
-                <Card key={resource.id} className="group p-5 md:p-6 border-2 hover:border-primary/50 transition-all hover:shadow-xl hover:-translate-y-1 transform">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className={`inline-flex p-3 rounded-xl bg-gradient-to-br ${gradient} shadow-lg group-hover:scale-110 transition-transform`}>
-                      <CategoryIcon className="h-6 w-6 text-white" />
+                <Card 
+                  key={resource.id} 
+                  className="group relative flex flex-col justify-between overflow-hidden border bg-card hover:bg-card/50 transition-all duration-3xl hover:shadow-xl hover:-translate-y-1.5 rounded-2xl"
+                >
+                  <div className="p-6 space-y-4 flex-1">
+                    <div className="flex justify-between items-start">
+                      <div className={`inline-flex p-3 rounded-2xl bg-gradient-to-br ${gradientBg} shadow-md group-hover:scale-105 transition-transform duration-3xl`}>
+                        <CategoryIcon className="h-5 w-5 text-white" />
+                      </div>
+                      
+                      {isAdmin && (
+                        <AdminAction>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => deleteResource(resource.id)}
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all opacity-80 sm:opacity-0 group-hover:opacity-100"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AdminAction>
+                      )}
                     </div>
-                    {isAdmin && (
-                      <AdminAction>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => deleteResource(resource.id)}
-                          className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </AdminAction>
+
+                    <div className="space-y-1.5">
+                      <h3 className="text-lg font-bold text-foreground line-clamp-2 leading-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                        {resource.title}
+                      </h3>
+                      {resource.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">
+                          {resource.description}
+                        </p>
+                      )}
+                    </div>
+
+                    {resource.tags && resource.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {resource.tags.slice(0, 3).map((tag, idx) => (
+                          <span key={idx} className="px-2 py-0.5 bg-secondary text-secondary-foreground text-xs font-medium rounded-md">
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
                     )}
                   </div>
 
-                  <h3 className="text-lg md:text-xl font-bold text-foreground mb-2 line-clamp-2 leading-tight group-hover:text-primary transition-colors">
-                    {resource.title}
-                  </h3>
-
-                  {resource.description && (
-                    <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                      {resource.description}
-                    </p>
-                  )}
-
-                  {resource.tags && resource.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {resource.tags.slice(0, 3).map((tag, idx) => (
-                        <span key={idx} className="px-2 py-1 bg-muted text-xs font-medium rounded">
-                          {tag}
-                        </span>
-                      ))}
+                  {/* Rodapé Interno do Card */}
+                  <div className="px-6 pb-6 pt-2 border-t bg-muted/20 space-y-4">
+                    <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
+                      <span className="uppercase px-1.5 py-0.5 bg-muted rounded border text-[10px] tracking-wider font-bold">
+                        {resource.fileType || resource.file_type || 'DOC'}
+                      </span>
+                      <span>•</span>
+                      <span>{formatFileSize(resource.fileSize || (resource as any).file_size || 0)}</span>
+                      <span>•</span>
+                      <span className="text-foreground/80">
+                        {resource.downloads_count || resource.downloadsCount || 0} downloads
+                      </span>
                     </div>
-                  )}
 
-                  <div className="flex items-center justify-between text-xs text-muted-foreground mb-4">
-                    <span>{resource.fileType?.toUpperCase()}</span>
-                    <span>{formatFileSize(resource.fileSize || 0)}</span>
-                    <span>{resource.downloadsCount} downloads</span>
+                    <Button
+                      onClick={() => handleDownload(resource)}
+                      className={`w-full font-bold shadow-md bg-gradient-to-r ${gradientBg} text-white hover:opacity-95 active:scale-[0.99] transition-all rounded-xl h-11`}
+                    >
+                      <Download className="mr-2 h-4 w-4 stroke-[2.5]" />
+                      Baixar Material
+                    </Button>
                   </div>
-
-                  <Button
-                    onClick={() => handleDownload(resource)}
-                    className={`w-full font-semibold bg-gradient-to-r ${gradient} text-white`}
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    Baixar
-                  </Button>
                 </Card>
               )
             })}
@@ -385,78 +446,89 @@ const ResourcesPage = () => {
         ) : (
           <EmptyState
             icon={BookOpen}
-            title="Nenhum recurso encontrado"
-            description={searchQuery || categoryFilter !== 'all' ? 'Tente ajustar os filtros de busca' : 'Novos recursos serão adicionados em breve'}
+            title="Nenhum recurso localizado"
+            description={searchQuery || categoryFilter !== 'all' ? 'Tente flexibilizar termos ou alterar a categoria escolhida nos filtros.' : 'Novos e-books e apostilas estão sendo preparados para a biblioteca.'}
           />
         )}
 
-        {/* Guest Prompt */}
+        {/* Prompt de Visitantes */}
         {isGuest && resources.length > 0 && (
           <GuestPrompt
-            title="Acesso total aos recursos"
-            description="Membros têm acesso ilimitado para download de todos os materiais espirituais disponíveis."
-            actionLabel="Criar Conta"
+            title="Acesso ilimitado liberado!"
+            description="Crie uma conta comunitária de membro para destravar downloads sem restrições e acompanhar seu histórico de leitura."
+            actionLabel="Criar Conta Gratuita"
             onAction={() => navigate('/auth')}
           />
         )}
       </div>
 
-      {/* Upload Dialog */}
+      {/* Modal / Dialog de Upload do Admin */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-2xl">Adicionar Recurso Espiritual</DialogTitle>
+        <DialogContent className="max-w-xl rounded-2xl p-6 shadow-2xl">
+          <DialogHeader className="flex flex-row items-center justify-between pb-2 border-b">
+            <DialogTitle className="text-xl font-bold">Publicar Novo Recurso</DialogTitle>
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setDialogOpen(false)}>
+              <X className="h-4 w-4" />
+            </Button>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Título *</Label>
+          
+          <div className="space-y-5 pt-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="title" className="font-semibold text-sm">Título do Material *</Label>
               <Input
+                id="title"
                 value={newResource.title}
                 onChange={(e) => setNewResource({ ...newResource, title: e.target.value })}
-                placeholder="Nome do recurso"
+                placeholder="Ex: Guia de Oração e Intercessão Prática"
+                className="h-11 rounded-xl"
               />
             </div>
 
-            <div>
-              <Label>Categoria *</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="category" className="font-semibold text-sm">Categoria Primária *</Label>
               <Select
                 value={newResource.category}
                 onValueChange={(value: any) => setNewResource({ ...newResource, category: value })}
               >
-                <SelectTrigger>
+                <SelectTrigger id="category" className="h-11 rounded-xl">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ebook">E-book</SelectItem>
-                  <SelectItem value="study">Estudo Bíblico</SelectItem>
-                  <SelectItem value="devotional">Devocional</SelectItem>
-                  <SelectItem value="discipleship">Discipulado</SelectItem>
-                  <SelectItem value="other">Outro</SelectItem>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="ebook">📚 E-book Completo</SelectItem>
+                  <SelectItem value="study">📝 Estudo Bíblico / Esboço</SelectItem>
+                  <SelectItem value="devotional">❤️ Devocional Diário</SelectItem>
+                  <SelectItem value="discipleship">🎓 Manual de Discipulado</SelectItem>
+                  <SelectItem value="other"> Outros Formatos</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            <div>
-              <Label>Descrição</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="description" className="font-semibold text-sm">Sinopse ou Descrição</Label>
               <Textarea
+                id="description"
                 value={newResource.description}
                 onChange={(e) => setNewResource({ ...newResource, description: e.target.value })}
-                placeholder="Breve descrição do conteúdo"
+                placeholder="Insira um breve resumo contextualizando o material bíblico..."
+                className="rounded-xl resize-none"
                 rows={3}
               />
             </div>
 
-            <div>
-              <Label>Tags (separadas por vírgula)</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="tags" className="font-semibold text-sm">Palavras-chave (Separadas por vírgula)</Label>
               <Input
+                id="tags"
                 value={newResource.tags}
                 onChange={(e) => setNewResource({ ...newResource, tags: e.target.value })}
-                placeholder="fé, oração, bíblia"
+                placeholder="Ex: paternidade, jejum, evangelismo"
+                className="h-11 rounded-xl"
               />
             </div>
 
-            <div>
-              <Label>Arquivo (PDF, DOCX, EPUB - máx 10MB) *</Label>
+            {/* Drag & Drop Upload Container */}
+            <div className="space-y-1.5">
+              <Label className="font-semibold text-sm">Arquivo Anexo *</Label>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -464,33 +536,50 @@ const ResourcesPage = () => {
                 onChange={handleFileSelect}
                 className="hidden"
               />
-              <div className="mt-2">
+              
+              <div 
+                className={`mt-1 border-2 border-dashed rounded-xl transition-all ${
+                  selectedFile 
+                    ? 'border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/10' 
+                    : isDragActive 
+                    ? 'border-indigo-500 bg-indigo-50/40' 
+                    : 'border-muted-foreground/20 bg-muted/10 hover:bg-muted/30'
+                }`}
+                onDragEnter={handleDrag}
+                onDragOver={handleDrag}
+                onDragLeave={handleDrag}
+                onDrop={handleDrop}
+              >
                 {selectedFile ? (
-                  <div className="flex items-center gap-3 p-4 bg-muted rounded-lg border-2 border-primary/30">
-                    <FileText className="h-8 w-8 text-primary" />
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold truncate">{selectedFile.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {formatFileSize(selectedFile.size)}
-                      </div>
+                  <div className="flex items-center gap-4 p-4">
+                    <div className="p-2.5 bg-emerald-500 text-white rounded-xl">
+                      <FileText className="h-6 w-6" />
+                    </div>
+                    <div className="flex-1 min-w-0 text-left">
+                      <div className="font-semibold text-sm truncate">{selectedFile.name}</div>
+                      <div className="text-xs text-muted-foreground">{formatFileSize(selectedFile.size)}</div>
                     </div>
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={() => setSelectedFile(null)}
+                      className="h-8 w-8 p-0 rounded-full hover:bg-emerald-100"
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-4 w-4 text-emerald-700 dark:text-emerald-400" />
                     </Button>
                   </div>
                 ) : (
-                  <Button
-                    variant="outline"
+                  <button
+                    type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-full border-2 border-dashed h-24"
+                    className="w-full h-28 flex flex-col items-center justify-center gap-2 px-4 text-muted-foreground focus:outline-none"
                   >
-                    <Upload className="mr-2 h-5 w-5" />
-                    Selecionar Arquivo
-                  </Button>
+                    <Upload className={`h-6 w-6 transition-transform ${isDragActive ? 'translate-y-[-4px] text-indigo-500' : ''}`} />
+                    <span className="text-sm font-medium">
+                      Arrastar e soltar arquivo ou <span className="text-indigo-600 font-semibold underline">navegar</span>
+                    </span>
+                    <span className="text-xs text-muted-foreground/80">PDF, DOCX ou EPUB até 10MB</span>
+                  </button>
                 )}
               </div>
             </div>
@@ -498,9 +587,16 @@ const ResourcesPage = () => {
             <Button
               onClick={uploadResource}
               disabled={uploading}
-              className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white"
+              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:opacity-95 text-white h-11 font-bold rounded-xl shadow-md flex items-center justify-center gap-2 transition-all mt-2"
             >
-              {uploading ? 'Fazendo upload...' : 'Publicar Recurso'}
+              {uploading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Salvando no Servidor...
+                </>
+              ) : (
+                'Publicar Recurso na Biblioteca'
+              )}
             </Button>
           </div>
         </DialogContent>
@@ -509,4 +605,4 @@ const ResourcesPage = () => {
   )
 }
 
-export default ResourcesPage
+export default ResourcesPage;
