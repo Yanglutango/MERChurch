@@ -3,14 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import Layout from '../components/layout/Layout'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
-import { Card } from '../components/ui/card'
 import { Input } from '../components/ui/input'
 import { Button } from '../components/ui/button'
 import {
   Send, Loader2, BookOpen, Heart, Lightbulb,
   PlusCircle, Trash2, Bookmark, BookmarkCheck,
   UserPlus, Copy, Check, Share2, ChevronRight,
-  Sparkles, MessageSquare, X,
+  Sparkles, MessageSquare, X, Menu
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { routeAIRequest } from '../lib/aiRouter'
@@ -164,52 +163,47 @@ const LogosAIPage = () => {
     setTimeout(() => setCopiedIndex(null), 2000)
   }
 
-  // ── GUEST SCREEN ──────────────────────────────────────────────────────────
+  // ── GUEST SCREEN (PREMIUM MINIMALIST) ──────────────────────────────────────
   if (isGuest) {
     return (
       <Layout title="Logos by KAIRÓS">
-        <div className="p-4 md:p-8 max-w-4xl mx-auto flex flex-col justify-center min-h-[70vh] animate-fade-in">
-          <div className="max-w-2xl mx-auto text-center space-y-8 bg-card p-6 md:p-10 rounded-2xl border border-border shadow-xl">
+        <div className="flex flex-col items-center justify-center min-h-[80vh] px-4 animate-fade-in">
+          <div className="w-full max-w-2xl text-center space-y-8">
             <div className="space-y-4">
-              <div className="inline-flex p-3.5 bg-[#0A2E4A] rounded-2xl shadow-md text-white ring-4 ring-[#0A2E4A]/10">
-                <Sparkles className="h-7 w-7 animate-pulse" />
+              <div className="inline-flex p-3 text-[#0A2E4A] dark:text-blue-400">
+                <Sparkles className="h-10 w-10 animate-pulse" />
               </div>
-              <h1 className="text-3xl font-black tracking-tight text-foreground sm:text-4xl">Logos by KAIRÓS</h1>
-              <p className="text-sm md:text-base text-muted-foreground max-w-md mx-auto leading-relaxed">
-                Assistente bíblico inteligente. Obtenha respostas exaustivas e solidamente fundamentadas nas Escrituras Sagradas.
+              <h1 className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl font-sans">
+                Logos <span className="text-muted-foreground font-light">by KAIRÓS</span>
+              </h1>
+              <p className="text-base text-muted-foreground max-w-md mx-auto leading-relaxed">
+                Assistente bíblico avançado focado em respostas exaustivas fundamentadas estritamente nas Escrituras.
               </p>
-              <div className="pt-2">
-                <Button
-                  onClick={() => navigate('/auth')}
-                  className="bg-[#0A2E4A] hover:bg-[#0A2E4A]/90 text-white font-bold px-6 h-11 rounded-xl shadow-lg hover:shadow-xl transition-all"
-                >
-                  <UserPlus className="mr-2 h-4 w-4" />Criar Minha Conta Gratuitamente
-                </Button>
-              </div>
             </div>
 
-            <div className="relative py-2">
-              <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-dashed" /></div>
-              <div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-3 text-muted-foreground font-semibold">Exemplos de Consulta</span></div>
+            <div className="pt-2">
+              <Button
+                onClick={() => navigate('/auth')}
+                className="bg-[#0A2E4A] hover:bg-[#0A2E4A]/90 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 text-white font-medium px-6 h-12 rounded-full shadow-sm transition-all"
+              >
+                <UserPlus className="mr-2 h-4 w-4" />Começar agora gratuitamente
+              </Button>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-3.5 text-left">
+            <div className="grid sm:grid-cols-2 gap-3 text-left pt-8">
               {SUGGESTIONS.map((s, i) => (
                 <button
                   key={i}
                   onClick={() => navigate('/auth')}
-                  className="group flex items-start gap-3.5 p-4 rounded-xl border border-border bg-background hover:border-[#0A2E4A]/40 hover:bg-[#0A2E4A]/5 hover:shadow-md transition-all duration-200 text-left"
+                  className="group flex flex-col justify-between p-5 rounded-2xl border border-border bg-card/40 hover:bg-muted/40 transition-all duration-200"
                 >
-                  <div className="p-2 rounded-lg bg-muted text-muted-foreground group-hover:bg-[#0A2E4A] group-hover:text-white transition-colors mt-0.5">
-                    <s.icon className="h-4 w-4 flex-shrink-0" />
+                  <span className="text-[10px] font-medium text-muted-foreground/80 uppercase tracking-widest mb-3 block">
+                    {s.category}
+                  </span>
+                  <div className="flex items-center justify-between w-full gap-2">
+                    <p className="text-sm font-medium text-foreground/90 leading-snug line-clamp-2">{s.text}</p>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:translate-x-0.5 group-hover:text-foreground transition-all flex-shrink-0" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-bold text-[#4A90A4] uppercase tracking-widest mb-0.5">
-                      {s.category}
-                    </p>
-                    <p className="text-xs md:text-sm font-semibold text-foreground leading-snug group-hover:text-foreground transition-colors line-clamp-2">{s.text}</p>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground/30 ml-auto flex-shrink-0 mt-2 group-hover:translate-x-0.5 group-hover:text-[#0A2E4A] transition-all" />
                 </button>
               ))}
             </div>
@@ -219,166 +213,177 @@ const LogosAIPage = () => {
     )
   }
 
-  // ── MEMBER / ADMIN SCREEN ─────────────────────────────────────────────────
+  // ── MEMBER / ADMIN SCREEN (AI CANVAS STYLE) ────────────────────────────────
   return (
     <Layout title="Logos by KAIRÓS">
-      <div className="p-4 md:p-6 max-w-7xl mx-auto flex flex-col h-[calc(100vh-120px)] lg:h-[calc(100vh-90px)]">
+      <div className="flex h-[calc(100vh-65px)] overflow-hidden bg-background font-sans">
         
-        {/* Cabeçalho Compacto Elegante */}
-        <div className="flex items-center justify-between gap-3 pb-3 mb-4 border-b border-border/80 flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-[#0A2E4A] rounded-xl flex-shrink-0 shadow-sm text-white ring-4 ring-[#0A2E4A]/5">
-              <Sparkles className="h-4 w-4" />
-            </div>
-            <div>
-              <h1 className="text-base md:text-lg font-black text-foreground tracking-tight">Logos by KAIRÓS</h1>
-              {usageStats && (
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className={`w-1.5 h-1.5 rounded-full ${usageStats.remaining > 5 ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-                  <p className="text-[10px] md:text-xs font-medium text-muted-foreground">
-                    {usageStats.remaining} de {usageStats.limit} créditos diários restantes
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setShowSidebar(v => !v)}
-              className={`lg:hidden h-9 text-xs font-bold transition-all ${showSidebar ? 'bg-muted border-border' : ''}`}
+        {/* Sidebar Estilo ChatGPT/Claude */}
+        {showSidebar && (
+          <div 
+            className="fixed inset-0 bg-background/40 backdrop-blur-sm z-40 lg:hidden"
+            onClick={() => setShowSidebar(false)}
+          />
+        )}
+
+        <aside className={`
+          fixed lg:static inset-y-0 left-0 w-64 z-50 lg:z-0 flex-shrink-0 flex flex-col bg-muted/30 border-r border-border/60 transition-all duration-200 transform
+          ${showSidebar ? 'translate-x-0' : '-translate-x-full lg:translate-x-0 lg:flex'}
+        `}>
+          <div className="p-3.5 flex items-center justify-between">
+            <Button 
+              variant="ghost" 
+              onClick={createNewChat} 
+              className="flex-1 justify-start gap-2 h-10 px-3 rounded-lg hover:bg-muted text-foreground/80 font-medium text-sm"
             >
-              <MessageSquare className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />Histórico
+              <PlusCircle className="h-4 w-4 text-muted-foreground" />
+              Nova conversa
             </Button>
-            <Button size="sm" onClick={createNewChat} className="h-9 text-xs font-bold bg-[#0A2E4A] hover:bg-[#0A2E4A]/90 text-white shadow-sm">
-              <PlusCircle className="h-3.5 w-3.5 mr-1.5" />Nova Conversa
-            </Button>
-          </div>
-        </div>
-
-        {/* Corpo Principal Responsivo */}
-        <div className="flex flex-1 gap-4 overflow-hidden relative">
-          
-          {/* Overlay Mobile para fechar a Sidebar */}
-          {showSidebar && (
-            <div 
-              className="fixed inset-0 bg-background/60 backdrop-blur-sm z-40 lg:hidden"
+            <button
               onClick={() => setShowSidebar(false)}
-            />
-          )}
+              className="p-2 rounded-lg hover:bg-muted text-muted-foreground lg:hidden ml-1"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
 
-          {/* Sidebar de Conversas */}
-          <Card className={`
-            fixed lg:static inset-y-0 left-0 w-64 z-50 lg:z-0 flex-shrink-0 flex flex-col border shadow-xl lg:shadow-none bg-card transition-all duration-200 transform
-            ${showSidebar ? 'translate-x-0' : '-translate-x-full lg:translate-x-0 lg:hidden'}
-          `}>
-            <div className="p-3 border-b border-border/80 flex items-center justify-between bg-muted/20">
-              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                Conversas Ativas
-              </span>
-              <button
-                onClick={() => setShowSidebar(false)}
-                className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground transition-colors lg:hidden"
+          <div className="flex-1 overflow-y-auto px-2 space-y-0.5">
+            {chats.map(chat => (
+              <div
+                key={chat.id}
+                onClick={() => {
+                  setCurrentChatId(chat.id)
+                  if (window.innerWidth < 1024) setShowSidebar(false)
+                }}
+                className={`group flex items-center justify-between p-2.5 rounded-lg cursor-pointer transition-all ${
+                  currentChatId === chat.id
+                    ? 'bg-muted text-foreground font-medium'
+                    : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                }`}
               >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-2 space-y-1">
-              {chats.map(chat => (
-                <div
-                  key={chat.id}
-                  onClick={() => {
-                    setCurrentChatId(chat.id)
-                    if (window.innerWidth < 1024) setShowSidebar(false)
-                  }}
-                  className={`group flex items-center gap-2.5 p-2.5 rounded-xl cursor-pointer transition-all duration-150 relative ${
-                    currentChatId === chat.id
-                      ? 'bg-[#0A2E4A] text-white shadow-sm font-semibold'
-                      : 'hover:bg-muted text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  <div className="flex-1 min-w-0 pr-4">
-                    <p className="text-xs truncate">{chat.title}</p>
-                    <p className={`text-[10px] mt-0.5 opacity-70 ${currentChatId === chat.id ? 'text-blue-200' : 'text-muted-foreground'}`}>
-                      {chat.messages.length} {chat.messages.length === 1 ? 'mensagem' : 'mensagens'}
-                    </p>
-                  </div>
-                  {chats.length > 1 && (
-                    <button
-                      onClick={e => { e.stopPropagation(); deleteChat(chat.id) }}
-                      className={`
-                        absolute right-2 p-1.5 rounded-lg transition-all duration-150 lg:opacity-0 group-hover:opacity-100
-                        ${currentChatId === chat.id ? 'hover:bg-blue-950 text-blue-200 hover:text-white' : 'hover:bg-background text-muted-foreground hover:text-red-500'}
-                      `}
-                      title="Excluir histórico"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </Card>
+                <span className="text-xs truncate flex-1 pr-2">{chat.title}</span>
+                {chats.length > 1 && (
+                  <button
+                    onClick={e => { e.stopPropagation(); deleteChat(chat.id) }}
+                    className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-background text-muted-foreground hover:text-destructive transition-all"
+                    title="Excluir"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
 
-          {/* Área Principal do Chat */}
-          <Card className="flex-1 flex flex-col border overflow-hidden bg-card shadow-sm min-w-0">
-            {/* Histórico de Mensagens */}
-            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 bg-muted/5">
-              {currentChat?.messages.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center gap-6 text-center max-w-xl mx-auto animate-fade-in">
-                  <div className="space-y-2">
-                    <p className="text-lg font-bold text-foreground">Como posso guiar seu estudo hoje?</p>
-                    <p className="text-xs md:text-sm text-muted-foreground max-w-sm mx-auto">
-                      Pesquise textos bíblicos, conceitos teológicos ou orientações pastorais fundamentadas na Palavra.
-                    </p>
-                  </div>
-                  <div className="grid sm:grid-cols-2 gap-2.5 w-full">
-                    {SUGGESTIONS.map((s, i) => (
-                      <button
-                        key={i}
-                        onClick={() => handleSend(s.text)}
-                        className="group flex items-center gap-3 p-3.5 rounded-xl border border-border bg-card hover:border-[#0A2E4A]/40 hover:bg-[#0A2E4A]/5 text-left transition-all duration-200 shadow-sm"
-                      >
-                        <s.icon className="h-4 w-4 text-[#4A90A4] group-hover:text-[#0A2E4A] flex-shrink-0 transition-colors" />
-                        <span className="text-xs font-semibold text-muted-foreground group-hover:text-foreground leading-snug line-clamp-2 transition-colors">
-                          {s.text}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
+          {/* Painel Inferior de Quota */}
+          {usageStats && (
+            <div className="p-4 border-t border-border/60 bg-muted/10">
+              <div className="flex items-center justify-between text-[11px] font-medium text-muted-foreground mb-1.5">
+                <span>Limite diário</span>
+                <span>{usageStats.remaining} / {usageStats.limit} restando</span>
+              </div>
+              <div className="w-full bg-muted h-1 rounded-full overflow-hidden">
+                <div 
+                  className="bg-[#0A2E4A] dark:bg-zinc-400 h-full transition-all duration-300"
+                  style={{ width: `${(usageStats.remaining / usageStats.limit) * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
+        </aside>
+
+        {/* Área Central de Trabalho */}
+        <main className="flex-1 flex flex-col relative overflow-hidden bg-background">
+          
+          {/* Topbar Slim Mobile */}
+          <header className="flex items-center justify-between px-4 py-2.5 border-b border-border/40 lg:border-none flex-shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowSidebar(v => !v)}
+              className="lg:hidden h-9 w-9"
+            >
+              <Menu className="h-5 w-5 text-muted-foreground" />
+            </Button>
+            
+            <div className="flex items-center gap-2 lg:absolute lg:top-4 lg:left-6 z-10">
+              <span className="text-sm font-semibold tracking-tight text-foreground/80 lg:text-base">
+                Logos <span className="text-muted-foreground font-normal">by KAIRÓS</span>
+              </span>
+            </div>
+
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={createNewChat} 
+              className="lg:hidden h-8 text-xs font-medium"
+            >
+              <PlusCircle className="h-3.5 w-3.5 mr-1" /> Novo
+            </Button>
+          </header>
+
+          {/* Área de Mensagens Infinitas */}
+          <div className="flex-1 overflow-y-auto px-4 pt-4 pb-36 space-y-6">
+            {currentChat?.messages.length === 0 ? (
+              
+              // Estado Inicial Centralizado (Estilo Gemini)
+              <div className="h-full flex flex-col items-center justify-center max-w-2xl mx-auto space-y-8 animate-fade-in pt-12">
+                <h2 className="text-2xl sm:text-3xl font-medium tracking-tight text-center text-foreground/50">
+                  Como posso auxiliar seu estudo teológico hoje?
+                </h2>
+                <div className="grid sm:grid-cols-2 gap-3 w-full">
+                  {SUGGESTIONS.map((s, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleSend(s.text)}
+                      className="group flex flex-col justify-between p-4 rounded-xl border border-border bg-card hover:bg-muted/40 text-left transition-all duration-200"
+                    >
+                      <span className="text-[10px] font-medium text-muted-foreground/60 uppercase tracking-widest mb-2">{s.category}</span>
+                      <span className="text-xs sm:text-sm text-foreground/80 group-hover:text-foreground font-medium leading-snug line-clamp-2">
+                        {s.text}
+                      </span>
+                    </button>
+                  ))}
                 </div>
-              ) : (
-                currentChat.messages.map((msg, idx) => (
+              </div>
+            ) : (
+              
+              // Feed de Chat Alinhado e Limpo (Estilo Claude)
+              <div className="max-w-3xl mx-auto space-y-8 w-full">
+                {currentChat.messages.map((msg, idx) => (
                   <div
                     key={idx}
-                    className={`flex gap-3 max-w-4xl mx-auto ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-slide-up`}
+                    className={`flex gap-4 group ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-slide-up`}
                   >
+                    {/* Ícone Lateral para as respostas da IA */}
                     {msg.role === 'assistant' && (
-                      <div className="h-8 w-8 rounded-xl bg-[#0A2E4A] text-white flex items-center justify-center flex-shrink-0 shadow-sm mt-0.5">
-                        <Sparkles className="h-4 w-4" />
+                      <div className="h-7 w-7 rounded-full border border-border bg-background flex items-center justify-center flex-shrink-0 text-muted-foreground shadow-sm mt-0.5">
+                        <Sparkles className="h-3.5 w-3.5" />
                       </div>
                     )}
-                    <div className={`group max-w-[85%] sm:max-w-[75%] flex flex-col gap-1.5 ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+
+                    <div className={`flex flex-col gap-1.5 max-w-[85%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                      
+                      {/* Texto com tipografia espaçada e limpa */}
                       <div className={`
-                        px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-sm transition-all duration-150
+                        text-sm md:text-base leading-relaxed tracking-normal whitespace-pre-wrap
                         ${msg.role === 'user'
-                          ? 'bg-[#0A2E4A] text-white rounded-tr-none font-medium'
-                          : 'bg-card border border-border/80 text-foreground rounded-tl-none'}
+                          ? 'bg-muted/80 text-foreground px-4 py-2.5 rounded-2xl rounded-tr-none'
+                          : 'text-foreground/90 pl-1 pr-4 py-0.5'}
                       `}>
                         {msg.content}
                       </div>
                       
-                      {/* Painel de Ações sob a mensagem */}
+                      {/* Painel de ações flutuantes sob a resposta da IA */}
                       {msg.role === 'assistant' && (
-                        <div className="flex items-center gap-1 lg:opacity-0 group-hover:opacity-100 transition-opacity duration-200 pl-1">
-                          <span className="text-[10px] text-muted-foreground font-medium mr-2">
+                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pl-1">
+                          <span className="text-[10px] text-muted-foreground mr-2 font-mono">
                             {msg.timestamp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                           </span>
                           <button
                             onClick={() => copyMsg(msg.content, idx)}
-                            className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-all"
-                            title="Copiar texto"
+                            className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-all"
+                            title="Copiar"
                           >
                             {copiedIndex === idx
                               ? <Check className="h-3.5 w-3.5 text-green-600" />
@@ -389,81 +394,82 @@ const LogosAIPage = () => {
                               if (navigator.share) navigator.share({ text: msg.content }).catch(() => null)
                               else copyMsg(msg.content, -1)
                             }}
-                            className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-all"
+                            className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-all"
                             title="Compartilhar"
                           >
                             <Share2 className="h-3.5 w-3.5" />
                           </button>
                           <button
                             onClick={() => toggleSave(idx)}
-                            className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-all"
-                            title={msg.saved ? 'Remover dos itens salvos' : 'Guardar referência'}
+                            className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-all"
+                            title={msg.saved ? 'Remover salvo' : 'Salvar'}
                           >
                             {msg.saved
-                              ? <BookmarkCheck className="h-3.5 w-3.5 text-[#0A2E4A]" />
+                              ? <BookmarkCheck className="h-3.5 w-3.5 text-foreground" />
                               : <Bookmark className="h-3.5 w-3.5" />}
                           </button>
                         </div>
                       )}
                     </div>
-                    {msg.role === 'user' && (
-                      <div className="h-8 w-8 rounded-xl bg-muted border border-border flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-black text-foreground shadow-sm">
-                        {user?.username?.charAt(0).toUpperCase() || 'U'}
-                      </div>
-                    )}
                   </div>
-                ))
-              )}
+                ))}
 
-              {/* Loader/Indicador de Digitação */}
-              {loadingAI && (
-                <div className="flex gap-3 max-w-4xl mx-auto justify-start animate-pulse">
-                  <div className="h-8 w-8 rounded-xl bg-[#0A2E4A] flex items-center justify-center flex-shrink-0 shadow-sm text-white">
-                    <Sparkles className="h-4 w-4" />
+                {/* Loading elegante e discreto */}
+                {loadingAI && (
+                  <div className="flex gap-4 justify-start animate-pulse">
+                    <div className="h-7 w-7 rounded-full border border-border bg-background flex items-center justify-center flex-shrink-0 text-muted-foreground shadow-sm">
+                      <Sparkles className="h-3.5 w-3.5" />
+                    </div>
+                    <div className="py-2 flex items-center gap-1">
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground/60" />
+                      <span className="text-xs text-muted-foreground/60 font-medium">Pensando...</span>
+                    </div>
                   </div>
-                  <div className="px-4 py-3.5 bg-card border border-border/80 rounded-2xl rounded-tl-none flex items-center gap-1.5 shadow-sm">
-                    <div className="w-1.5 h-1.5 bg-muted-foreground/60 rounded-full animate-bounce [animation-duration:1s]" />
-                    <div className="w-1.5 h-1.5 bg-muted-foreground/60 rounded-full animate-bounce [animation-duration:1s] [animation-delay:0.15s]" />
-                    <div className="w-1.5 h-1.5 bg-muted-foreground/60 rounded-full animate-bounce [animation-duration:1s] [animation-delay:0.3s]" />
-                  </div>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
+                )}
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
 
-            {/* Container de Entrada Fixado abaixo */}
-            <div className="p-3 md:p-4 border-t border-border/80 bg-card flex-shrink-0">
+          {/* Input Flutuante no Rodapé (Estilo ChatGPT) */}
+          <div className="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-background via-background to-transparent flex-shrink-0 z-20">
+            <div className="max-w-3xl mx-auto space-y-2">
+              
               {usageStats && usageStats.remaining <= 5 && usageStats.remaining > 0 && (
-                <p className="text-[11px] font-bold text-amber-600 dark:text-amber-400 text-center mb-2 animate-fade-in">
-                  Atenção: Você possui apenas {usageStats.remaining} {usageStats.remaining === 1 ? 'consulta restante' : 'consultas restantes'} hoje.
+                <p className="text-[11px] font-medium text-amber-600 dark:text-amber-400 text-center animate-fade-in">
+                  Restam apenas {usageStats.remaining} mensagens de sua cota diária.
                 </p>
               )}
-              <div className="flex gap-2 max-w-4xl mx-auto">
+
+              <div className="relative flex items-center bg-card border border-border shadow-md rounded-2xl px-3 py-1.5 focus-within:ring-1 focus-within:ring-border focus-within:border-muted-foreground/30 transition-all">
                 <Input
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
-                  placeholder={usageStats?.remaining === 0 ? "Limite diário alcançado." : "Faça uma pergunta teológica ou devocional..."}
-                  className="flex-1 h-11 text-sm bg-background/50 focus-visible:ring-[#0A2E4A]/20 rounded-xl"
+                  placeholder={usageStats?.remaining === 0 ? "Limite diário alcançado." : "Faça uma pergunta bíblica ou teológica..."}
+                  className="flex-1 bg-transparent border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 h-11 text-base placeholder:text-muted-foreground/60"
                   maxLength={500}
                   disabled={loadingAI || usageStats?.remaining === 0}
                 />
+                
                 <Button
                   onClick={() => handleSend()}
                   disabled={loadingAI || !input.trim() || usageStats?.remaining === 0}
-                  className="h-11 w-11 p-0 bg-[#0A2E4A] hover:bg-[#0A2E4A]/90 text-white flex-shrink-0 rounded-xl shadow-md disabled:opacity-50"
+                  className="h-9 w-9 p-0 bg-foreground text-background hover:bg-foreground/90 rounded-xl transition-all flex-shrink-0 shadow-sm disabled:opacity-20"
                 >
                   {loadingAI
                     ? <Loader2 className="h-4 w-4 animate-spin" />
                     : <Send className="h-4 w-4" />}
                 </Button>
               </div>
-              <p className="text-[10px] text-muted-foreground text-center mt-2 font-medium tracking-wide">
-                Respostas fundamentadas estritamente nas Sagradas Escrituras · Sola Scriptura
+
+              <p className="text-[10px] text-muted-foreground/70 text-center font-normal tracking-wide">
+                Respostas fundamentadas exclusivamente nas Escrituras Sagradas · Sola Scriptura
               </p>
             </div>
-          </Card>
-        </div>
+          </div>
+
+        </main>
       </div>
     </Layout>
   )
