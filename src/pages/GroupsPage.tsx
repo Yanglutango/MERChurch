@@ -173,76 +173,108 @@ const GroupsPage = () => {
 
   return (
     <Layout title="Grupos & Células">
-      <div className="p-4 space-y-5">
-        <div className="flex items-center justify-between gap-3 pb-1 border-b border-border">
+      <div className="max-w-7xl mx-auto p-4 space-y-5 font-sans antialiased">
+        
+        {/* Top Header Row */}
+        <div className="flex items-center justify-between gap-4 pb-4 border-b border-border/60">
           <div>
-            <h1 className="text-xl font-bold text-foreground">Grupos & Células</h1>
-            <p className="text-sm text-muted-foreground">Conecte-se em comunidade por região e interesse</p>
+            <h1 className="text-xl font-bold tracking-tight text-[#0A2E4A] dark:text-zinc-100">Grupos & Células</h1>
+            <p className="text-xs text-muted-foreground">Conecte-se em comunidade por região e interesse</p>
           </div>
           <div className="flex gap-2">
             {!isGuest && (
-              <Button onClick={() => setCreateOpen(true)} size="sm" className="bg-[#0A2E4A] hover:bg-[#0d3a5c] text-white font-semibold">
+              <Button onClick={() => setCreateOpen(true)} size="sm" className="h-9 bg-[#0A2E4A] hover:bg-[#0A2E4A]/90 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 text-white font-medium rounded-xl px-4 shadow-sm">
                 <Plus className="h-4 w-4 mr-1.5" /> Criar Grupo
               </Button>
             )}
             {isGuest && (
-              <Button onClick={() => navigate('/auth')} size="sm" className="bg-[#0A2E4A] hover:bg-[#0d3a5c] text-white font-semibold">
+              <Button onClick={() => navigate('/auth')} size="sm" className="h-9 bg-[#0A2E4A] hover:bg-[#0A2E4A]/90 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 text-white font-medium rounded-xl px-4 shadow-sm">
                 <UserPlus className="h-4 w-4 mr-1.5" /> Entrar
               </Button>
             )}
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-5">
-          <div className={`lg:col-span-1 space-y-3 ${mobileView === 'chat' ? 'hidden lg:block' : 'block'}`}>
-            <Card className="p-3 border">
-              <div className="space-y-2">
+        {/* Core Main Grid */}
+        <div className="grid lg:grid-cols-3 gap-5 items-start">
+          
+          {/* Left Column (Lists & Filters) */}
+          <div className={`lg:col-span-1 space-y-4 ${mobileView === 'chat' ? 'hidden lg:block' : 'block'}`}>
+            <Card className="p-3.5 border border-border/50 shadow-sm bg-card rounded-2xl">
+              <div className="space-y-2.5">
                 <div className="relative">
-                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-                    placeholder="Buscar grupo ou região..." className="pl-9 h-9" />
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground/60" />
+                  <Input 
+                    value={searchTerm} 
+                    onChange={e => setSearchTerm(e.target.value)}
+                    placeholder="Buscar grupo ou região..." 
+                    className="pl-9 h-9 bg-background/50 rounded-xl border-border/60 text-sm placeholder:text-muted-foreground/60 focus-visible:ring-muted-foreground/20" 
+                  />
                 </div>
-                <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)}
-                  className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:border-primary">
+                <select 
+                  value={filterCategory} 
+                  onChange={e => setFilterCategory(e.target.value)}
+                  className="w-full h-9 rounded-xl border border-border/60 bg-background px-3 text-sm focus:outline-none focus:border-primary/40 text-foreground"
+                >
                   <option value="all">Todas as Categorias</option>
                   {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                 </select>
               </div>
             </Card>
 
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {filteredGroups.length === 0
                 ? <EmptyState icon={Users} title="Nenhum grupo encontrado" description="Aguarde novos grupos ou crie o primeiro" />
                 : filteredGroups.map(group => {
-                  const isMember = isMemberOf(group.id)
-                  const isSelected = selectedGroup?.id === group.id
-                  return (
-                    <Card key={group.id}
-                      className={`p-3 border cursor-pointer transition-all hover:shadow-md ${isSelected ? 'border-[#0A2E4A] bg-[#0A2E4A]/5' : 'hover:border-[#4A90A4]/50'}`}
-                      onClick={() => selectGroup(group)}>
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                            <h3 className="font-semibold text-foreground text-sm leading-tight">{group.name}</h3>
-                            {isMember && <span className="px-1.5 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-[10px] font-bold rounded-full">Membro</span>}
+                    const isMember = isMemberOf(group.id)
+                    const isSelected = selectedGroup?.id === group.id
+                    return (
+                      <Card 
+                        key={group.id}
+                        className={`p-4 border transition-all rounded-2xl cursor-pointer ${
+                          isSelected 
+                            ? 'border-[#0A2E4A] bg-[#0A2E4A]/5 shadow-sm dark:border-zinc-400 dark:bg-zinc-800/10' 
+                            : 'border-border/40 bg-card hover:border-border/80 hover:shadow-sm'
+                        }`}
+                        onClick={() => selectGroup(group)}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0 space-y-1.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <h3 className="font-semibold text-foreground text-sm leading-snug">{group.name}</h3>
+                              {isMember && <span className="px-2 py-0.5 bg-green-500/10 dark:bg-green-500/20 text-green-700 dark:text-green-400 text-[10px] font-bold rounded-full tracking-wide">Membro</span>}
+                            </div>
+                            
+                            {group.category && (
+                              <span className="inline-block px-2 py-0.5 bg-[#0A2E4A]/5 dark:bg-zinc-800 text-[#0A2E4A] dark:text-zinc-300 text-[10px] font-medium rounded-full border border-border/30">
+                                {getCategoryLabel(group.category)}
+                              </span>
+                            )}
+                            
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground/80 pt-0.5">
+                              {group.region && <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5 opacity-70" />{group.region}</span>}
+                              <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5 opacity-70" />{group.member_count}</span>
+                            </div>
                           </div>
-                          {group.category && <span className="inline-block px-1.5 py-0.5 bg-[#0A2E4A]/10 text-[#0A2E4A] dark:text-[#7bbdd4] text-[10px] font-semibold rounded-full mb-1">{getCategoryLabel(group.category)}</span>}
-                          <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-                            {group.region && <span className="flex items-center gap-0.5"><MapPin className="h-3 w-3" />{group.region}</span>}
-                            <span className="flex items-center gap-0.5"><Users className="h-3 w-3" />{group.member_count}</span>
-                          </div>
+                          
+                          {!isGuest && (
+                            <Button 
+                              size="sm" 
+                              variant={isMember ? 'outline' : 'default'}
+                              onClick={e => { e.stopPropagation(); isMember ? leaveGroup(group.id) : joinGroup(group.id) }}
+                              className={`flex-shrink-0 h-8 px-3 text-xs font-semibold rounded-xl transition-colors ${
+                                isMember 
+                                  ? 'border-destructive/30 text-destructive hover:bg-destructive/5 dark:border-destructive/40' 
+                                  : 'bg-[#0A2E4A] hover:bg-[#0A2E4A]/90 dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-900 text-white'
+                              }`}
+                            >
+                              {isMember ? <><LogOut className="h-3.5 w-3.5 mr-1" />Sair</> : <><LogIn className="h-3.5 w-3.5 mr-1" />Entrar</>}
+                            </Button>
+                          )}
                         </div>
-                        {!isGuest && (
-                          <Button size="sm" variant={isMember ? 'outline' : 'default'}
-                            onClick={e => { e.stopPropagation(); isMember ? leaveGroup(group.id) : joinGroup(group.id) }}
-                            className={`flex-shrink-0 h-7 px-2 text-[11px] font-bold ${isMember ? 'border-red-300 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20' : 'bg-[#0A2E4A] hover:bg-[#0d3a5c] text-white'}`}>
-                            {isMember ? <><LogOut className="h-3 w-3 mr-0.5" />Sair</> : <><LogIn className="h-3 w-3 mr-0.5" />Entrar</>}
-                          </Button>
-                        )}
-                      </div>
-                    </Card>
-                  )
-                })
+                      </Card>
+                    )
+                  })
               }
             </div>
 
@@ -251,125 +283,155 @@ const GroupsPage = () => {
             )}
           </div>
 
+          {/* Right Column (Dynamic Workspace Box) */}
           <div className={`lg:col-span-2 ${mobileView === 'list' ? 'hidden lg:block' : 'block'}`}>
             {!selectedGroup ? (
-              <Card className="h-full min-h-[400px] flex items-center justify-center border border-dashed">
-                <div className="text-center space-y-3 p-8">
-                  <div className="inline-flex p-5 bg-muted rounded-2xl">
-                    <MessageCircle className="h-12 w-12 text-muted-foreground/50" />
+              <Card className="h-full min-h-[440px] flex items-center justify-center border border-dashed border-border/80 rounded-2xl bg-card/30">
+                <div className="text-center space-y-3.5 p-8">
+                  <div className="inline-flex p-4.5 bg-muted rounded-2xl border border-border/40 shadow-inner">
+                    <MessageCircle className="h-10 w-10 text-muted-foreground/40" />
                   </div>
-                  <h3 className="font-semibold text-foreground">Selecione um grupo</h3>
-                  <p className="text-sm text-muted-foreground max-w-xs">
-                    {isGuest ? 'Crie uma conta para participar dos grupos.' : 'Escolha um grupo ao lado para ver o chat e reuniões.'}
+                  <h3 className="font-semibold text-foreground text-sm">Selecione um grupo</h3>
+                  <p className="text-xs text-muted-foreground max-w-xs leading-relaxed">
+                    {isGuest ? 'Crie uma conta para participar dos grupos.' : 'Escolha um grupo ao lado para ver o canal de conversas e reuniões agendadas.'}
                   </p>
                 </div>
               </Card>
             ) : (
-              <Card className="flex flex-col border shadow-md" style={{ height: 'calc(100vh - 200px)', minHeight: '500px' }}>
-                <div className="p-3 border-b border-border flex items-center justify-between gap-2 bg-muted/30">
-                  <div className="flex items-center gap-2">
-                    <button onClick={goBack} className="lg:hidden p-1.5 hover:bg-muted rounded-lg transition-colors" aria-label="Voltar">
-                      <ArrowLeft className="h-4 w-4 text-muted-foreground" />
+              <Card className="flex flex-col border border-border/40 shadow-sm bg-card rounded-2xl overflow-hidden" style={{ height: 'calc(100vh - 180px)', minHeight: '520px' }}>
+                
+                {/* Header Sub-Bar Inside Workspace */}
+                <div className="p-3.5 border-b border-border/40 flex items-center justify-between gap-3 bg-muted/20 backdrop-blur-sm">
+                  <div className="flex items-center gap-3">
+                    <button onClick={goBack} className="lg:hidden p-1.5 hover:bg-muted rounded-xl transition-colors text-muted-foreground" aria-label="Voltar">
+                      <ArrowLeft className="h-4 w-4" />
                     </button>
-                    <div className="p-1.5 bg-[#0A2E4A] rounded-lg">
-                      <Users className="h-4 w-4 text-white" />
+                    <div className="p-2 bg-[#0A2E4A]/10 dark:bg-zinc-800 text-[#0A2E4A] dark:text-zinc-200 rounded-xl border border-border/30">
+                      <Users className="h-4 w-4" />
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-foreground text-sm">{selectedGroup.name}</h3>
-                      <p className="text-[10px] text-muted-foreground">{selectedGroup.member_count} membros · {getCategoryLabel(selectedGroup.category)}</p>
+                    <div className="min-w-0">
+                      <h3 className="font-bold text-foreground text-sm truncate leading-tight">{selectedGroup.name}</h3>
+                      <p className="text-[10px] text-muted-foreground/90 truncate mt-0.5">{selectedGroup.member_count} membros · {getCategoryLabel(selectedGroup.category)}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Button size="sm" variant={chatView === 'chat' ? 'default' : 'outline'} onClick={() => setChatView('chat')} className="h-7 px-2 text-xs font-semibold">
-                      <MessageCircle className="h-3 w-3 mr-1" />Chat
+                  
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <Button 
+                      size="sm" 
+                      variant={chatView === 'chat' ? 'default' : 'outline'} 
+                      onClick={() => setChatView('chat')} 
+                      className={`h-7.5 rounded-lg px-2.5 text-xs font-semibold ${chatView === 'chat' ? 'bg-[#0A2E4A] hover:bg-[#0A2E4A]/90 text-white dark:bg-zinc-100 dark:text-zinc-900' : 'text-muted-foreground border-border/60'}`}
+                    >
+                      <MessageCircle className="h-3.5 w-3.5 mr-1" />Chat
                     </Button>
-                    <Button size="sm" variant={chatView === 'meetings' ? 'default' : 'outline'} onClick={() => setChatView('meetings')} className="h-7 px-2 text-xs font-semibold">
-                      <Calendar className="h-3 w-3 mr-1" />Reuniões
+                    <Button 
+                      size="sm" 
+                      variant={chatView === 'meetings' ? 'default' : 'outline'} 
+                      onClick={() => setChatView('meetings')} 
+                      className={`h-7.5 rounded-lg px-2.5 text-xs font-semibold ${chatView === 'meetings' ? 'bg-[#0A2E4A] hover:bg-[#0A2E4A]/90 text-white dark:bg-zinc-100 dark:text-zinc-900' : 'text-muted-foreground border-border/60'}`}
+                    >
+                      <Calendar className="h-3.5 w-3.5 mr-1" />Reuniões
                     </Button>
-                    <button onClick={() => { setSelectedGroup(null); setMobileView('list') }} className="p-1.5 hover:bg-muted rounded-lg transition-colors">
-                      <X className="h-4 w-4 text-muted-foreground" />
+                    <button onClick={() => { setSelectedGroup(null); setMobileView('list') }} className="p-1.5 hover:bg-muted rounded-xl text-muted-foreground/70 transition-colors">
+                      <X className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
 
+                {/* Switchable Chat Feed View */}
                 {chatView === 'chat' ? (
                   <>
-                    <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-3.5 bg-background/20">
                       {!isMemberOf(selectedGroup.id) ? (
                         <div className="h-full flex items-center justify-center">
-                          <div className="text-center space-y-3">
-                            <MessageCircle className="h-10 w-10 text-muted-foreground/40 mx-auto" />
-                            <p className="text-sm text-muted-foreground">Entre no grupo para ver o chat</p>
-                            <Button onClick={() => joinGroup(selectedGroup.id)} size="sm" className="bg-[#0A2E4A] hover:bg-[#0d3a5c] text-white font-bold">
-                              <LogIn className="h-3 w-3 mr-1.5" />Entrar no Grupo
+                          <div className="text-center space-y-3 p-4">
+                            <MessageCircle className="h-9 w-9 text-muted-foreground/30 mx-auto" />
+                            <p className="text-xs text-muted-foreground max-w-xs leading-relaxed">Entre no grupo para participar e acompanhar as mensagens dos membros.</p>
+                            <Button onClick={() => joinGroup(selectedGroup.id)} size="sm" className="h-8.5 bg-[#0A2E4A] hover:bg-[#0A2E4A]/90 dark:bg-zinc-100 dark:text-zinc-900 text-white font-semibold rounded-xl px-4">
+                              <LogIn className="h-3.5 w-3.5 mr-1.5" />Entrar no Grupo
                             </Button>
                           </div>
                         </div>
                       ) : messages.length === 0 ? (
                         <div className="h-full flex items-center justify-center">
-                          <p className="text-sm text-muted-foreground">Sem mensagens ainda. Seja o primeiro!</p>
+                          <p className="text-xs text-muted-foreground/80 font-medium">Sem mensagens ainda neste canal. Seja o primeiro!</p>
                         </div>
                       ) : messages.map(msg => {
-                        const isOwn = msg.user_id === user?.id
-                        const hasAvatar = !!msg.user?.avatar_url
-                        return (
-                          <div key={msg.id} className={`flex gap-2 ${isOwn ? 'flex-row-reverse' : ''}`}>
-                            {hasAvatar ? (
-                              <img src={msg.user!.avatar_url!} alt={msg.user!.username} className="h-7 w-7 rounded-full flex-shrink-0 object-cover border" />
-                            ) : (
-                              <div className={`h-7 w-7 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-bold ${isOwn ? 'bg-[#0A2E4A]' : 'bg-[#4A90A4]'}`}>
-                                {msg.user?.username?.charAt(0).toUpperCase() || 'U'}
+                          const isOwn = msg.user_id === user?.id
+                          const hasAvatar = !!msg.user?.avatar_url
+                          return (
+                            <div key={msg.id} className={`flex gap-2.5 items-end ${isOwn ? 'flex-row-reverse' : ''}`}>
+                              {hasAvatar ? (
+                                <img src={msg.user!.avatar_url!} alt={msg.user!.username} className="h-7 w-7 rounded-full flex-shrink-0 object-cover border border-border/40 shadow-sm" />
+                              ) : (
+                                <div className={`h-7 w-7 rounded-full flex-shrink-0 flex items-center justify-center text-white text-[10px] font-bold shadow-sm ${isOwn ? 'bg-[#0A2E4A]' : 'bg-[#4A90A4]'}`}>
+                                  {msg.user?.username?.charAt(0).toUpperCase() || 'U'}
+                                </div>
+                              )}
+                              <div className={`max-w-[75%] flex flex-col gap-0.5 ${isOwn ? 'items-end' : 'items-start'}`}>
+                                {!isOwn && <span className="text-[10px] font-semibold text-muted-foreground/90 px-1.5 mb-0.5">{msg.user?.username}</span>}
+                                <div className={`px-3.5 py-2 rounded-2xl text-sm leading-relaxed ${
+                                  isOwn 
+                                    ? 'bg-[#0A2E4A] dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-br-none shadow-sm' 
+                                    : 'bg-muted/80 dark:bg-muted text-foreground rounded-bl-none border border-border/10'
+                                }`}>
+                                  {msg.message}
+                                </div>
+                                <span className="text-[9px] text-muted-foreground/60 px-1.5 mt-0.5">
+                                  {new Date(msg.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                </span>
                               </div>
-                            )}
-                            <div className={`max-w-[75%] flex flex-col gap-0.5 ${isOwn ? 'items-end' : 'items-start'}`}>
-                              {!isOwn && <span className="text-[10px] font-semibold text-muted-foreground px-1">{msg.user?.username}</span>}
-                              <div className={`px-3 py-1.5 rounded-2xl text-sm leading-relaxed ${isOwn ? 'bg-[#0A2E4A] text-white rounded-tr-sm' : 'bg-muted text-foreground rounded-tl-sm'}`}>
-                                {msg.message}
-                              </div>
-                              <span className="text-[10px] text-muted-foreground px-1">
-                                {new Date(msg.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                              </span>
                             </div>
-                          </div>
-                        )
-                      })}
+                          )
+                        })
+                      }
                       <div ref={messagesEndRef} />
                     </div>
 
+                    {/* Chat Text Input Section */}
                     {isMemberOf(selectedGroup.id) && (
-                      <div className="p-2.5 border-t border-border">
+                      <div className="p-3 border-t border-border/40 bg-card/50">
                         <div className="flex gap-2">
-                          <Input value={newMessage} onChange={e => setNewMessage(e.target.value)}
+                          <Input 
+                            value={newMessage} 
+                            onChange={e => setNewMessage(e.target.value)}
                             onKeyPress={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-                            placeholder="Mensagem..." className="flex-1 h-9 text-sm" />
-                          <Button onClick={sendMessage} disabled={sendingMessage || !newMessage.trim()}
-                            className="h-9 px-3 bg-[#0A2E4A] hover:bg-[#0d3a5c] text-white">
-                            <Send className="h-4 w-4" />
+                            placeholder="Escreva uma mensagem..." 
+                            className="flex-1 h-9 rounded-xl bg-background border-border/60 text-sm focus-visible:ring-muted-foreground/20 placeholder:text-muted-foreground/60" 
+                          />
+                          <Button 
+                            onClick={sendMessage} 
+                            disabled={sendingMessage || !newMessage.trim()}
+                            className="h-9 w-9 p-0 bg-[#0A2E4A] hover:bg-[#0A2E4A]/90 dark:bg-zinc-100 dark:text-zinc-900 text-white rounded-xl flex items-shrink-0 items-center justify-center shadow-sm"
+                          >
+                            <Send className="h-3.5 w-3.5" />
                           </Button>
                         </div>
                       </div>
                     )}
                   </>
                 ) : (
-                  <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                  /* Meetings Sub-Feed View */
+                  <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-background/20">
                     {meetings.length === 0 ? (
                       <div className="h-full flex items-center justify-center">
-                        <div className="text-center space-y-2">
-                          <Calendar className="h-10 w-10 text-muted-foreground/40 mx-auto" />
-                          <p className="text-sm text-muted-foreground">Nenhuma reunião agendada</p>
+                        <div className="text-center space-y-2 p-4">
+                          <Calendar className="h-9 w-9 text-muted-foreground/30 mx-auto" />
+                          <p className="text-xs text-muted-foreground">Nenhuma reunião ou evento agendado.</p>
                         </div>
                       </div>
                     ) : meetings.map(meeting => (
-                      <Card key={meeting.id} className="p-3 border hover:border-[#4A90A4]/40 transition-colors">
-                        <h4 className="font-semibold text-foreground text-sm mb-1">{meeting.title}</h4>
-                        {meeting.description && <p className="text-xs text-muted-foreground mb-2">{meeting.description}</p>}
-                        <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{new Date(meeting.meeting_date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
-                          <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{new Date(meeting.meeting_date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
-                          {meeting.location && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{meeting.location}</span>}
-                        </div>
-                      </Card>
-                    ))}
+                        <Card key={meeting.id} className="p-4 border border-border/40 bg-card rounded-2xl hover:border-border/80 transition-colors shadow-sm">
+                          <h4 className="font-bold text-foreground text-sm leading-tight mb-1">{meeting.title}</h4>
+                          {meeting.description && <p className="text-xs text-muted-foreground/90 mb-3 leading-relaxed">{meeting.description}</p>}
+                          <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground/80 pt-1">
+                            <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5 opacity-70" />{new Date(meeting.meeting_date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                            <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5 opacity-70" />{new Date(meeting.meeting_date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                            {meeting.location && <span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 opacity-70" />{meeting.location}</span>}
+                          </div>
+                        </Card>
+                      ))
+                    }
                   </div>
                 )}
               </Card>
@@ -378,38 +440,68 @@ const GroupsPage = () => {
         </div>
       </div>
 
+      {/* Responsive Dialog Creator Form */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle className="text-lg font-bold">Criar Novo Grupo</DialogTitle></DialogHeader>
-          <div className="space-y-4">
+        <DialogContent className="max-w-md rounded-2xl border-border/60 shadow-lg p-5">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold tracking-tight text-foreground">Criar Novo Grupo</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-1">
             <div>
-              <Label className="font-semibold mb-1 block">Nome *</Label>
-              <Input value={newGroup.name} onChange={e => setNewGroup({ ...newGroup, name: e.target.value })} placeholder="Ex: Estudo Bíblico do Bairro Norte" className="h-10 border" />
+              <Label className="text-xs font-semibold text-muted-foreground block mb-1.5">Nome do Grupo *</Label>
+              <Input 
+                value={newGroup.name} 
+                onChange={e => setNewGroup({ ...newGroup, name: e.target.value })} 
+                placeholder="Ex: Célula Morada da Paz" 
+                className="h-9.5 rounded-xl border-border/60 text-sm focus-visible:ring-muted-foreground/20" 
+              />
             </div>
             <div>
-              <Label className="font-semibold mb-1 block">Descrição</Label>
-              <Textarea value={newGroup.description} onChange={e => setNewGroup({ ...newGroup, description: e.target.value })} placeholder="Propósito do grupo..." rows={3} className="resize-none border" />
+              <Label className="text-xs font-semibold text-muted-foreground block mb-1.5">Descrição / Propósito</Label>
+              <Textarea 
+                value={newGroup.description} 
+                onChange={e => setNewGroup({ ...newGroup, description: e.target.value })} 
+                placeholder="Qual o objetivo principal do grupo?" 
+                rows={3} 
+                className="resize-none rounded-xl border-border/60 text-sm placeholder:text-muted-foreground/50 focus-visible:ring-muted-foreground/20" 
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="font-semibold mb-1 block">Categoria</Label>
-                <select value={newGroup.category} onChange={e => setNewGroup({ ...newGroup, category: e.target.value })}
-                  className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:border-primary">
+                <Label className="text-xs font-semibold text-muted-foreground block mb-1.5">Categoria</Label>
+                <select 
+                  value={newGroup.category} 
+                  onChange={e => setNewGroup({ ...newGroup, category: e.target.value })}
+                  className="w-full h-9.5 rounded-xl border border-border/60 bg-background px-3 text-sm focus:outline-none focus:border-primary/40 text-foreground"
+                >
                   <option value="">Selecione</option>
                   {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                 </select>
               </div>
               <div>
-                <Label className="font-semibold mb-1 block">Região</Label>
-                <Input value={newGroup.region} onChange={e => setNewGroup({ ...newGroup, region: e.target.value })} placeholder="Ex: Bairro Norte" className="h-10 border" />
+                <Label className="text-xs font-semibold text-muted-foreground block mb-1.5">Região / Cidade</Label>
+                <Input 
+                  value={newGroup.region} 
+                  onChange={e => setNewGroup({ ...newGroup, region: e.target.value })} 
+                  placeholder="Ex: Zona Central" 
+                  className="h-9.5 rounded-xl border-border/60 text-sm focus-visible:ring-muted-foreground/20" 
+                />
               </div>
             </div>
             <div>
-              <Label className="font-semibold mb-1 block">Horário de Reunião</Label>
-              <Input value={newGroup.meeting_schedule} onChange={e => setNewGroup({ ...newGroup, meeting_schedule: e.target.value })} placeholder="Ex: Sábados às 15h" className="h-10 border" />
+              <Label className="text-xs font-semibold text-muted-foreground block mb-1.5">Horário de Reunião</Label>
+              <Input 
+                value={newGroup.meeting_schedule} 
+                onChange={e => setNewGroup({ ...newGroup, meeting_schedule: e.target.value })} 
+                placeholder="Ex: Sábados às 18h00" 
+                className="h-9.5 rounded-xl border-border/60 text-sm focus-visible:ring-muted-foreground/20" 
+              />
             </div>
-            <Button onClick={createGroup} className="w-full h-10 bg-[#0A2E4A] hover:bg-[#0d3a5c] text-white font-bold">
-              <Plus className="mr-2 h-4 w-4" />Criar Grupo
+            <Button 
+              onClick={createGroup} 
+              className="w-full h-10 bg-[#0A2E4A] hover:bg-[#0A2E4A]/90 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 text-white font-medium rounded-xl text-xs mt-2 shadow-sm"
+            >
+              <Plus className="mr-1.5 h-4 w-4" />Criar Grupo
             </Button>
           </div>
         </DialogContent>
