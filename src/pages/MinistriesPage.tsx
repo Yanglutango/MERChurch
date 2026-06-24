@@ -32,16 +32,10 @@ const COLOR_PRESETS = [
 
 const EMPTY_FORM = { name: '', description: '', color: '#4A90A4', activities: '', imageUrl: '' }
 
-function extractCount(rel: unknown): number {
-  if (!rel) return 0
-  if (Array.isArray(rel)) return (rel[0] as any)?.count ?? 0
-  return (rel as any)?.count ?? 0
-}
-
 const MinistriesPage = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [ministries, setMinistries] = useState<Ministry[]>([])
+  const [ministries, setMinistries] = useState<any[]>([])
   const [joinedMinistries, setJoinedMinistries] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [editorOpen, setEditorOpen] = useState(false)
@@ -61,9 +55,14 @@ const MinistriesPage = () => {
   const loadMinistries = useCallback(async () => {
     setLoading(true)
     try {
+      // Alteração Crítica de Query: Busca a árvore relacional completa de membros para alimentar o Facepile
       const { data, error } = await supabase
         .from('ministries')
-        .select('*, leader:user_profiles(username, avatar_url), ministry_members(count)')
+        .select(`
+          *, 
+          leader:user_profiles(username, avatar_url), 
+          ministry_members(user_profiles(username, avatar_url))
+        `)
         .order('created_at', { ascending: false })
 
       if (error) {
@@ -71,11 +70,12 @@ const MinistriesPage = () => {
         return
       }
 
-      const withCounts = (data || []).map((m: any) => ({
+      const formatted = (data || []).map((m: any) => ({
         ...m,
-        memberCount: extractCount(m.ministry_members),
+        memberCount: m.ministry_members ? m.ministry_members.length : 0,
+        membersList: m.ministry_members || []
       }))
-      setMinistries(withCounts)
+      setMinistries(formatted)
     } catch (err) {
       console.error(err)
       toast.error('Erro inesperado ao carregar ministérios')
@@ -216,9 +216,6 @@ const MinistriesPage = () => {
         if (error) throw error
 
         setJoinedMinistries(prev => prev.filter(id => id !== ministryId))
-        setMinistries(prev => prev.map(m =>
-          m.id === ministryId ? { ...m, memberCount: Math.max(0, (m.memberCount || 1) - 1) } : m
-        ))
         toast.success('Você deixou o ministério')
       } else {
         const { error } = await supabase
@@ -228,21 +225,21 @@ const MinistriesPage = () => {
         if (error) throw error
 
         setJoinedMinistries(prev => [...prev, ministryId])
-        setMinistries(prev => prev.map(m =>
-          m.id === ministryId ? { ...m, memberCount: (m.memberCount || 0) + 1 } : m
-        ))
         toast.success('Bem-vindo ao ministério! 🙏')
 
         const currentMin = ministries.find(m => m.id === ministryId)
         logActivity({ type: 'ministry_joined', actorId: user!.id, actorName: user!.username, title: currentMin?.name || 'Ministério', referenceId: ministryId, referenceType: 'ministry' }).catch(() => null)
       }
+      
+      // Recarrega de forma transparente para atualizar a lista de avatares local em background
+      await loadMinistries()
     } catch (err: any) {
       console.error(err)
       toast.error(err.message || 'Erro de comunicação com o servidor')
     } finally {
       setPendingJoinIds(prev => prev.filter(id => id !== ministryId))
     }
-  }, [joinedMinistries, pendingJoinIds, user, ministries])
+  }, [joinedMinistries, pendingJoinIds, user, ministries, loadMinistries])
 
   const filteredMinistries = useMemo(() => {
     let list = ministries
@@ -292,7 +289,7 @@ const MinistriesPage = () => {
           </div>
         </div>
 
-        {/* Controladores de Busca */}
+        {/* Controladores */}
         {ministries.length > 0 && (
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
@@ -301,14 +298,14 @@ const MinistriesPage = () => {
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Filtrar por nome, propósito ou competência..."
-                className="pl-9 h-10 transition-all duration-200 focus:ring-2 focus:ring-primary/20"
+                className="pl-9 h-10"
               />
             </div>
             {!isGuest && (
               <Button
                 variant={filterMine ? "default" : "outline"}
                 onClick={() => setFilterMine(v => !v)}
-                className={`h-10 text-xs font-bold transition-all duration-200 ${filterMine ? 'bg-[#0A2E4A] text-white hover:bg-[#0A2E4A]/90' : ''}`}
+                className={`h-10 text-xs font-bold ${filterMine ? 'bg-[#0A2E4A] text-white' : ''}`}
               >
                 Minhas Atividades ({joinedMinistries.length})
               </Button>
@@ -316,7 +313,7 @@ const MinistriesPage = () => {
           </div>
         )}
 
-        {/* Grid Principal */}
+        {/* Grid principal */}
         {ministries.length === 0 ? (
           <EmptyState
             icon={Users}
@@ -379,7 +376,7 @@ const MinistriesPage = () => {
                 value={newMinistry.name}
                 onChange={e => setNewMinistry({ ...newMinistry, name: e.target.value.slice(0, NAME_MAX) })}
                 placeholder="Ex: Ministério de Comunicação & Mídia"
-                className="h-10 border focus-visible:ring-primary"
+                className="h-10 border"
               />
               <p className="text-[10px] font-mono text-muted-foreground mt-1 text-right">{newMinistry.name.length}/{NAME_MAX}</p>
             </div>
@@ -435,7 +432,7 @@ const MinistriesPage = () => {
               </div>
               <div className="flex gap-2 items-center">
                 <div
-                  className="w-10 h-10 rounded-lg border flex-shrink-0 transition-colors duration-200"
+                  className="w-10 h-10 rounded-lg border flex-shrink-0"
                   style={{ backgroundColor: HEX_REGEX.test(newMinistry.color) ? newMinistry.color : 'transparent' }}
                 />
                 <Input
@@ -456,7 +453,7 @@ const MinistriesPage = () => {
               <Button
                 onClick={createOrUpdate}
                 disabled={saving || !newMinistry.name.trim()}
-                className="flex-1 h-10 font-bold text-white shadow-md transition-all active:scale-[0.99]"
+                className="flex-1 h-10 font-bold text-white shadow-md"
                 style={{ backgroundColor: HEX_REGEX.test(newMinistry.color) ? newMinistry.color : '#0A2E4A' }}
               >
                 {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
@@ -473,7 +470,7 @@ const MinistriesPage = () => {
           <AlertDialogHeader>
             <AlertDialogTitle className="font-black tracking-tight">Deseja remover este ministério definitivamente?</AlertDialogTitle>
             <AlertDialogDescription className="text-sm">
-              Esta ação removerá o registro do banco de dados imediatamente. Todos os vínculos de membros ativos e logs internos diretores deixarão de mapear este ID.
+              Esta ação removerá o registro do banco de dados imediatamente. Todos os vínculos de membros ativos deixarão de mapear este ID.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2">
