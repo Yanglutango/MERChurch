@@ -300,9 +300,9 @@ const AuthPage = () => {
             </div>
           </form>
 
-          {/* ── OAuth (login only) ─────────────────────────── */}
-          {isLogin && (
-            <>
+          {/* ── OAuth (Disponível estritamente para membros) ── */}
+          {isLogin && role === 'member' && (
+            <div className="animate-in fade-in zoom-in-95 duration-200">
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center" aria-hidden="true">
                   <div className="w-full border-t border-border/60" />
@@ -317,7 +317,7 @@ const AuthPage = () => {
                 <Chrome className="mr-2 h-4 w-4 text-muted-foreground/80" aria-hidden="true" />
                 Continuar com Google
               </Button>
-            </>
+            </div>
           )}
 
           {/* ── Toggle Login / Register ────────────────────── */}
