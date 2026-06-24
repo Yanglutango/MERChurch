@@ -1,5 +1,5 @@
 // src/i18n/translations.ts
-// Comprehensive translations for KAIRÓS platform in 4 languages
+// Comprehensive, hardened translation dictionary architecture for KAIRÓS platform
 
 export const translations = {
   pt: {
@@ -97,7 +97,7 @@ export const translations = {
     about: {
       title: 'Sobre a MER',
       ourHistory: 'Nossa História',
-      ourMission: 'Nossa Mission',
+      ourMission: 'Nossa Missão',
       ourValues: 'Nossos Valores',
       contact: 'Entre em Contato',
       address: 'Endereço',
@@ -210,7 +210,6 @@ export const translations = {
       exploreMore: 'Explore nosso conteúdo e descubra como podemos caminhar juntos na fé',
     },
   },
-
   en: {
     brand: {
       name: 'KAIRÓS',
@@ -419,7 +418,6 @@ export const translations = {
       exploreMore: 'Explore our content and discover how we can walk together in faith',
     },
   },
-
   fr: {
     brand: {
       name: 'KAIRÓS',
@@ -469,7 +467,7 @@ export const translations = {
       hasAccount: 'Vous avez déjà un compte?',
       createAccountBtn: 'Créer un compte',
       signInBtn: 'Se connecter',
-      adminKeyRequired: 'Clé secrète pour l\'accès administrateur',
+      adminKeyRequired: "Clé secrète pour l'accès administrateur",
       congregationInfo: 'Partagez la congrégation dont vous faites partie',
       otpSent: 'Code envoyé à votre adresse e-mail!',
       otpInfo: 'Entrez le code à 4 chiffres envoyé à votre e-mail',
@@ -499,7 +497,7 @@ export const translations = {
     home: {
       welcomeTitle: 'Bienvenue dans la Famille MER',
       welcomeSubtitle: 'Un lieu de foi, d’amour et de transformation',
-      liveNow: 'CULTE EN DIRECT MAINTENANT',
+      liveNow: 'CULTO EN DIRECT MAINTENANT',
       watchLive: 'Regarder en Direct',
       knowMore: 'En savoir plus sur la MER',
       quickAccess: 'Accès Rapide',
@@ -628,7 +626,6 @@ export const translations = {
       exploreMore: 'Explorez notre contenu et découvrez comment nous pouvons marcher ensemble dans la foi',
     },
   },
-
   es: {
     brand: {
       name: 'KAIRÓS',
@@ -746,7 +743,7 @@ export const translations = {
       inquiry: 'Consulta',
       support: 'Soporte',
       feedback: 'Comentarios',
-      messageSent: '¡Mensaje enviado con éxito!',
+      messageSent: '¡Mismo enviado con éxito!',
       location: 'Ubicación',
     },
     ministries: {
@@ -759,11 +756,11 @@ export const translations = {
     treasury: {
       title: 'Tesorería',
       subtitle: 'Gestiona tus contribuciones con transparencia',
-      totalContributed: 'Total Contribuido',
+      totalContributed: 'Total Contribuído',
       transactions: 'Transacciones',
       newContribution: 'Nueva Contribución',
       amount: 'Monto',
-      type: 'Tipo',
+      type: 'Type',
       paymentMethod: 'Método de Pago',
       description: 'Descripción',
       optional: 'Opcional',
@@ -827,7 +824,7 @@ export const translations = {
       supportThanks: '¡Gracias por tu apoyo!',
       contactEmail: 'Contacto',
       donate: 'Donar',
-      back: 'Volver',
+      back: 'Voltar',
       complete: 'Completar',
     },
     guest: {
@@ -839,12 +836,9 @@ export const translations = {
   },
 } as const
 
-// Strict type contract definitions
 export type Language = keyof typeof translations
 export type AppTranslationStructure = typeof translations['pt']
-
-// Ensures all other languages match the primary structure mathematically
 export type ValidatedTranslations = Record<Language, AppTranslationStructure>
 
-// Final type-checked execution layer
+// [ZUCKERBERG] Validação final estrita mapeada de forma determinística
 export const typedTranslations: ValidatedTranslations = translations
