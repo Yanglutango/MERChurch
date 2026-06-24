@@ -56,32 +56,27 @@ const AcademyPage = () => {
   const [enrollmentCount, setEnrollmentCount] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterLevel, setFilterLevel] = useState<string | null>(null)
-  const [sortBy, setSortBy] = useState('created_at')
 
-  // Segurança de Role Dupla: Garante privilégios se for admin por Role OU por verificação de e-mail/ID de criador
-  const isAdmin = useMemo(() => {
-    if (!user) return false;
-    const userRole = String(user.role).toLowerCase();
-    // Verifica se a role bate com padrões administrativos ou se é o e-mail/perfil do Administrador-chefe
-    return userRole === 'admin' || userRole === 'administrator' || userRole === 'owner';
-  }, [user])
+  // Correção do Glitch: Avaliação direta por string primitiva. Evita loops de re-renderização.
+  const userRoleString = user?.role ? String(user.role).toLowerCase() : ''
+  const isAdmin = userRoleString === 'admin' || userRoleString === 'administrator' || userRoleString === 'owner'
 
+  // loadInitialData reage estritamente a propriedades primitivas agora (isAdmin estável)
   const loadInitialData = useCallback(async (isSilent = false) => {
     if (!isSilent) setLoading(true)
     else setRefreshing(true)
     
     try {
-      // Admins visualizam TUDO (rascunhos e publicados). Membros normais apenas publicados.
       const coursesQuery = isAdmin
         ? supabase.from('courses').select('*')
         : supabase.from('courses').select('*').eq('is_published', true)
 
       const [coursesRes, enrollmentsRes, progressRes, statsRes] = await Promise.all([
         coursesQuery.order('created_at', { ascending: false }),
-        user 
+        user?.id 
           ? supabase.from('enrollments').select('course_id').eq('user_id', user.id)
           : Promise.resolve({ data: null, error: null }),
-        user
+        user?.id
           ? supabase.from('course_progress').select('*').eq('user_id', user.id)
           : Promise.resolve({ data: null, error: null }),
         isAdmin
@@ -122,12 +117,12 @@ const AcademyPage = () => {
       }
     } catch (error) {
       toast.error(ACADEMY_MESSAGES.LOAD_COURSES_ERROR)
-      console.error('Error loading academy database metrics:', error)
+      console.error('Database sync error:', error)
     } finally {
       setLoading(false)
       setRefreshing(false)
     }
-  }, [user, isAdmin])
+  }, [isAdmin, user?.id]) // Dependências limpas e estáveis
 
   useEffect(() => {
     loadInitialData()
@@ -154,21 +149,18 @@ const AcademyPage = () => {
 
   const handleDelete = async (id: string) => {
     if (!confirm(ACADEMY_MESSAGES.DELETE_CONFIRM)) return
-
     try {
       const { error } = await supabase.from('courses').delete().eq('id', id)
       if (error) throw error
-
       toast.success(ACADEMY_MESSAGES.DELETE_SUCCESS)
       loadInitialData(true)
     } catch (error) {
       toast.error(ACADEMY_MESSAGES.DELETE_ERROR)
-      console.error(error)
     }
   }
 
   const enrollCourse = async (courseId: string) => {
-    if (!user) return
+    if (!user?.id) return
     try {
       const { error } = await supabase.from('enrollments').insert({ course_id: courseId, user_id: user.id })
       if (error) throw error
@@ -189,14 +181,14 @@ const AcademyPage = () => {
   }
 
   if (loading) {
-    return <LoadingState fullScreen message="Sincronizando painel do Administrador-chefe..." />
+    return <LoadingState fullScreen message="Sincronizando painel do Administrador-chefe com segurança..." />
   }
 
   return (
     <Layout title="MER Academy">
-      <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
+      <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6 animate-in fade-in duration-200">
         
-        {/* BARRA EXCLUSIVA DO ADMINISTRADOR-CHEFE (Sempre visível se isAdmin for true) */}
+        {/* BARRA EXCLUSIVA DO ADMINISTRADOR-CHEFE */}
         {isAdmin && (
           <Card className="p-4 border-2 border-dashed border-indigo-500/40 bg-indigo-500/[0.02] rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
             <div className="flex items-center gap-3">
@@ -280,8 +272,6 @@ const AcademyPage = () => {
 
                 return (
                   <Card key={course.id} className="border bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-                    
-                    {/* Topo da Imagem */}
                     <div className="relative h-44 bg-slate-100 dark:bg-slate-800">
                       <img
                         src={course.thumbnailUrl || 'https://images.unsplash.com/photo-1519682337058-a94d519337bc?w=600&h=400&fit=crop'}
@@ -292,8 +282,6 @@ const AcademyPage = () => {
                         <span className={`px-2 py-0.5 text-xs font-bold rounded-md ${badge.color}`}>
                           {badge.label}
                         </span>
-                        
-                        {/* Indicativo de Rascunho */}
                         {!course.isPublished && (
                           <span className="flex items-center gap-1 px-2 py-0.5 bg-orange-500 text-white text-[10px] font-black uppercase rounded-md shadow">
                             <EyeOff className="h-2.5 w-2.5" /> Oculto / Rascunho
@@ -302,7 +290,6 @@ const AcademyPage = () => {
                       </div>
                     </div>
 
-                    {/* Corpo de Conteúdo */}
                     <div className="p-4 flex-1 flex flex-col justify-between space-y-4">
                       <div className="space-y-1">
                         <h4 className="font-bold text-base text-foreground line-clamp-1">{course.title}</h4>
@@ -315,7 +302,6 @@ const AcademyPage = () => {
                         <Clock className="h-3 w-3" /> Carga Horária: {course.durationHours || 0}h
                       </div>
 
-                      {/* AREA DE BOTÕES VISÍVEIS (Gerenciamento Direto) */}
                       <div className="space-y-2 pt-2 border-t">
                         {isAdmin ? (
                           <div className="grid grid-cols-2 gap-2">
@@ -348,7 +334,6 @@ const AcademyPage = () => {
                           </Button>
                         )}
                       </div>
-
                     </div>
                   </Card>
                 )
@@ -356,10 +341,8 @@ const AcademyPage = () => {
             </div>
           )}
         </div>
-
       </div>
 
-      {/* Janela Modal do Editor (Invocada pelos botões Criar e Editar acima) */}
       <CourseEditor
         open={editorOpen}
         onOpenChange={setEditorOpen}
