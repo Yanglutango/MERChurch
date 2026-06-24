@@ -13,7 +13,7 @@ import {
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { logActivity } from '../lib/activityLogger'
-import { Users, Plus, UserPlus, Save, Users2, Search, Loader2, Image as ImageIcon, Crown, Tag, HandHeart, UserMinus } from 'lucide-react'
+import { Users, Plus, UserPlus, Save, Users2, Search, Loader2, Image as ImageIcon, ShieldAlert } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Ministry } from '../types'
 import { EmptyState } from '../components/shared/EmptyState'
@@ -30,17 +30,16 @@ const COLOR_PRESETS = [
   '#DC2626', '#9333EA', '#EA580C', '#0EA5E9',
 ]
 
-const EMPTY_FORM = { name: '', description: '', color: '#4A90A4', activities: '', imageUrl: '' }
+const EMPTY_FORM = { name: '', description: '', color: '#4A90A4', activities: '', imageUrl: '', leaderId: '' }
 
 const MinistriesPage = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [ministries, setMinistries] = useState<any[]>([])
   const [joinedMinistries, setJoinedMinistries] = useState<string[]>([])
+  const [profiles, setProfiles] = useState<any[]>([]) // Armazena a lista de usuários para seleção de líder
   const [loading, setLoading] = useState(true)
   const [editorOpen, setEditorOpen] = useState(false)
-  const [detailsOpen, setDetailsOpen] = useState(false)
-  const [selectedMinistry, setSelectedMinistry] = useState<any>(null)
   const [editingMinistry, setEditingMinistry] = useState<Ministry | null>(null)
   const [newMinistry, setNewMinistry] = useState(EMPTY_FORM)
   const [colorError, setColorError] = useState<string | null>(null)
@@ -49,7 +48,6 @@ const MinistriesPage = () => {
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedTag, setSelectedTag] = useState<string | null>(null)
   const [filterMine, setFilterMine] = useState(false)
 
   const isGuest = user?.role === 'guest'
@@ -60,7 +58,11 @@ const MinistriesPage = () => {
     try {
       const { data, error } = await supabase
         .from('ministries')
-        .select('*, leader:user_profiles(username, avatar_url), ministry_members(user_profiles(username, avatar_url))')
+        .select(`
+          *, 
+          leader:user_profiles(username, avatar_url), 
+          ministry_members(user_profiles(username, avatar_url))
+        `)
         .order('created_at', { ascending: false })
 
       if (error) {
@@ -74,19 +76,13 @@ const MinistriesPage = () => {
         membersList: m.ministry_members || []
       }))
       setMinistries(formatted)
-      
-      // Sincroniza o modal de detalhes caso esteja aberto para atualizar os membros em tempo real
-      if (selectedMinistry) {
-        const updated = formatted.find(f => f.id === selectedMinistry.id)
-        if (updated) setSelectedMinistry(updated)
-      }
     } catch (err) {
       console.error(err)
       toast.error('Erro inesperado ao carregar ministérios')
     } finally {
       setLoading(false)
     }
-  }, [selectedMinistry])
+  }, [])
 
   const loadJoinedMinistries = useCallback(async () => {
     try {
@@ -102,24 +98,30 @@ const MinistriesPage = () => {
     }
   }, [user?.id])
 
+  // Carrega todos os perfis do sistema caso o usuário logado seja Administrador
+  const loadProfiles = useCallback(async () => {
+    if (!isAdmin) return
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('id, username')
+        .order('username', { ascending: true })
+
+      if (error) {
+        console.error('Erro ao carregar perfis:', error)
+        return
+      }
+      setProfiles(data || [])
+    } catch (err) {
+      console.error(err)
+    }
+  }, [isAdmin])
+
   useEffect(() => {
     loadMinistries()
     if (!isGuest && user?.id) loadJoinedMinistries()
-  }, [user?.id, isGuest])
-
-  // Processa e extrai as tags exclusivas mais populares para o filtro avançado
-  const availableTags = useMemo(() => {
-    const tags = new Set<string>()
-    ministries.forEach(m => {
-      if (m.activities) {
-        m.activities.split(',').forEach((act: string) => {
-          const trimmed = act.trim()
-          if (trimmed) tags.add(trimmed)
-        })
-      }
-    })
-    return Array.from(tags).slice(0, 8)
-  }, [ministries])
+    if (isAdmin) loadProfiles()
+  }, [user?.id, isGuest, isAdmin, loadMinistries, loadJoinedMinistries, loadProfiles])
 
   const closeEditor = useCallback(() => {
     setEditorOpen(false)
@@ -130,10 +132,10 @@ const MinistriesPage = () => {
 
   const openCreate = useCallback(() => {
     setEditingMinistry(null)
-    setNewMinistry(EMPTY_FORM)
+    setNewMinistry({ ...EMPTY_FORM, leaderId: user?.id || '' }) // Default inicial é quem cria, mas customizável
     setColorError(null)
     setEditorOpen(true)
-  }, [])
+  }, [user?.id])
 
   const openEdit = useCallback((m: Ministry) => {
     setEditingMinistry(m)
@@ -143,14 +145,10 @@ const MinistriesPage = () => {
       color: m.color || '#4A90A4',
       activities: (m as any).activities || '',
       imageUrl: m.imageUrl || '',
+      leaderId: m.leaderId || '',
     })
     setColorError(null)
     setEditorOpen(true)
-  }, [])
-
-  const handleViewDetails = useCallback((m: any) => {
-    setSelectedMinistry(m)
-    setDetailsOpen(true)
   }, [])
 
   const canManage = useCallback((m: Ministry) => isAdmin || m.leaderId === user?.id, [isAdmin, user?.id])
@@ -158,6 +156,10 @@ const MinistriesPage = () => {
   const createOrUpdate = async () => {
     if (!newMinistry.name.trim()) {
       toast.error('Nome é obrigatório')
+      return
+    }
+    if (!newMinistry.leaderId) {
+      toast.error('É obrigatório definir um líder para o ministério')
       return
     }
     if (!HEX_REGEX.test(newMinistry.color)) {
@@ -173,11 +175,12 @@ const MinistriesPage = () => {
         color: newMinistry.color,
         activities: newMinistry.activities.trim() || null,
         image_url: newMinistry.imageUrl.trim() || null,
+        leader_id: newMinistry.leaderId, // Vincula o ID do líder escolhido no formulário
       }
 
       if (editingMinistry) {
-        if (!canManage(editingMinistry)) {
-          toast.error('Sem permissão para editar este ministério')
+        if (!isAdmin) {
+          toast.error('Apenas o Administrador-chefe pode redefinir lideranças')
           setSaving(false)
           return
         }
@@ -185,13 +188,13 @@ const MinistriesPage = () => {
         const { error } = await supabase.from('ministries').update(payload).eq('id', editingMinistry.id)
         if (error) throw error
 
-        toast.success('Ministério atualizado!')
+        toast.success('Ministério atualizado com sucesso!')
         logActivity({ type: 'ministry_updated', actorId: user!.id, actorName: user!.username, title: newMinistry.name, referenceId: editingMinistry.id, referenceType: 'ministry' }).catch(() => null)
       } else {
-        const { error } = await supabase.from('ministries').insert({ ...payload, leader_id: user!.id })
+        const { error } = await supabase.from('ministries').insert(payload)
         if (error) throw error
 
-        toast.success('Ministério criado!')
+        toast.success('Ministério criado com sucesso!')
         logActivity({ type: 'ministry_created', actorId: user!.id, actorName: user!.username, title: newMinistry.name, referenceType: 'ministry' }).catch(() => null)
       }
 
@@ -266,19 +269,18 @@ const MinistriesPage = () => {
   const filteredMinistries = useMemo(() => {
     let list = ministries
     if (filterMine) list = list.filter(m => joinedMinistries.includes(m.id))
-    if (selectedTag) list = list.filter(m => m.activities?.toLowerCase().includes(selectedTag.toLowerCase()))
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
       list = list.filter(m =>
         m.name.toLowerCase().includes(q) ||
         m.description?.toLowerCase().includes(q) ||
-        m.activities?.toLowerCase().includes(q)
+        (m as any).activities?.toLowerCase().includes(q)
       )
     }
     return list
-  }, [ministries, filterMine, selectedTag, searchQuery, joinedMinistries])
+  }, [ministries, filterMine, joinedMinistries, searchQuery])
 
-  if (loading && ministries.length === 0) {
+  if (loading) {
     return (
       <Layout title="Ministérios">
         <LoadingState fullScreen message="Sincronizando infraestrutura..." />
@@ -304,53 +306,34 @@ const MinistriesPage = () => {
                 <Plus className="h-4 w-4 mr-1.5" />Novo Ministério
               </Button>
             )}
+            {isGuest && (
+              <Button size="sm" onClick={() => navigate('/auth')} className="bg-[#0A2E4A] hover:bg-[#0A2E4A]/90 text-white font-bold shadow-sm">
+                <UserPlus className="h-4 w-4 mr-1.5" />Criar Conta
+              </Button>
+            )}
           </div>
         </div>
 
-        {/* Controladores & Add Ministry Search Filters */}
+        {/* Controladores */}
         {ministries.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  placeholder="Filtrar por nome, propósito ou competência..."
-                  className="pl-9 h-10"
-                />
-              </div>
-              {!isGuest && (
-                <Button
-                  variant={filterMine ? "default" : "outline"}
-                  onClick={() => setFilterMine(v => !v)}
-                  className={`h-10 text-xs font-bold ${filterMine ? 'bg-[#0A2E4A] text-white' : ''}`}
-                >
-                  Minhas Atividades ({joinedMinistries.length})
-                </Button>
-              )}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Filtrar por nome, propósito ou competência..."
+                className="pl-9 h-10"
+              />
             </div>
-
-            {/* Chips de Categorias Dinâmicas (Filtros Avançados) */}
-            {availableTags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 pt-1 items-center">
-                <span className="text-[11px] font-bold text-muted-foreground mr-1">Filtros Rápidos:</span>
-                <button
-                  onClick={() => setSelectedTag(null)}
-                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors border ${!selectedTag ? 'bg-[#0A2E4A] text-white border-[#0A2E4A]' : 'bg-muted border-transparent hover:bg-muted/80'}`}
-                >
-                  Todos
-                </button>
-                {availableTags.map(tag => (
-                  <button
-                    key={tag}
-                    onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
-                    className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors border ${selectedTag === tag ? 'bg-[#0A2E4A] text-white border-[#0A2E4A]' : 'bg-secondary/60 border-transparent hover:bg-secondary'}`}
-                  >
-                    {tag}
-                  </button>
-                ))}
-              </div>
+            {!isGuest && (
+              <Button
+                variant={filterMine ? "default" : "outline"}
+                onClick={() => setFilterMine(v => !v)}
+                className={`h-10 text-xs font-bold ${filterMine ? 'bg-[#0A2E4A] text-white' : ''}`}
+              >
+                Minhas Atividades ({joinedMinistries.length})
+              </Button>
             )}
           </div>
         )}
@@ -359,14 +342,19 @@ const MinistriesPage = () => {
         {ministries.length === 0 ? (
           <EmptyState
             icon={Users}
-            title="Nenhum núcleo operacional ativo"
-            description="Novas frentes de atuação serão listadas em breve."
+            title={isAdmin ? 'Nenhum ministério configurado' : 'Nenhum núcleo operacional ativo'}
+            description={isAdmin ? 'Inicie a estrutura inserindo o primeiro ministério do sistema.' : 'Novas frentes de atuação serão listadas em breve.'}
+            action={isAdmin ? (
+              <Button onClick={openCreate} className="bg-[#0A2E4A] text-white font-bold">
+                <Plus className="mr-2 h-4 w-4" />Criar Ministério
+              </Button>
+            ) : undefined}
           />
         ) : filteredMinistries.length === 0 ? (
           <EmptyState
             icon={Search}
             title="Nenhum resultado indexado"
-            description="Modifique os parâmetros ou remova os filtros ativos."
+            description="Modifique os parâmetros ou termos da pesquisa de filtros."
           />
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -383,118 +371,20 @@ const MinistriesPage = () => {
                 onEdit={openEdit}
                 onDelete={setDeleteTargetId}
                 onAuthNavigate={() => navigate('/auth')}
-                onViewDetails={handleViewDetails}
               />
             ))}
           </div>
         )}
+
+        {isGuest && ministries.length > 0 && (
+          <GuestPrompt
+            title="Faça parte da nossa comunidade ativa"
+            description="Contas integradas permitem a inscrição em ministérios e acompanhamento de funções de liderança."
+            actionLabel="Cadastrar-se Agora"
+            onAction={() => navigate('/auth')}
+          />
+        )}
       </div>
-
-      {/* Add Ministry Detail Modal (Visualização Imersiva Expandida) */}
-      <Dialog open={detailsOpen} onOpenChange={open => { if (!open) setDetailsOpen(false) }}>
-        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto rounded-xl border p-0">
-          {selectedMinistry && (
-            <div className="space-y-0">
-              {/* Banner do Modal */}
-              <div className="h-44 relative bg-muted" style={selectedMinistry.imageUrl ? undefined : { backgroundColor: `${selectedMinistry.color}20` }}>
-                {selectedMinistry.imageUrl ? (
-                  <img src={selectedMinistry.imageUrl} alt={selectedMinistry.name} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Users className="h-16 w-16" style={{ color: selectedMinistry.color }} />
-                  </div>
-                )}
-                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-5 pt-12">
-                  <h2 className="text-xl font-black text-white tracking-tight">{selectedMinistry.name}</h2>
-                </div>
-              </div>
-
-              {/* Informações Funcionais */}
-              <div className="p-6 space-y-5">
-                {selectedMinistry.leader?.username && (
-                  <div className="flex items-center gap-3 bg-muted/40 p-2.5 rounded-xl border">
-                    <Crown className="h-4 w-4 text-amber-500 flex-shrink-0" />
-                    <div className="text-xs">
-                      <p className="text-muted-foreground font-medium">Liderança Executiva</p>
-                      <p className="font-bold text-foreground text-sm">{selectedMinistry.leader.username}</p>
-                    </div>
-                  </div>
-                )}
-
-                <div className="space-y-1.5">
-                  <h4 className="text-xs font-black text-muted-foreground uppercase tracking-wider">Missão & Atribuições</h4>
-                  <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">{selectedMinistry.description || 'Nenhuma descrição adicionada ao núcleo.'}</p>
-                </div>
-
-                {selectedMinistry.activities && (
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-black text-muted-foreground uppercase tracking-wider">Frentes de Trabalho</h4>
-                    <div className="flex flex-wrap gap-1.5">
-                      {selectedMinistry.activities.split(',').map((act: string, i: number) => (
-                        <span key={i} className="text-xs font-semibold bg-secondary px-2.5 py-1 rounded-md text-secondary-foreground">
-                          {act.trim()}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Listagem Integral de Membros (Add Member Profiles Completo) */}
-                <div className="space-y-2.5 pt-2 border-t">
-                  <div className="flex items-center gap-1.5 text-xs font-black text-muted-foreground uppercase tracking-wider">
-                    <HandHeart className="h-3.5 w-3.5" style={{ color: selectedMinistry.color }} />
-                    <span>Equipe Operacional ({selectedMinistry.memberCount})</span>
-                  </div>
-                  
-                  {selectedMinistry.membersList?.length === 0 ? (
-                    <p className="text-xs text-muted-foreground italic">Nenhum voluntário integrado neste momento.</p>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-2 max-h-36 overflow-y-auto pr-1">
-                      {selectedMinistry.membersList?.map((m: any, idx: number) => (
-                        <div key={idx} className="flex items-center gap-2 bg-secondary/30 p-1.5 rounded-lg border border-border/50">
-                          {m.user_profiles?.avatar_url ? (
-                            <img src={m.user_profiles.avatar_url} className="h-5 w-5 rounded-full object-cover" alt="" />
-                          ) : (
-                            <div className="h-5 w-5 rounded-full bg-[#0A2E4A] text-[8px] font-bold text-white flex items-center justify-center uppercase">
-                              {m.user_profiles?.username?.slice(0, 2) || 'MB'}
-                            </div>
-                          )}
-                          <span className="text-xs font-medium truncate text-foreground">{m.user_profiles?.username || 'Voluntário'}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Ações Integradas no Modal */}
-                <div className="pt-4 border-t flex justify-end">
-                  {isGuest ? (
-                    <Button onClick={() => { setDetailsOpen(false); navigate('/auth'); }} size="sm" className="w-full text-white font-bold" style={{ backgroundColor: selectedMinistry.color }}>
-                      <UserPlus className="h-3.5 w-3.5 mr-2" />Fazer Login para Entrar
-                    </Button>
-                  ) : joinedMinistries.includes(selectedMinistry.id) ? (
-                    <Button
-                      onClick={() => toggleJoin(selectedMinistry.id)}
-                      disabled={pendingJoinIds.includes(selectedMinistry.id)}
-                      size="sm" variant="outline" className="w-full font-bold border-red-200 text-red-600 hover:bg-red-50"
-                    >
-                      <UserMinus className="h-3.5 w-3.5 mr-2" /> Sair do Ministério
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={() => toggleJoin(selectedMinistry.id)}
-                      disabled={pendingJoinIds.includes(selectedMinistry.id)}
-                      size="sm" className="w-full text-white font-bold" style={{ backgroundColor: selectedMinistry.color }}
-                    >
-                      <UserPlus className="h-3.5 w-3.5 mr-2" /> Inscrever-se Agora
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
 
       {/* Janela de Edição/Criação */}
       <Dialog open={editorOpen} onOpenChange={open => { if (!open) closeEditor() }}>
@@ -505,6 +395,29 @@ const MinistriesPage = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
+            
+            {/* NOVO CAMPO: Seleção Personalizada de Líderes (Restrito para Administrador) */}
+            {isAdmin && (
+              <div className="p-3 bg-blue-50/50 dark:bg-slate-900/40 rounded-xl border border-blue-100 dark:border-slate-800 space-y-1.5">
+                <Label className="font-bold flex items-center gap-1.5 text-sm text-blue-900 dark:text-blue-400">
+                  <ShieldAlert className="h-4 w-4" /> Delegar Líder do Ministério *
+                </Label>
+                <select
+                  value={newMinistry.leaderId}
+                  onChange={e => setNewMinistry({ ...newMinistry, leaderId: e.target.value })}
+                  className="w-full h-10 px-3 bg-background rounded-md border border-input text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                >
+                  <option value="">-- Escolha um Líder --</option>
+                  {profiles.map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.username} {p.id === user?.id ? '(Você)' : ''}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-muted-foreground">Como administrador master, você pode atribuir a liderança a qualquer pessoa cadastrada.</p>
+              </div>
+            )}
+
             <div>
               <Label className="font-bold mb-1.5 block text-sm">Nome Oficial *</Label>
               <Input
@@ -561,6 +474,7 @@ const MinistriesPage = () => {
                     onClick={() => { setNewMinistry({ ...newMinistry, color: preset }); setColorError(null) }}
                     className={`h-7 w-7 rounded-full border-2 transition-transform duration-200 hover:scale-110 ${newMinistry.color === preset ? 'scale-110 border-foreground shadow-sm' : 'border-transparent'}`}
                     style={{ backgroundColor: preset }}
+                    aria-label={`Preset ${preset}`}
                   />
                 ))}
               </div>
@@ -586,7 +500,7 @@ const MinistriesPage = () => {
               </Button>
               <Button
                 onClick={createOrUpdate}
-                disabled={saving || !newMinistry.name.trim()}
+                disabled={saving || !newMinistry.name.trim() || !newMinistry.leaderId}
                 className="flex-1 h-10 font-bold text-white shadow-md"
                 style={{ backgroundColor: HEX_REGEX.test(newMinistry.color) ? newMinistry.color : '#0A2E4A' }}
               >
