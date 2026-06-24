@@ -59,7 +59,7 @@ const CommunityPage = () => {
   const createPost = async () => {
     if (!newPost.trim() || loading) return
 
-    setLoading(true)
+    loading = true
     try {
       const { error } = await supabase.from('community_posts').insert({
         user_id: user!.id,
@@ -88,7 +88,6 @@ const CommunityPage = () => {
     toast.success('Publicação removida')
   }
   
-  // Substitua a sua função toggleLike antiga por esta:
   const toggleLike = async (postId: string) => {
     if (!user) return
 
@@ -100,7 +99,6 @@ const CommunityPage = () => {
     if (!targetPost) return
 
     // Definir se estamos curtindo ou descurtindo com base no estado atual
-    // Nota: Caso sua tabela não use 'isLiked', ela usará a lógica inversa do clique
     const isLiked = targetPost.isLiked ?? false 
 
     // 3. UI Otimista: Atualiza o estado visual do React INSTANTANEAMENTE
@@ -124,8 +122,6 @@ const CommunityPage = () => {
         // Se já estava curtido: Remove o registro e decrementa no banco de forma segura
         const deleteLike = supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', user.id)
         const updateCount = supabase.rpc('decrement_likes', { post_id: postId }) 
-        // Caso não tenha a RPC criada no banco, mantemos o fallback do update padrão abaixo:
-        // const updateCount = supabase.from('community_posts').update({ likes_count: Math.max(0, (targetPost.likesCount || 1) - 1) }).eq('id', postId)
 
         const [likeRes, countRes] = await Promise.all([deleteLike, updateCount])
         if (likeRes.error) throw likeRes.error
@@ -133,8 +129,6 @@ const CommunityPage = () => {
         // Se não estava curtido: Insere o registro e incrementa no banco
         const insertLike = supabase.from('post_likes').insert({ post_id: postId, user_id: user.id })
         const updateCount = supabase.rpc('increment_likes', { post_id: postId })
-        // Caso não tenha a RPC criada no banco, usamos o fallback do update padrão:
-        // const updateCount = supabase.from('community_posts').update({ likes_count: (targetPost.likesCount || 0) + 1 }).eq('id', postId)
 
         const [likeRes, countRes] = await Promise.all([insertLike, updateCount])
         
@@ -143,7 +137,7 @@ const CommunityPage = () => {
       }
     } catch (error) {
       console.error('Erro ao alternar o like:', error)
-      // 4. ROLLBACK: Se a API falhar por problemas de rede ou permissão, desfaz a alteração na tela na hora
+      // 4. ROLLBACK: Se a API falhar, desfaz a alteração na tela na hora
       setPosts(previousPosts)
       toast.error('Não foi possível computar a sua reação. Tente novamente.')
     }
@@ -151,37 +145,35 @@ const CommunityPage = () => {
 
   return (
     <Layout title="Comunidade">
-      <div className="space-y-6">
+      <div className="space-y-6 max-w-4xl mx-auto font-sans antialiased">
+        
         {/* Hero Banner - Contextual */}
-        <Card className="relative overflow-hidden border-0 shadow-2xl rounded-2xl elevation-3">
+        <Card className="relative overflow-hidden border-0 shadow-sm rounded-2xl bg-card">
           <div className="absolute inset-0">
             <img
               src="https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=1920&h=600&fit=crop&q=80"
               alt="Community"
-              className="w-full h-full object-cover opacity-90"
+              className="w-full h-full object-cover opacity-35 dark:opacity-20 transition-opacity"
             />
-            <div className="absolute inset-0 bg-gradient-to-br from-pink-700/96 via-purple-700/94 to-indigo-700/92" />
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/40 via-purple-900/30 to-background dark:from-indigo-950/50 dark:via-purple-950/40 dark:to-background" />
           </div>
           
-          <div className="relative z-10 p-6 md:p-10 lg:p-12 text-white">
-            <div className="max-w-3xl space-y-5">
-              <div className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-white/20 backdrop-blur-md rounded-full border border-white/30 shadow-lg">
-                <MessageCircle className="h-4 w-4 md:h-5 md:w-5" />
-                <span className="text-sm md:text-base font-bold tracking-wide">
-                  {isAdmin ? 'MODERAÇÃO COMUNITÁRIA' : 'COMUNIDADE MER'}
+          <div className="relative z-10 p-6 sm:p-8 md:p-10 text-foreground">
+            <div className="max-w-2xl space-y-4">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-muted/80 backdrop-blur-md rounded-full border border-border/40 shadow-sm">
+                <MessageCircle className="h-3.5 w-3.5 text-primary" />
+                <span className="text-[11px] font-bold tracking-wider uppercase text-muted-foreground">
+                  {isAdmin ? 'Moderação Comunitária' : 'Comunidade MER'}
                 </span>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {isGuest && (
                   <>
-                    <h1 className="text-3xl md:text-5xl font-black leading-tight tracking-tight">
-                      Comunhão{' '}
-                      <span className="bg-gradient-to-r from-white via-yellow-200 to-white bg-clip-text text-transparent">
-                        Viva
-                      </span>
+                    <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-[#0A2E4A] dark:text-zinc-100">
+                      Comunhão <span className="text-primary bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent dark:from-blue-400 dark:to-indigo-300">Viva</span>
                     </h1>
-                    <p className="text-lg md:text-xl text-white/90 font-medium leading-relaxed">
+                    <p className="text-sm text-muted-foreground leading-relaxed max-w-xl">
                       Veja como nossa comunidade compartilha fé, testemunhos e encorajamento mútuo.
                     </p>
                   </>
@@ -189,10 +181,10 @@ const CommunityPage = () => {
                 
                 {isMember && (
                   <>
-                    <h1 className="text-3xl md:text-5xl font-black leading-tight tracking-tight">
+                    <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-[#0A2E4A] dark:text-zinc-100">
                       Sua Comunidade Espiritual
                     </h1>
-                    <p className="text-lg md:text-xl text-white/90 font-medium leading-relaxed">
+                    <p className="text-sm text-muted-foreground leading-relaxed max-w-xl">
                       Compartilhe sua jornada, encoraje irmãos e cresça em comunhão.
                     </p>
                   </>
@@ -200,54 +192,47 @@ const CommunityPage = () => {
                 
                 {isAdmin && (
                   <>
-                    <h1 className="text-3xl md:text-5xl font-black leading-tight tracking-tight flex items-center gap-3 flex-wrap">
-                      <Shield className="h-10 w-10 md:h-12 md:w-12 text-yellow-300" />
+                    <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight flex items-center gap-2.5 text-[#0A2E4A] dark:text-zinc-100">
+                      <Shield className="h-7 w-7 text-primary/80" />
                       Moderar Comunidade
                     </h1>
-                    <p className="text-lg md:text-xl text-white/90 font-medium leading-relaxed">
+                    <p className="text-sm text-muted-foreground leading-relaxed max-w-xl">
                       Cuide da comunidade com sabedoria pastoral. Destaque conteúdo edificante.
                     </p>
                   </>
                 )}
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <div className="flex flex-col sm:flex-row gap-2 pt-1">
                 {isGuest && (
                   <Button
-                    size="lg"
+                    size="sm"
                     onClick={() => navigate('/about')}
-                    className="bg-white text-pink-700 hover:bg-white/95 font-bold px-7 py-6 rounded-full shadow-2xl transform hover:scale-105 transition-all"
+                    className="bg-[#0A2E4A] hover:bg-[#0A2E4A]/90 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 text-white font-medium rounded-xl px-5 py-5 transition-all shadow-sm"
                   >
-                    <UserPlus className="mr-2 h-5 w-5" />
+                    <UserPlus className="mr-1.5 h-4 w-4" />
                     Participar da Comunidade
                   </Button>
                 )}
                 {!isGuest && (
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="border-2 border-white/80 text-white hover:bg-white/10 backdrop-blur-sm font-bold px-7 py-6 rounded-full"
-                  >
-                    <TrendingUp className="mr-2 h-5 w-5" />
+                  <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground bg-muted/50 rounded-xl px-4 py-2 border border-border/30 w-max">
+                    <TrendingUp className="h-3.5 w-3.5 text-primary" />
                     {posts.length} Publicações
-                  </Button>
+                  </div>
                 )}
               </div>
             </div>
           </div>
-
-          <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-yellow-400/20 to-transparent rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-white/10 to-transparent rounded-full blur-3xl" />
         </Card>
 
         {/* Create Post - Apenas Member/Admin */}
         {!isGuest && (
-          <Card className="p-5 md:p-6 border-2 shadow-lg elevation-2">
+          <Card className="p-5 border border-border/50 bg-card/70 backdrop-blur-md shadow-sm rounded-2xl">
             <div className="flex gap-4">
               {user?.avatar ? (
-                <img src={user.avatar} alt={user.username} className="h-12 w-12 md:h-14 md:w-14 rounded-full flex-shrink-0 border-2 border-primary/30" />
+                <img src={user.avatar} alt={user.username} className="h-10 w-10 rounded-full flex-shrink-0 border border-border/60 object-cover" />
               ) : (
-                <div className="h-12 w-12 md:h-14 md:w-14 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold text-lg flex-shrink-0 shadow-md">
+                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#0A2E4A] to-[#4A90A4] flex items-center justify-center text-white font-semibold text-sm flex-shrink-0 shadow-sm">
                   {user?.username?.charAt(0).toUpperCase()}
                 </div>
               )}
@@ -258,18 +243,18 @@ const CommunityPage = () => {
                   onChange={(e) => setNewPost(e.target.value)}
                   placeholder="Compartilhe algo edificante com a comunidade..."
                   rows={3}
-                  className="resize-none border-2 focus:border-primary"
+                  className="resize-none bg-background/40 rounded-xl border-border/60 focus-visible:ring-muted-foreground/20 placeholder:text-muted-foreground/60 text-sm"
                 />
 
                 <div className="flex justify-between items-center">
-                  <Button variant="ghost" size="sm" disabled className="text-muted-foreground">
-                    <ImageIcon className="h-4 w-4 mr-2" />
+                  <Button variant="ghost" size="sm" disabled className="text-muted-foreground/60 hover:bg-transparent rounded-lg text-xs">
+                    <ImageIcon className="h-4 w-4 mr-1.5" />
                     Foto
                   </Button>
 
-                  <Button onClick={createPost} disabled={loading || !newPost.trim()} className="gradient-primary text-white font-semibold">
+                  <Button onClick={createPost} disabled={loading || !newPost.trim()} className="h-9 bg-[#0A2E4A] hover:bg-[#0A2E4A]/90 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 text-white font-medium rounded-xl px-4 shadow-sm text-xs">
                     {loading ? 'Publicando...' : 'Publicar'}
-                    <Send className="h-4 w-4 ml-2" />
+                    <Send className="h-3 w-3 ml-1.5" />
                   </Button>
                 </div>
               </div>
@@ -277,7 +262,7 @@ const CommunityPage = () => {
           </Card>
         )}
 
-        {/* Posts */}
+        {/* Posts Feed */}
         {loadingPosts ? (
           <LoadingState message="Carregando publicações..." />
         ) : posts.length === 0 ? (
@@ -287,7 +272,7 @@ const CommunityPage = () => {
             description={isGuest ? 'Torne-se membro para ver e participar da comunidade' : 'Seja o primeiro a compartilhar algo edificante!'}
             action={
               isGuest ? (
-                <Button onClick={() => navigate('/about')} className="gradient-primary text-white">
+                <Button onClick={() => navigate('/about')} className="bg-[#0A2E4A] dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-xl">
                   <UserPlus className="mr-2 h-4 w-4" />
                   Tornar-se Membro
                 </Button>
@@ -297,25 +282,25 @@ const CommunityPage = () => {
         ) : (
           <div className="space-y-4">
             {posts.map((post) => (
-              <Card key={post.id} className="group p-5 md:p-6 border-2 hover:border-primary/30 transition-all elevation-1">
+              <Card key={post.id} className="group p-5 border border-border/40 hover:border-border/80 bg-card transition-all shadow-sm rounded-2xl">
                 <div className="flex gap-4">
-                  {post.user?.avatar ? (
-                    <Link to={`/profile/${post.userId}`}>
-                      <img src={post.user.avatar} alt={post.user.username} className="h-12 w-12 rounded-full flex-shrink-0 border-2 border-primary/20 hover:opacity-80 transition-opacity" />
-                    </Link>
-                  ) : (
-                    <Link to={`/profile/${post.userId}`}>
-                      <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold flex-shrink-0 shadow-md hover:opacity-80 transition-opacity">
+                  <Link to={`/profile/${post.userId}`} className="flex-shrink-0">
+                    {post.user?.avatar ? (
+                      <img src={post.user.avatar} alt={post.user.username} className="h-10 w-10 rounded-full border border-border/40 hover:opacity-90 transition-opacity object-cover" />
+                    ) : (
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-muted to-muted/60 border border-border/50 flex items-center justify-center text-foreground font-semibold text-sm hover:opacity-90 transition-opacity">
                         {post.user?.username?.charAt(0).toUpperCase() || 'U'}
                       </div>
-                    </Link>
-                  )}
+                    )}
+                  </Link>
 
                   <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-start mb-3">
+                    <div className="flex justify-between items-start mb-2">
                       <div>
-                        <Link to={`/profile/${post.userId}`} className="font-bold text-base text-foreground hover:text-primary transition-colors">{post.user?.username || 'Usuário'}</Link>
-                        <div className="text-sm text-muted-foreground">
+                        <Link to={`/profile/${post.userId}`} className="font-semibold text-sm text-foreground hover:text-primary transition-colors block">
+                          {post.user?.username || 'Usuário'}
+                        </Link>
+                        <span className="text-[11px] text-muted-foreground/80">
                           {new Date(post.createdAt).toLocaleDateString('pt-BR', {
                             day: '2-digit',
                             month: 'short',
@@ -323,14 +308,14 @@ const CommunityPage = () => {
                             hour: '2-digit',
                             minute: '2-digit',
                           })}
-                        </div>
+                        </span>
                       </div>
 
                       <div className="flex gap-1">
                         {isAdmin && (
                           <AdminAction>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100">
-                              <Pin className="h-4 w-4 text-primary" />
+                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 rounded-lg text-muted-foreground transition-opacity">
+                              <Pin className="h-3.5 w-3.5" />
                             </Button>
                           </AdminAction>
                         )}
@@ -339,42 +324,44 @@ const CommunityPage = () => {
                             variant="ghost"
                             size="sm"
                             onClick={() => setDeletePostId(post.id)}
-                            className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100"
+                            className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 rounded-lg text-muted-foreground hover:text-destructive transition-opacity"
                           >
-                            <Trash2 className="h-4 w-4 text-red-500" />
+                            <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         )}
                       </div>
                     </div>
 
-                    <p className="text-foreground/90 mb-4 whitespace-pre-wrap leading-relaxed">{post.content}</p>
+                    <p className="text-foreground/90 text-sm mb-3.5 whitespace-pre-wrap leading-relaxed">{post.content}</p>
 
                     {post.imageUrl && (
-                      <img
-                        src={post.imageUrl}
-                        alt="Post"
-                        className="rounded-xl mb-4 max-h-96 w-full object-cover shadow-md"
-                      />
+                      <div className="rounded-xl overflow-hidden border border-border/40 mb-3.5 bg-muted/30">
+                        <img
+                          src={post.imageUrl}
+                          alt="Post"
+                          className="max-h-96 w-full object-cover transition-transform duration-300 hover:scale-[1.01]"
+                        />
+                      </div>
                     )}
 
                     {!isGuest && (
-                      <div className="flex gap-4 pt-2 border-t border-border/50">
+                      <div className="flex gap-3 pt-2 border-t border-border/40">
                         <Button
-  variant="ghost"
-  size="sm"
-  onClick={() => toggleLike(post.id)}
-  className={`font-medium transition-colors ${
-    post.isLiked 
-      ? 'text-red-600 hover:text-red-700 bg-red-50 dark:bg-red-950/30' 
-      : 'text-muted-foreground hover:text-red-600'
-  }`}
->
-  <Heart className={`h-4 w-4 mr-1.5 transition-transform active:scale-125 ${post.isLiked ? 'fill-red-600 text-red-600' : ''}`} />
-  {post.likesCount || 0}
-</Button>
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleLike(post.id)}
+                          className={`h-8 rounded-lg px-2.5 text-xs font-medium transition-colors ${
+                            post.isLiked 
+                              ? 'text-red-600 hover:text-red-700 bg-red-500/5 dark:bg-red-500/10' 
+                              : 'text-muted-foreground hover:text-red-600'
+                          }`}
+                        >
+                          <Heart className={`h-3.5 w-3.5 mr-1.5 transition-transform active:scale-125 ${post.isLiked ? 'fill-red-600 text-red-600' : ''}`} />
+                          {post.likesCount || 0}
+                        </Button>
 
-                        <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary font-medium">
-                          <MessageCircle className="h-4 w-4 mr-1.5" />
+                        <Button variant="ghost" size="sm" className="h-8 rounded-lg px-2.5 text-xs text-muted-foreground hover:text-primary font-medium">
+                          <MessageCircle className="h-3.5 w-3.5 mr-1.5" />
                           {post.commentsCount || 0}
                         </Button>
                       </div>
@@ -396,20 +383,24 @@ const CommunityPage = () => {
           />
         )}
       </div>
+
+      {/* Confirmation Dialog */}
       <AlertDialog open={!!deletePostId} onOpenChange={open => { if (!open) setDeletePostId(null) }}>
-  <AlertDialogContent>
-    <AlertDialogHeader>
-      <AlertDialogTitle>Remover publicação?</AlertDialogTitle>
-      <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
-    </AlertDialogHeader>
-    <AlertDialogFooter>
-      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-      <AlertDialogAction onClick={deletePost} className="bg-red-600 hover:bg-red-700 text-white">
-        Remover
-      </AlertDialogAction>
-    </AlertDialogFooter>
-  </AlertDialogContent>
-</AlertDialog>
+        <AlertDialogContent className="rounded-2xl border-border/60">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-lg font-bold tracking-tight">Remover publicação?</AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-muted-foreground">
+              Esta ação não pode ser desfeita. O conteúdo deixará de ser exibido para os outros membros.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel className="rounded-xl border-border/80 text-xs font-medium">Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={deletePost} className="bg-red-600 hover:bg-red-700 text-white font-medium rounded-xl text-xs">
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   )
 }
