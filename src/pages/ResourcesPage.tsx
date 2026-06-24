@@ -11,7 +11,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useAppStore } from '../stores/appStore'
-import { BookOpen, Download, Search, Plus, Trash2, FileText, BookMarked, Heart, GraduationCap, Upload, X, Shield, RefreshCw } from 'lucide-react'
+import { 
+  BookOpen, Download, Search, Plus, Trash2, FileText, 
+  BookMarked, Heart, GraduationCap, Upload, X, Shield, 
+  FolderOpen, Calendar, HardDrive, RefreshCw
+} from 'lucide-react'
 import { toast } from 'sonner'
 import type { SpiritualResource } from '../types'
 import { StatCard } from '../components/shared/StatCard'
@@ -32,9 +36,8 @@ const ResourcesPage = () => {
   const [uploading, setUploading] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [isDragActive, setIsDragActive] = useState(false)
+  const [dragActive, setDragActive] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  
   const [newResource, setNewResource] = useState({
     title: '',
     description: '',
@@ -55,20 +58,20 @@ const ResourcesPage = () => {
 
   const loadResources = async () => {
     setLoading(true)
-    try {
-      const { data, error } = await supabase
-        .from('spiritual_resources')
-        .select('*')
-        .order('created_at', { ascending: false })
+    const { data, error } = await supabase
+      .from('spiritual_resources')
+      .select('*')
+      .order('created_at', { ascending: false })
 
-      if (error) throw error
-      setResources(data as any)
-    } catch (error) {
+    if (error) {
       console.error('Error loading resources:', error)
-      toast.error('Erro ao carregar os recursos da biblioteca')
-    } finally {
+      toast.error('Erro ao carregar acervo de recursos')
       setLoading(false)
+      return
     }
+
+    setResources(data as any)
+    setLoading(false)
   }
 
   const filterResources = () => {
@@ -90,47 +93,38 @@ const ResourcesPage = () => {
     setFilteredResources(filtered)
   }
 
-  const handleFileValidation = (file: File) => {
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('O arquivo deve ter no máximo 10MB')
-      return false
-    }
-    const allowedExtensions = ['pdf', 'doc', 'docx', 'epub']
-    const ext = file.name.split('.').pop()?.toLowerCase()
-    if (!ext || !allowedExtensions.includes(ext)) {
-      toast.error('Formato não suportado. Use PDF, DOC, DOCX ou EPUB.')
-      return false
-    }
-    return true
-  }
-
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (file && handleFileValidation(file)) {
-      setSelectedFile(file)
+    validateAndSetFile(file)
+  }
+
+  const validateAndSetFile = (file: File | undefined) => {
+    if (!file) return
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('O arquivo deve ter no máximo 10MB')
+      return
     }
+
+    setSelectedFile(file)
   }
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
     if (e.type === "dragenter" || e.type === "dragover") {
-      setIsDragActive(true)
+      setDragActive(true)
     } else if (e.type === "dragleave") {
-      setIsDragActive(false)
+      setDragActive(false)
     }
   }
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    setIsDragActive(false)
-    
+    setDragActive(false)
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const file = e.dataTransfer.files[0]
-      if (handleFileValidation(file)) {
-        setSelectedFile(file)
-      }
+      validateAndSetFile(e.dataTransfer.files[0])
     }
   }
 
@@ -169,39 +163,36 @@ const ResourcesPage = () => {
           file_size: selectedFile.size,
           tags,
           created_by: user!.id,
-          downloads_count: 0
         })
 
       if (dbError) throw dbError
 
-      toast.success('Recurso publicado com sucesso!')
+      toast.success('Recurso publicado com sucesso no acervo!')
       setDialogOpen(false)
       setSelectedFile(null)
       setNewResource({ title: '', description: '', category: 'study', tags: '' })
       loadResources()
     } catch (error: any) {
       console.error('Upload error:', error)
-      toast.error(error.message || 'Erro ao realizar upload do recurso')
+      toast.error(error.message || 'Erro ao efetuar publicação do arquivo')
     } finally {
       setUploading(false)
     }
   }
 
   const handleDownload = async (resource: SpiritualResource) => {
-    const currentDownloads = resource.downloads_count || resource.downloadsCount || 0
-    
     await supabase
       .from('spiritual_resources')
-      .update({ downloads_count: currentDownloads + 1 })
+      .update({ downloads_count: (resource.downloadsCount || 0) + 1 })
       .eq('id', resource.id)
 
-    window.open(resource.fileUrl || (resource as any).file_url, '_blank')
+    window.open(resource.fileUrl, '_blank')
     toast.success('Download iniciado com sucesso!')
     loadResources()
   }
 
   const deleteResource = async (id: string) => {
-    if (!confirm('Tem certeza absoluta que deseja excluir permanentemente este recurso?')) return
+    if (!confirm('Confirmar exclusão definitiva deste recurso estratégico?')) return
 
     const { error } = await supabase
       .from('spiritual_resources')
@@ -209,11 +200,11 @@ const ResourcesPage = () => {
       .eq('id', id)
 
     if (error) {
-      toast.error('Erro ao excluir o recurso')
+      toast.error('Não foi possível remover o recurso do banco')
       return
     }
 
-    toast.success('Recurso excluído do servidor!')
+    toast.success('Recurso removido com sucesso!')
     loadResources()
   }
 
@@ -231,11 +222,11 @@ const ResourcesPage = () => {
   }
 
   const categoryColors = {
-    ebook: 'from-blue-500 to-cyan-500 text-blue-500 bg-blue-50 dark:bg-blue-950/30',
-    study: 'from-purple-500 to-pink-500 text-purple-500 bg-purple-50 dark:bg-purple-950/30',
-    devotional: 'from-rose-500 to-orange-500 text-rose-500 bg-rose-50 dark:bg-rose-950/30',
-    discipleship: 'from-green-500 to-emerald-500 text-green-500 bg-green-50 dark:bg-green-950/30',
-    other: 'from-gray-500 to-slate-500 text-gray-500 bg-gray-50 dark:bg-slate-950/30',
+    ebook: 'from-blue-500 to-cyan-500 bg-blue-50 text-blue-700 border-blue-100',
+    study: 'from-purple-500 to-pink-500 bg-purple-50 text-purple-700 border-purple-100',
+    devotional: 'from-rose-500 to-orange-500 bg-rose-50 text-rose-700 border-rose-100',
+    discipleship: 'from-green-500 to-emerald-500 bg-emerald-50 text-emerald-700 border-emerald-100',
+    other: 'from-gray-500 to-slate-500 bg-slate-50 text-slate-700 border-slate-100',
   }
 
   const formatFileSize = (bytes: number): string => {
@@ -247,163 +238,154 @@ const ResourcesPage = () => {
   if (loading) {
     return (
       <Layout title="Recursos Espirituais">
-        <LoadingState fullScreen message="Acessando arquivos da biblioteca..." />
+        <LoadingState fullScreen message="Sincronizando acervo espiritual..." />
       </Layout>
     )
   }
 
   return (
     <Layout title="Recursos Espirituais">
-      <div className="p-4 mx-auto max-w-7xl space-y-8 animate-fade-in">
+      <div className="p-4 md:p-6 space-y-8 max-w-7xl mx-auto">
         
-        {/* Hero */}
-        <Card className="relative overflow-hidden border-0 shadow-2xl rounded-3xl group">
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-700 via-purple-700 to-pink-600 transition-transform duration-700 group-hover:scale-[1.02]" />
-          <div className="absolute -right-10 -bottom-10 w-60 h-60 bg-white/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -left-10 -top-10 w-60 h-60 bg-pink-500/20 rounded-full blur-3xl pointer-events-none" />
+        {/* Hero Section */}
+        <Card className="relative overflow-hidden border-0 shadow-xl rounded-3xl bg-slate-950">
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/90 via-purple-600/80 to-pink-600/70 mix-blend-multiply" />
+          <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
+          <div className="absolute -left-10 -bottom-10 w-60 h-60 bg-indigo-500/20 rounded-full blur-3xl" />
           
-          <div className="relative z-10 p-8 md:p-12 lg:p-16 text-white">
-            <div className="max-w-4xl space-y-6">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/15 backdrop-blur-md rounded-full border border-white/20 shadow-md">
+          <div className="relative z-10 p-6 md:p-12 lg:p-16 text-white flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="max-w-2xl space-y-4">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 backdrop-blur-md rounded-full border border-white/20 shadow-inner">
                 <BookOpen className="h-4 w-4 text-amber-300" />
-                <span className="text-xs md:text-sm font-bold tracking-wider uppercase">Biblioteca Digital</span>
+                <span className="text-xs md:text-sm font-semibold tracking-wider uppercase text-slate-100">Biblioteca Ministerial</span>
               </div>
 
-              <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-none">
+              <h1 className="text-3xl md:text-5xl font-black tracking-tight leading-tight">
                 Recursos{' '}
-                <span className="bg-gradient-to-r from-yellow-200 via-amber-100 to-white bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-amber-200 via-white to-orange-200 bg-clip-text text-transparent">
                   Espirituais
                 </span>
               </h1>
               
-              <p className="text-lg md:text-xl text-indigo-50/90 font-medium max-w-2xl leading-relaxed">
+              <p className="text-base md:text-lg text-slate-100/90 font-normal leading-relaxed">
                 {isAdmin 
-                  ? 'Painel de Gestão da Plataforma: Publique novos materiais, gerencie acervos de e-books, estudos teológicos e devocionais estruturados.'
-                  : 'Explore e faça download de e-books, estudos profundos da palavra e ferramentas completas para guiar sua caminhada de fé.'}
+                  ? 'Painel Geral do Administrador Chefe. Publique, monitore downloads e gerencie e-books, estudos teológicos e devocionais estruturadas.'
+                  : 'Acesse e-books, estudos teológicos, devocionais e guias práticos desenvolvidos para apoiar seu crescimento integral.'}
               </p>
-
-              {isAdmin && (
-                <AdminAction>
-                  <Button
-                    onClick={() => setDialogOpen(true)}
-                    size="lg"
-                    className="bg-white text-indigo-700 hover:bg-indigo-50 font-bold px-8 py-6 rounded-full shadow-xl transition-all hover:shadow-2xl hover:-translate-y-0.5"
-                  >
-                    <Plus className="mr-2 h-5 w-5 stroke-[2.5]" />
-                    Adicionar Novo Recurso
-                  </Button>
-                </AdminAction>
-              )}
             </div>
+
+            {/* Exclusive Admin Trigger Button */}
+            {isAdmin && (
+              <AdminAction>
+                <Button
+                  onClick={() => setDialogOpen(true)}
+                  size="lg"
+                  className="bg-white text-indigo-950 hover:bg-slate-50 font-bold px-6 py-6 h-auto text-base rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 border border-slate-100 shrink-0 self-start md:self-center"
+                >
+                  <Plus className="mr-2 h-5 w-5 stroke-[2.5]" />
+                  Adicionar Recurso
+                </Button>
+              </AdminAction>
+            )}
           </div>
         </Card>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Analytics Section */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard
             icon={BookOpen}
-            label="Total no Acervo"
+            label="Total Cadastrado"
             value={resources.length}
-            gradient="from-indigo-500 to-indigo-600 shadow-indigo-100 dark:shadow-none"
+            gradient="from-indigo-600 to-purple-600"
           />
           <StatCard
             icon={FileText}
             label="Estudos Bíblicos"
             value={resources.filter(r => r.category === 'study').length}
-            gradient="from-purple-500 to-purple-600 shadow-purple-100 dark:shadow-none"
+            gradient="from-purple-600 to-pink-600"
           />
           <StatCard
             icon={Heart}
             label="Devocionais"
             value={resources.filter(r => r.category === 'devotional').length}
-            gradient="from-rose-500 to-rose-600 shadow-rose-100 dark:shadow-none"
+            gradient="from-rose-600 to-orange-600"
           />
           <StatCard
             icon={Download}
-            label="Total de Downloads"
-            value={resources.reduce((sum, r) => sum + (r.downloads_count || r.downloadsCount || 0), 0)}
-            gradient="from-emerald-500 to-emerald-600 shadow-emerald-100 dark:shadow-none"
+            label="Total Downloads"
+            value={resources.reduce((sum, r) => sum + (r.downloadsCount || 0), 0)}
+            gradient="from-emerald-600 to-teal-600"
           />
         </div>
 
-        {/* Search & Filter */}
-        <Card className="p-4 md:p-6 border-muted shadow-sm rounded-2xl bg-card">
-          <div className="flex flex-col md:flex-row gap-4 items-center">
-            <div className="relative flex-1 w-full">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Pesquise por títulos, tags ou descrição..."
-                className="pl-12 h-13 rounded-xl border-muted bg-muted/30 focus-visible:ring-primary focus-visible:ring-2 transition-all"
-              />
-              {searchQuery && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 p-0 rounded-full"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-            
-            <div className="flex w-full md:w-auto gap-3">
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="h-13 w-full md:w-64 rounded-xl border-muted bg-muted/20 font-medium">
-                  <SelectValue placeholder="Filtrar por Categoria" />
-                </SelectTrigger>
-                <SelectContent rounded-xl>
-                  <SelectItem value="all">Todas as categorias</SelectItem>
-                  <SelectItem value="ebook">📚 E-books</SelectItem>
-                  <SelectItem value="study">📖 Estudos Bíblicos</SelectItem>
-                  <SelectItem value="devotional">❤️ Devocionais</SelectItem>
-                  <SelectItem value="discipleship">🎓 Discipulado</SelectItem>
-                  <SelectItem value="other">✨ Outros Recursos</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {(searchQuery || categoryFilter !== 'all') && (
-                <Button 
-                  variant="outline" 
-                  onClick={clearFilters}
-                  className="h-13 rounded-xl px-4 border-dashed hover:bg-muted"
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Limpar
-                </Button>
-              )}
-            </div>
+        {/* Filter Bar */}
+        <div className="flex flex-col md:flex-row gap-4 items-center bg-card p-4 rounded-2xl border shadow-sm">
+          <div className="relative w-full flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Buscar por títulos, palavras-chave ou tags..."
+              className="pl-11 h-12 rounded-xl border-slate-200 focus-visible:ring-indigo-500 bg-muted/30"
+            />
+            {searchQuery && (
+              <button 
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground rounded-full"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
-        </Card>
+          <div className="w-full md:w-72">
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="h-12 rounded-xl border-slate-200 focus:ring-indigo-500 bg-muted/30">
+                <div className="flex items-center gap-2">
+                  <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                  <SelectValue placeholder="Filtrar por Categoria" />
+                </div>
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="all">Todas as categorias</SelectItem>
+                <SelectItem value="ebook">E-books</SelectItem>
+                <SelectItem value="study">Estudos Bíblicos</SelectItem>
+                <SelectItem value="devotional">Devocionais</SelectItem>
+                <SelectItem value="discipleship">Discipulado</SelectItem>
+                <SelectItem value="other">Outros Materiais</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
-        {/* Resources Grid */}
+        {/* Resources Layout Grid */}
         {filteredResources.length > 0 ? (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredResources.map((resource) => {
               const CategoryIcon = categoryIcons[resource.category] || BookOpen
-              const styleMeta = categoryColors[resource.category] || categoryColors.other
-              const [gradientClass, textAndBgClass] = styleMeta.split(' text-')
+              const styleConfig = categoryColors[resource.category] || categoryColors.other
+              const gradientParts = styleConfig.split(' ')
 
               return (
                 <Card 
                   key={resource.id} 
-                  className="group relative flex flex-col justify-between overflow-hidden p-6 border border-muted bg-card rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300"
+                  className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border-2 border-slate-100 hover:border-indigo-500/30 transition-all duration-300 hover:shadow-xl bg-card"
                 >
-                  <div>
-                    <div className="flex justify-between items-start mb-5">
-                      <div className={`p-3 rounded-xl bg-gradient-to-br ${gradientClass} text-white shadow-md group-hover:scale-110 transition-transform duration-300`}>
-                        <CategoryIcon className="h-5 w-5" />
-                      </div>
+                  <div className="p-5 md:p-6 flex-1">
+                    <div className="flex justify-between items-center mb-5">
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${gradientParts[2]} ${gradientParts[3]} ${gradientParts[4]}`}>
+                        <CategoryIcon className="h-3.5 w-3.5" />
+                        {resource.category.toUpperCase()}
+                      </span>
                       
+                      {/* Exclusive Admin Actions on Card */}
                       {isAdmin && (
                         <AdminAction>
                           <Button
-                            size="icon"
-                            variant="destructive"
+                            size="sm"
+                            variant="ghost"
                             onClick={() => deleteResource(resource.id)}
-                            className="h-9 w-9 rounded-xl opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity duration-200 shadow-sm"
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100"
+                            title="Remover Recurso"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -411,7 +393,7 @@ const ResourcesPage = () => {
                       )}
                     </div>
 
-                    <h3 className="text-xl font-bold text-card-foreground mb-2 line-clamp-2 leading-snug group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-200">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 line-clamp-2 leading-snug group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                       {resource.title}
                     </h3>
 
@@ -420,36 +402,40 @@ const ResourcesPage = () => {
                         {resource.description}
                       </p>
                     )}
-                  </div>
 
-                  <div className="mt-auto pt-4 space-y-4 border-t border-muted/60">
                     {resource.tags && resource.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5">
+                      <div className="flex flex-wrap gap-1.5 mb-4">
                         {resource.tags.slice(0, 3).map((tag, idx) => (
-                          <span 
-                            key={idx} 
-                            className="px-2.5 py-0.5 bg-muted/60 text-muted-foreground text-[11px] font-semibold tracking-wide rounded-md uppercase"
-                          >
+                          <span key={idx} className="px-2 py-0.5 bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-[11px] font-medium rounded-md">
                             #{tag}
                           </span>
                         ))}
                       </div>
                     )}
+                  </div>
 
-                    <div className="flex items-center justify-between text-xs font-medium text-muted-foreground/80 bg-muted/30 px-3 py-2 rounded-xl">
-                      <span className="uppercase font-bold tracking-wider">{resource.fileType || 'DOC'}</span>
-                      <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
-                      <span>{formatFileSize(resource.fileSize || 0)}</span>
-                      <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
-                      <span className="font-semibold text-foreground/90">{resource.downloads_count || resource.downloadsCount || 0} downloads</span>
+                  {/* Metadata and Download Trigger */}
+                  <div className="px-5 md:px-6 pb-5 md:pb-6 mt-auto space-y-4">
+                    <div className="grid grid-cols-3 gap-1 pt-3 border-t text-[11px] font-medium text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <FileText className="h-3 w-3 shrink-0" />
+                        <span className="truncate">{resource.fileType?.toUpperCase() || 'DOC'}</span>
+                      </div>
+                      <div className="flex items-center gap-1 justify-center">
+                        <HardDrive className="h-3 w-3 shrink-0" />
+                        <span>{formatFileSize(resource.fileSize || 0)}</span>
+                      </div>
+                      <div className="text-right truncate">
+                        {resource.downloadsCount || 0} downloads
+                      </div>
                     </div>
 
                     <Button
                       onClick={() => handleDownload(resource)}
-                      className={`w-full font-bold h-11 rounded-xl bg-gradient-to-r ${gradientClass} text-white shadow-md hover:shadow-lg hover:brightness-105 transition-all`}
+                      className={`w-full font-bold h-11 rounded-xl shadow-sm bg-gradient-to-r ${gradientParts[0]} ${gradientParts[1]} text-white hover:opacity-95 transition-opacity`}
                     >
-                      <Download className="mr-2 h-4 w-4 stroke-[2.5]" />
-                      Baixar Material
+                      <Download className="mr-2 h-4 w-4" />
+                      Baixar Arquivo
                     </Button>
                   </div>
                 </Card>
@@ -457,64 +443,66 @@ const ResourcesPage = () => {
             })}
           </div>
         ) : (
-          <EmptyState
-            icon={BookOpen}
-            title="Nenhum recurso encontrado"
-            description={searchQuery || categoryFilter !== 'all' ? 'Não encontramos resultados para os termos ou filtros aplicados.' : 'Novos arquivos e e-books serão anexados em breve.'}
-          />
+          <div className="text-center py-12 bg-muted/20 border-2 border-dashed rounded-3xl p-8">
+            <EmptyState
+              icon={BookOpen}
+              title="Nenhum registro localizado"
+              description={searchQuery || categoryFilter !== 'all' ? 'Redefina os parâmetros de pesquisa para encontrar conteúdos adicionais.' : 'Novas diretrizes e recursos serão postados pelo administrador em breve.'}
+            />
+            {(searchQuery || categoryFilter !== 'all') && (
+              <Button 
+                variant="outline" 
+                onClick={clearFilters}
+                className="mt-4 rounded-xl"
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Limpar Filtros e Busca
+              </Button>
+            )}
+          </div>
         )}
 
-        {/* Guest Prompt */}
+        {/* Guest Accountability Section */}
         {isGuest && resources.length > 0 && (
-          <div className="pt-4">
-            <GuestPrompt
-              title="Acesso total à Biblioteca"
-              description="Faça parte da nossa comunidade para baixar e salvar de forma ilimitada todos os materiais espirituais disponíveis."
-              actionLabel="Criar Conta"
-              onAction={() => navigate('/auth')}
-            />
-          </div>
+          <GuestPrompt
+            title="Acesso total aos recursos estratégicos"
+            description="Membros matriculados ativos ganham permissão irrestrita para download e arquivamento de todos os materiais teológicos e ebooks."
+            actionLabel="Criar Conta"
+            onAction={() => navigate('/auth')}
+          />
         )}
       </div>
 
-      {/* Upload Dialog */}
+      {/* Exclusive Admin Upload Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl rounded-2xl overflow-hidden p-0 border-0 shadow-2xl">
-          <div className="bg-gradient-to-r from-indigo-700 to-purple-800 p-6 text-white relative">
-            <div className="absolute right-4 top-4">
-              <Button 
-                variant="ghost" 
-                onClick={() => setDialogOpen(false)} 
-                className="text-white/70 hover:text-white hover:bg-white/10 rounded-full h-8 w-8 p-0"
-              >
-                <X className="h-4 w-4" />
-              </Button>
+        <DialogContent className="max-w-2xl rounded-2xl p-6">
+          <DialogHeader className="flex flex-row items-center justify-between border-b pb-4">
+            <div className="space-y-1">
+              <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                <Shield className="h-5 w-5 text-indigo-600" />
+                Painel Administrativo: Novo Recurso
+              </DialogTitle>
+              <p className="text-xs text-muted-foreground">Adicione e disponibilize arquivos oficiais para download geral.</p>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-white/10 rounded-xl">
-                <Shield className="h-6 w-6 text-amber-300" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold tracking-tight">Publicar na Biblioteca</h2>
-                <p className="text-xs text-indigo-200/90 font-medium uppercase tracking-wider mt-0.5">Painel de Controle do Administrador Chefe</p>
-              </div>
-            </div>
-          </div>
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setDialogOpen(false)}>
+              <X className="h-4 w-4" />
+            </Button>
+          </DialogHeader>
 
-          <div className="p-6 space-y-5 bg-card">
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label className="font-semibold text-sm">Título do Recurso *</Label>
+          <div className="space-y-5 pt-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-2 space-y-1.5">
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Título do Recurso *</Label>
                 <Input
                   value={newResource.title}
                   onChange={(e) => setNewResource({ ...newResource, title: e.target.value })}
-                  placeholder="Ex: Guia Prático de Oração"
+                  placeholder="Ex: Teologia Sistemática e Hermenêutica"
                   className="rounded-xl h-11"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label className="font-semibold text-sm">Categoria Primária *</Label>
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Categoria *</Label>
                 <Select
                   value={newResource.category}
                   onValueChange={(value: any) => setNewResource({ ...newResource, category: value })}
@@ -522,40 +510,41 @@ const ResourcesPage = () => {
                   <SelectTrigger className="rounded-xl h-11">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent rounded-xl>
+                  <SelectContent className="rounded-xl">
                     <SelectItem value="ebook">E-book</SelectItem>
                     <SelectItem value="study">Estudo Bíblico</SelectItem>
                     <SelectItem value="devotional">Devocional</SelectItem>
                     <SelectItem value="discipleship">Discipulado</SelectItem>
-                    <SelectItem value="other">Outro Material</SelectItem>
+                    <SelectItem value="other">Outro</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label className="font-semibold text-sm">Descrição Curta</Label>
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Descrição Breve</Label>
               <Textarea
                 value={newResource.description}
                 onChange={(e) => setNewResource({ ...newResource, description: e.target.value })}
-                placeholder="Forneça um resumo detalhado sobre o que o leitor encontrará neste arquivo..."
+                placeholder="Insira detalhes resumidos sobre a finalidade pedagógica ou espiritual deste arquivo..."
                 className="rounded-xl resize-none"
                 rows={3}
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label className="font-semibold text-sm">Tags de Busca <span className="text-xs text-muted-foreground">(Separadas por vírgula)</span></Label>
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Tags Corporativas (Separadas por Vírgula)</Label>
               <Input
                 value={newResource.tags}
                 onChange={(e) => setNewResource({ ...newResource, tags: e.target.value })}
-                placeholder="Ex: teologia, fe, oracao, jejum"
+                placeholder="ex: lideranca, devocional, igreja"
                 className="rounded-xl h-11"
               />
             </div>
 
+            {/* Premium Drag and Drop Drag Area */}
             <div className="space-y-1.5">
-              <Label className="font-semibold text-sm">Anexo do Documento * <span className="text-xs text-muted-foreground">(PDF, DOCX, EPUB até 10MB)</span></Label>
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Upload de Arquivo (Máx 10MB) *</Label>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -565,67 +554,61 @@ const ResourcesPage = () => {
               />
               
               <div 
+                className={`mt-1 border-2 border-dashed rounded-2xl p-6 transition-all duration-200 text-center flex flex-col items-center justify-center min-h-[140px] ${
+                  dragActive ? 'border-indigo-600 bg-indigo-50/20' : 'border-slate-200 bg-slate-50/50 hover:bg-slate-50'
+                }`}
                 onDragEnter={handleDrag}
                 onDragOver={handleDrag}
                 onDragLeave={handleDrag}
                 onDrop={handleDrop}
-                className="mt-1"
               >
                 {selectedFile ? (
-                  <div className="flex items-center gap-4 p-4 bg-muted/60 dark:bg-muted/20 rounded-xl border border-primary/20 animate-fade-in">
-                    <div className="p-2.5 bg-primary/10 text-primary rounded-xl">
+                  <div className="flex items-center gap-4 w-full text-left bg-card border rounded-xl p-3 shadow-sm">
+                    <div className="h-12 w-12 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 shrink-0">
                       <FileText className="h-6 w-6" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-bold text-sm truncate">{selectedFile.name}</div>
-                      <div className="text-xs text-muted-foreground font-medium mt-0.5">
-                        {formatFileSize(selectedFile.size)}
-                      </div>
+                      <div className="font-semibold text-sm truncate text-slate-800">{selectedFile.name}</div>
+                      <div className="text-xs text-muted-foreground">{formatFileSize(selectedFile.size)}</div>
                     </div>
                     <Button
-                      size="icon"
+                      size="sm"
                       variant="ghost"
                       onClick={() => setSelectedFile(null)}
-                      className="h-8 w-8 rounded-full hover:bg-muted"
+                      className="h-8 w-8 p-0 rounded-full text-muted-foreground hover:text-foreground shrink-0"
                     >
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className={`w-full flex flex-col items-center justify-center border-2 border-dashed rounded-xl h-32 transition-all gap-2 px-4 ${
-                      isDragActive 
-                        ? 'border-indigo-600 bg-indigo-50/40 dark:bg-indigo-950/20 scale-[0.99]' 
-                        : 'border-muted-foreground/30 hover:border-primary/50 hover:bg-muted/30'
-                    }`}
-                  >
-                    <div className="p-2 bg-muted rounded-xl text-muted-foreground group-hover:text-primary transition-colors">
+                  <div className="space-y-2 cursor-pointer w-full" onClick={() => fileInputRef.current?.click()}>
+                    <div className="mx-auto h-10 w-10 text-muted-foreground bg-white border shadow-sm rounded-xl flex items-center justify-center">
                       <Upload className="h-5 w-5" />
                     </div>
-                    <div className="text-sm font-semibold">Arraste o arquivo ou clique para selecionar</div>
-                    <div className="text-xs text-muted-foreground">PDF, DOCX ou EPUB de até 10MB</div>
-                  </button>
+                    <div className="text-sm">
+                      <span className="font-semibold text-indigo-600 hover:text-indigo-500">Clique para selecionar</span> ou arraste o documento aqui
+                    </div>
+                    <p className="text-xs text-muted-foreground">Formatos aceitos: PDF, DOCX ou EPUB de até 10 megabytes</p>
+                  </div>
                 )}
               </div>
             </div>
 
-            <div className="pt-2 flex gap-3">
+            <div className="flex items-center gap-3 pt-2">
               <Button
                 variant="outline"
-                type="button"
+                className="flex-1 h-12 rounded-xl font-semibold"
                 onClick={() => setDialogOpen(false)}
-                className="w-1/3 h-11 rounded-xl font-semibold"
+                disabled={uploading}
               >
                 Cancelar
               </Button>
               <Button
                 onClick={uploadResource}
                 disabled={uploading}
-                className="w-2/3 h-11 rounded-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg hover:brightness-105"
+                className="flex-1 h-12 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-100 disabled:opacity-50"
               >
-                {uploading ? 'Salvando no Servidor...' : 'Publicar Material Agora'}
+                {uploading ? 'Processando upload...' : 'Publicar no Acervo'}
               </Button>
             </div>
           </div>
