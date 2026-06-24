@@ -1,338 +1,376 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Layout from '../components/layout/Layout'
 import { Card } from '../components/ui/card'
 import { Button } from '../components/ui/button'
+import { Input } from '../components/ui/input'
+import { Textarea } from '../components/ui/textarea'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
+import { useRealTime } from '../hooks/useRealTime'
+import { logActivity } from '../lib/activityLogger'
 import { 
-  MessageSquare, 
-  Heart, 
-  Share2, 
-  TrendingUp, 
-  Plus, 
-  Send, 
-  Image as ImageIcon,
-  Sparkles,
-  AlertCircle
+  Heart, MessageSquare, Share2, Image, Send, 
+  Search, TrendingUp, Sparkles, UserPlus, X, Flame 
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { LoadingState } from '../components/shared/LoadingState'
-import { formatDistanceToNow } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
+import { EmptyState } from '../components/shared/EmptyState'
+import { GuestPrompt } from '../components/shared/GuestPrompt'
 
-// Interfaces estritas baseadas em dados reais
 interface Post {
-  id: string
-  content: string
-  imageUrl?: string
-  createdAt: string
-  userId: string
-  likesCount: number
-  commentsCount: number
-  isPinned: boolean
-  userProfile?: {
-    fullName: string
-    avatarUrl?: string
-    role: string
-  }
+  id: string; user_id: string; content: string; image_url: string | null;
+  created_at: string; likes_count: number; comments_count: number;
+  user: { username: string; avatar_url: string | null };
+  has_liked?: boolean;
 }
 
 const CommunityPage = () => {
+  const navigate = useNavigate()
   const { user } = useAuth()
+  const { version } = useRealTime()
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
-  const [submitting, setSubmitting] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  
+  // Estados para a criação de novo post
   const [newPostContent, setNewPostContent] = useState('')
-  const [newPostImage, setNewPostImage] = useState('')
+  const [imageInput, setImageInput] = useState('') // URL direta ou base64 de imagem
+  const [showImageField, setShowImageField] = useState(false)
+  const [publishing, setPublishing] = useState(false)
+  
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const isGuest = user?.role === 'guest'
 
-  // Mapeador seguro de banco de dados para evitar o erro de carregamento do feed
-  const mapPostData = (raw: any): Post => ({
-    id: raw.id,
-    content: raw.content,
-    imageUrl: raw.image_url || raw.imageUrl,
-    createdAt: raw.created_at || raw.createdAt,
-    userId: raw.user_id || raw.userId,
-    likesCount: raw.likes_count || raw.likesCount || 0,
-    commentsCount: raw.comments_count || raw.commentsCount || 0,
-    isPinned: raw.is_pinned !== undefined ? raw.is_pinned : (raw.isPinned || false),
-    userProfile: raw.profiles ? {
-      fullName: raw.profiles.full_name || raw.profiles.fullName || 'Usuário MER',
-      avatarUrl: raw.profiles.avatar_url || raw.profiles.avatarUrl,
-      role: raw.profiles.role || 'member'
-    } : undefined
-  })
+  useEffect(() => {
+    loadPosts()
+  }, [version])
 
-  // 1. CARREGAMENTO INICIAL COM TRATAMENTO DE ERROS CORRIGIDO
-  const loadCommunityFeed = useCallback(async () => {
+  const loadPosts = async () => {
     try {
-      // Fazemos o join com a tabela de perfis (ajuste 'profiles' se o nome da sua tabela de usuários for diferente)
+      setLoading(true)
+      // Busca os posts com os perfis dos usuários vinculados
       const { data, error } = await supabase
-        .from('community_posts')
-        .select(`
-          *,
-          profiles:user_id (
-            full_name,
-            avatar_url,
-            role
-          )
-        `)
+        .from('posts')
+        .select('*, user:user_profiles(username, avatar_url)')
         .order('created_at', { ascending: false })
 
       if (error) throw error
 
-      const formattedPosts = (data || []).map(mapPostData)
-      setPosts(formattedPosts)
+      // Se houver um usuário logado, podemos verificar quais posts ele curtiu
+      let postsWithLikes = (data || []) as Post[]
+      if (user && !isGuest) {
+        const { data: userLikes } = await supabase
+          .from('post_likes')
+          .select('post_id')
+          .eq('user_id', user.id)
+        
+        const likedPostIds = new Set(userLikes?.map(l => l.post_id) || [])
+        postsWithLikes = postsWithLikes.map(p => ({
+          ...p,
+          has_liked: likedPostIds.has(p.id)
+        }))
+      }
+
+      setPosts(postsWithLikes)
     } catch (error) {
-      console.error('Erro detalhado ao carregar feed:', error)
-      // O erro só dispara se a requisição falhar criticamente no banco
-      toast.error('Não foi possível sincronizar o feed com o servidor.')
+      console.error(error)
+      toast.error('Erro ao carregar o feed da comunidade')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }
 
-  // 2. REALTIME ENGINE: Escuta e atualiza em tempo real sem buscas repetitivas (Evita ruídos de IA)
-  useEffect(() => {
-    loadCommunityFeed()
-
-    // Inscreve o canal para ouvir qualquer mudança na tabela de posts da comunidade
-    const communityChannel = supabase
-      .channel('realtime-community')
-      .on(
-        'postgres_changes',
-        { event: '*', scheme: 'public', table: 'community_posts' },
-        () => {
-          // Quando qualquer alteração real ocorre (Novo post, Like, Comentário, Pin), recarrega os dados reais
-          loadCommunityFeed()
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(communityChannel)
-    }
-  }, [loadCommunityFeed])
-
-  // 3. SEÇÃO "EM DESTAQUE" - CÁLCULO DINÂMICO REAL TIME
-  const trendingPosts = useMemo(() => {
-    return [...posts]
-      .sort((a, b) => {
-        // Prioriza fixados estruturais primeiro
-        if (a.isPinned && !b.isPinned) return -1
-        if (!a.isPinned && b.isPinned) return 1
-        
-        // Algoritmo de engajamento humano: Likes (peso 1) + Comentários (peso 2)
-        const engagementA = (a.likesCount * 1) + (a.commentsCount * 2)
-        const engagementB = (b.likesCount * 1) + (b.commentsCount * 2)
-        return engagementB - engagementA
-      })
-      .slice(0, 3) // Exibe apenas o Top 3 quente do momento
-  }, [posts])
-
-  // Criação de nova publicação real
-  const handleCreatePost = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!user) {
-      toast.error('Você precisa estar autenticado para publicar.')
+  const handleCreatePost = async () => {
+    if (!newPostContent.trim() && !imageInput.trim()) {
+      toast.error('Escreva algo ou adicione uma imagem para publicar!')
       return
     }
-    if (!newPostContent.trim()) return
 
-    setSubmitting(true)
     try {
-      const { error } = await supabase
-        .from('community_posts')
+      setPublishing(true)
+      
+      const { data, error } = await supabase
+        .from('posts')
         .insert({
+          user_id: user!.id,
           content: newPostContent.trim(),
-          image_url: newPostImage.trim() || null,
-          user_id: user.id
+          image_url: imageInput.trim() || null
         })
+        .select('*, user:user_profiles(username, avatar_url)')
+        .single()
 
       if (error) throw error
 
-      toast.success('Publicado com sucesso!')
+      await logActivity({
+        type: 'post_created',
+        actorId: user!.id,
+        actorName: user!.username,
+        title: newPostContent.substring(0, 30) + '...',
+        referenceId: data?.id,
+        referenceType: 'post'
+      })
+
+      toast.success('Publicado com sucesso! 🎉')
       setNewPostContent('')
-      setNewPostImage('')
+      setImageInput('')
+      setShowImageField(false)
+      
+      // Atualiza o feed local imediatamente
+      setPosts([data, ...posts])
     } catch (error) {
-      console.error('Erro ao postar:', error)
-      toast.error('Erro ao enviar publicação.')
+      console.error(error)
+      toast.error('Não foi possível publicar seu post')
     } finally {
-      setSubmitting(false)
+      setPublishing(false)
     }
   }
 
-  // Ação de Like Real
-  const handleLikePost = async (postId: string, currentLikes: number) => {
+  const handleLike = async (postId: string, hasLiked: boolean) => {
+    if (isGuest) {
+      toast.error('Crie uma conta para interagir com as publicações')
+      return
+    }
+
     try {
-      // Exemplo simples de incremento direto (Idealmente mapeado em tabela pivot de likes)
-      const { error } = await supabase
-        .from('community_posts')
-        .update({ likes_count: currentLikes + 1 })
-        .eq('id', postId)
-
-      if (error) throw error
+      if (hasLiked) {
+        await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', user!.id)
+        setPosts(posts.map(p => p.id === postId ? { ...p, has_liked: false, likes_count: Math.max(0, p.likes_count - 1) } : p))
+      } else {
+        await supabase.from('post_likes').insert({ post_id: postId, user_id: user!.id })
+        setPosts(posts.map(p => p.id === postId ? { ...p, has_liked: true, likes_count: p.likes_count + 1 } : p))
+      }
     } catch (error) {
-      console.error('Erro ao curtir post:', error)
+      console.error(error)
     }
   }
 
-  if (loading) {
-    return <LoadingState fullScreen message="Conectando ao canal da comunidade..." />
+  // Simulação/Tratamento de upload local para link visual (ou input de URL de imagem)
+  const handleImageIconClick = () => {
+    setShowImageField(!showImageField)
   }
+
+  const navigateToProfile = (userId?: string) => {
+    if (isGuest) return
+    if (!userId && user) {
+      navigate(`/profile/${user.id}`)
+    } else if (userId) {
+      navigate(`/profile/${userId}`)
+    }
+  }
+
+  const filteredPosts = posts.filter(p => 
+    p.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.user?.username.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  if (loading) return <Layout title="Comunidade"><LoadingState fullScreen message="Carregando feed..." /></Layout>
 
   return (
-    <Layout title="Comunidade MER">
-      <div className="p-4 md:p-6 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <Layout title="Comunidade">
+      <div className="max-w-7xl mx-auto p-4 space-y-6 font-sans antialiased">
         
-        {/* Coluna Central: Criação e Feed principal */}
-        <div className="lg:col-span-2 space-y-6">
-          
-          {/* Caixa de Criação de Post */}
-          {user?.role !== 'guest' && (
-            <Card className="p-4 border rounded-2xl shadow-sm bg-card">
-              <form onSubmit={handleCreatePost} className="space-y-4">
-                <textarea
-                  placeholder={`No que você está pensando, ${user?.name || 'irmão'}? Compartilhe uma palavra ou testemunho...`}
-                  value={newPostContent}
-                  onChange={(e) => setNewPostContent(e.target.value)}
-                  rows={3}
-                  className="w-full resize-none border-0 bg-transparent p-0 text-sm focus:ring-0 placeholder:text-muted-foreground text-foreground focus:outline-none"
-                />
-                
-                {/* Campo opcional de imagem anexada */}
-                <div className="flex items-center gap-2 pt-2 border-t border-dashed justify-between">
-                  <div className="flex items-center gap-2 flex-1">
-                    <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                    <input 
-                      type="url" 
-                      placeholder="URL opcional de imagem..." 
-                      value={newPostImage}
-                      onChange={(e) => setNewPostImage(e.target.value)}
-                      className="bg-transparent border-0 text-xs w-full focus:outline-none focus:ring-0 text-muted-foreground"
-                    />
-                  </div>
-                  
-                  <Button 
-                    type="submit" 
-                    disabled={submitting || !newPostContent.trim()}
-                    size="sm"
-                    className="rounded-xl font-medium bg-indigo-600 hover:bg-indigo-700 text-white"
-                  >
-                    <Send className="h-3.5 w-3.5 mr-1.5" />
-                    {submitting ? 'Enviando...' : 'Publicar'}
-                  </Button>
-                </div>
-              </form>
-            </Card>
-          )}
-
-          {/* Lista de Publicações Reais */}
-          <div className="space-y-4">
-            {posts.length === 0 ? (
-              <Card className="p-8 text-center border-dashed border-2 rounded-2xl">
-                <AlertCircle className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm font-medium text-muted-foreground">Nenhuma publicação encontrada no momento.</p>
-              </Card>
-            ) : (
-              posts.map((post) => (
-                <Card key={post.id} className={`p-5 border rounded-2xl shadow-sm bg-card transition-all ${post.isPinned ? 'border-amber-500/30 bg-amber-500/[0.01]' : ''}`}>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center font-bold text-sm border">
-                        {post.userProfile?.fullName.charAt(0).toUpperCase() || 'M'}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <h4 className="font-bold text-sm text-foreground">{post.userProfile?.fullName}</h4>
-                          {post.userProfile?.role === 'admin' && (
-                            <span className="bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Líder</span>
-                          )}
-                        </div>
-                        <span className="text-[11px] text-muted-foreground">
-                          {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ptBR })}
-                        </span>
-                      </div>
-                    </div>
-
-                    {post.isPinned && (
-                      <span className="inline-flex items-center gap-1 text-[10px] bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400 font-bold px-2 py-0.5 rounded-full">
-                        <Sparkles className="h-3 w-3 fill-current" /> Fixo
-                      </span>
-                    )}
-                  </div>
-
-                  <p className="text-sm text-foreground mt-4 leading-relaxed whitespace-pre-wrap">{post.content}</p>
-
-                  {post.imageUrl && (
-                    <div className="mt-3 rounded-xl overflow-hidden max-h-80 bg-muted border">
-                      <img src={post.imageUrl} alt="Anexo da publicação" className="w-full h-full object-cover" />
-                    </div>
-                  )}
-
-                  {/* Barra de Interações Reais */}
-                  <div className="flex items-center gap-6 mt-5 pt-3 border-t text-muted-foreground">
-                    <button 
-                      onClick={() => handleLikePost(post.id, post.likesCount)}
-                      className="flex items-center gap-1.5 text-xs hover:text-rose-500 transition-colors"
-                    >
-                      <Heart className="h-4 w-4" />
-                      <span>{post.likesCount}</span>
-                    </button>
-                    <div className="flex items-center gap-1.5 text-xs">
-                      <MessageSquare className="h-4 w-4" />
-                      <span>{post.commentsCount}</span>
-                    </div>
-                    <button className="flex items-center gap-1.5 text-xs hover:text-primary ml-auto">
-                      <Share2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                </Card>
-              ))
-            )}
+        {/* Top Header Grid */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border/60">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-[#0A2E4A] dark:text-zinc-100 flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-amber-500 fill-amber-500" /> Painel da Comunidade
+            </h1>
+            <p className="text-xs text-muted-foreground">Compartilhe testemunhos, reflexões e conecte-se</p>
+          </div>
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground/60" />
+            <Input 
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              placeholder="Pesquisar no feed..." 
+              className="pl-9 h-9 bg-card rounded-xl border-border/60 text-sm focus-visible:ring-muted-foreground/20"
+            />
           </div>
         </div>
 
-        {/* Coluna Lateral: Painel "Em Destaque" 100% Real Time */}
-        <div className="space-y-6">
-          <Card className="p-5 border rounded-2xl shadow-sm bg-card space-y-4">
-            <div className="flex items-center gap-2 pb-2 border-b">
-              <TrendingUp className="h-5 w-5 text-indigo-500" />
-              <h3 className="font-bold text-base text-foreground">Em Destaque Agora</h3>
-            </div>
-
-            <div className="space-y-3.5">
-              {trendingPosts.length === 0 ? (
-                <p className="text-xs text-muted-foreground py-2">Sem interações de relevância no momento.</p>
-              ) : (
-                trendingPosts.map((trendPost, index) => (
-                  <div 
-                    key={`trend-${trendPost.id}`} 
-                    className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-transparent hover:border-border transition-all flex flex-col space-y-1.5"
+        {/* main layout column grids */}
+        <div className="grid lg:grid-cols-3 gap-6 items-start">
+          
+          {/* Main Feed Column */}
+          <div className="lg:col-span-2 space-y-4">
+            
+            {/* Box Criar Post Funcional */}
+            {!isGuest && (
+              <Card className="p-4 border border-border/50 shadow-sm bg-card rounded-2xl space-y-3">
+                <div className="flex gap-3 items-start">
+                  <button 
+                    onClick={() => navigateToProfile()} 
+                    className="h-9 w-9 rounded-full bg-[#0A2E4A] text-white flex items-center justify-center font-bold text-sm shadow-sm overflow-hidden flex-shrink-0 transition-opacity hover:opacity-90"
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">
-                        #{index + 1} Em Alta
-                      </span>
-                      <div className="flex items-center gap-2 text-[11px] text-muted-foreground font-semibold">
-                        <span className="flex items-center gap-0.5"><Heart className="h-3 w-3 fill-current text-rose-500" /> {trendPost.likesCount}</span>
-                        <span className="flex items-center gap-0.5"><MessageSquare className="h-3 w-3 text-blue-500" /> {trendPost.commentsCount}</span>
-                      </div>
-                    </div>
-                    
-                    <p className="text-xs text-foreground line-clamp-2 font-medium leading-snug">
-                      "{trendPost.content}"
-                    </p>
-                    
-                    <span className="text-[10px] text-muted-foreground block text-right font-medium">
-                      Por: {trendPost.userProfile?.fullName.split(' ')[0] || 'Membro'}
-                    </span>
+                    {user?.avatar_url ? (
+                      <img src={user.avatar_url} alt={user.username} className="h-full w-full object-cover" />
+                    ) : (
+                      user?.username?.charAt(0).toUpperCase()
+                    )}
+                  </button>
+                  <div className="flex-1">
+                    <Textarea 
+                      value={newPostContent}
+                      onChange={e => setNewPostContent(e.target.value)}
+                      placeholder={`O que está no seu coração hoje, ${user?.username}?`}
+                      className="min-h-[80px] border-none focus-visible:ring-0 resize-none p-0 text-sm bg-transparent placeholder:text-muted-foreground/60"
+                    />
                   </div>
-                ))
+                </div>
+
+                {/* Input Dinâmico de Imagem (Decorativo vira Funcional) */}
+                {showImageField && (
+                  <div className="relative flex items-center gap-2 bg-muted/50 p-2 rounded-xl border border-border/40 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <Image className="h-4 w-4 text-muted-foreground ml-1" />
+                    <Input 
+                      value={imageInput}
+                      onChange={e => setImageInput(e.target.value)}
+                      placeholder="Cole a URL de uma imagem da internet aqui..." 
+                      className="h-7 border-none bg-transparent text-xs focus-visible:ring-0 p-0 flex-1"
+                    />
+                    {imageInput && (
+                      <img src={imageInput} className="h-7 w-7 rounded object-cover border border-border/40" alt="Preview" />
+                    )}
+                    <button onClick={() => { setShowImageField(false); setImageInput('') }} className="p-1 hover:bg-muted rounded-lg text-muted-foreground">
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between pt-2 border-t border-border/40">
+                  <Button 
+                    type="button"
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={handleImageIconClick}
+                    className={`h-8 rounded-xl px-3 text-xs font-medium transition-colors ${showImageField ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                  >
+                    <Image className="h-4 w-4 mr-1.5 text-emerald-500" /> Adicionar Foto
+                  </Button>
+                  <Button 
+                    onClick={handleCreatePost}
+                    disabled={publishing || (!newPostContent.trim() && !imageInput.trim())}
+                    size="sm" 
+                    className="h-8 bg-[#0A2E4A] hover:bg-[#0A2E4A]/90 dark:bg-zinc-100 dark:text-zinc-900 text-white font-semibold rounded-xl px-4 shadow-sm"
+                  >
+                    {publishing ? 'Publicando...' : <><Send className="h-3.5 w-3.5 mr-1.5" /> Publicar</>}
+                  </Button>
+                </div>
+              </Card>
+            )}
+
+            {/* Listagem de Posts */}
+            <div className="space-y-4">
+              {filteredPosts.length === 0 ? (
+                <EmptyState icon={MessageSquare} title="Nenhuma publicação" description="Seja o primeiro a compartilhar algo com a comunidade!" />
+              ) : (
+                filteredPosts.map(post => {
+                  const hasAvatar = !!post.user?.avatar_url
+                  return (
+                    <Card key={post.id} className="p-4 border border-border/40 bg-card rounded-2xl shadow-sm space-y-3.5">
+                      {/* Top Meta Header */}
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2.5">
+                          <button 
+                            onClick={() => navigateToProfile(post.user_id)}
+                            className="h-9 w-9 rounded-full bg-[#4A90A4] text-white flex items-center justify-center font-bold text-sm shadow-sm overflow-hidden flex-shrink-0 transition-opacity hover:opacity-90"
+                          >
+                            {hasAvatar ? (
+                              <img src={post.user.avatar_url!} alt={post.user.username} className="h-full w-full object-cover" />
+                            ) : (
+                              post.user?.username?.charAt(0).toUpperCase() || 'U'
+                            )}
+                          </button>
+                          <div>
+                            <button 
+                              onClick={() => navigateToProfile(post.user_id)}
+                              className="font-semibold text-foreground text-sm hover:underline block text-left leading-tight"
+                            >
+                              {post.user?.username || 'Usuário'}
+                            </button>
+                            <span className="text-[10px] text-muted-foreground/80 block mt-0.5">
+                              {new Date(post.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} às {new Date(post.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Content Section */}
+                      <div className="space-y-3">
+                        <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">
+                          {post.content}
+                        </p>
+                        {post.image_url && (
+                          <div className="rounded-xl overflow-hidden border border-border/30 bg-muted/30 max-h-96 flex items-center justify-center">
+                            <img 
+                              src={post.image_url} 
+                              alt="Publicação da comunidade" 
+                              className="w-full h-full object-cover max-h-96"
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = 'none'
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Action Bar */}
+                      <div className="flex items-center gap-1 pt-1 border-t border-border/40">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleLike(post.id, !!post.has_liked)}
+                          className={`h-8 rounded-xl px-3 text-xs font-medium gap-1.5 ${post.has_liked ? 'text-rose-500 hover:text-rose-600 bg-rose-500/5' : 'text-muted-foreground'}`}
+                        >
+                          <Heart className={`h-4 w-4 ${post.has_liked ? 'fill-rose-500 text-rose-500' : ''}`} />
+                          <span>{post.likes_count || 0}</span>
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => !isGuest && navigate(`/community/post/${post.id}`)}
+                          className="h-8 rounded-xl px-3 text-xs font-medium text-muted-foreground gap-1.5"
+                        >
+                          <MessageSquare className="h-4 w-4" />
+                          <span>{post.comments_count || 0}</span>
+                        </Button>
+                      </div>
+                    </Card>
+                  )
+                })
               )}
             </div>
-          </Card>
-        </div>
+          </div>
 
+          {/* Right Column (Sidebar Extras) */}
+          <div className="space-y-4">
+            {isGuest && (
+              <GuestPrompt 
+                title="Faça parte da nossa rede" 
+                description="Crie uma conta para publicar, interagir, curtir e comentar nos posts dos irmãos." 
+                actionLabel="Criar Conta" 
+                onAction={() => navigate('/auth')} 
+              />
+            )}
+
+            {/* Trending / Hot Topics Box */}
+            <Card className="p-4 border border-border/40 bg-card rounded-2xl shadow-sm space-y-3">
+              <div className="flex items-center gap-2 pb-2 border-b border-border/40">
+                <TrendingUp className="h-4 w-4 text-[#0A2E4A] dark:text-zinc-300" />
+                <h3 className="font-bold text-sm text-foreground">Em Destaque</h3>
+              </div>
+              <div className="space-y-2.5">
+                <div className="flex items-start gap-2.5 text-xs group cursor-pointer">
+                  <div className="p-1.5 bg-amber-500/10 rounded-lg text-amber-600 mt-0.5">
+                    <Flame className="h-3.5 w-3.5" />
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+        </div>
       </div>
     </Layout>
   )
