@@ -102,102 +102,107 @@ const AuthPage = () => {
   const visibleRole = role === 'admin' ? 'admin' : role
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 via-blue-50/40 to-slate-100 dark:from-[#050e17] dark:via-[#071525] dark:to-[#050e17]">
-      {/* Subtle background decoration */}
+    <div className="min-h-screen flex items-center justify-center p-6 bg-background relative overflow-hidden font-sans antialiased">
+      
+      {/* ── Background Gradients (Estilo Gemini/Claude Canvas) ── */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-        <div className="absolute top-20 left-20 w-64 h-64 bg-[#0A2E4A]/6 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-20 w-96 h-96 bg-[#4A90A4]/5 rounded-full blur-3xl" />
+        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-blue-500/5 dark:bg-blue-500/5 rounded-full blur-[120px]" />
+        <div className="absolute -bottom-40 -right-40 w-[600px] h-[600px] bg-[#4A90A4]/5 dark:bg-[#4A90A4]/5 rounded-full blur-[120px]" />
       </div>
 
-      <Card className="w-full max-w-md relative z-10 bg-white dark:bg-[#0d1f2d] border border-border shadow-2xl">
-        <div className="p-8">
+      <Card className="w-full max-w-[420px] relative z-10 bg-card/60 dark:bg-card/40 backdrop-blur-md border border-border/50 shadow-sm rounded-2xl overflow-hidden transition-all">
+        <div className="p-8 sm:p-9">
+          
           {/* ── Header ────────────────────────────────────── */}
           <div className="text-center mb-8">
-            <div className="inline-flex justify-center mb-4">
+            <div className="inline-flex justify-center mb-5 opacity-90 transition-opacity hover:opacity-100">
               <Logo size="lg" showText={false} animated={false} />
             </div>
-            <h1 className="text-3xl font-bold mb-0.5 text-[#0A2E4A] dark:text-white tracking-tight">
+            <h1 className="text-2xl font-bold tracking-tight text-[#0A2E4A] dark:text-zinc-100 font-sans">
               KAIRÓS
             </h1>
-            <p className="text-sm text-muted-foreground mb-5">Missão Evangélica da Reconciliação</p>
+            <p className="text-[11px] font-medium tracking-wider uppercase text-muted-foreground/80 mt-1">
+              Missão Evangélica da Reconciliação
+            </p>
 
-            <div className="mb-6">
-              <h2 className="text-lg font-semibold text-foreground mb-0.5">
-                {isLogin ? 'Bem-vindo de Volta' : 'Junte-se à Nossa Comunidade'}
+            <div className="mt-6 space-y-1">
+              <h2 className="text-lg font-medium text-foreground tracking-tight">
+                {isLogin ? 'Bem-vindo de volta' : 'Crie sua conta'}
               </h2>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs text-muted-foreground/80">
                 {isLogin ? 'Continue sua jornada de fé' : 'Comece sua jornada conosco'}
               </p>
             </div>
           </div>
 
-          {/* ── Role Selector: only Membro / Convidado ────── */}
-          <div className="grid grid-cols-2 gap-2 mb-6 p-1 bg-muted rounded-lg" role="group" aria-label="Tipo de acesso">
+          {/* ── Role Selector ─────────────────────────────── */}
+          <div className="grid grid-cols-2 gap-1 mb-6 p-1 bg-muted/60 dark:bg-muted/40 rounded-xl" role="group" aria-label="Tipo de acesso">
             <button
               type="button"
               onClick={() => { setRole('member'); setShowAdminAccess(false); setAdminKey('') }}
-              className={`flex flex-col items-center gap-1 py-3 px-4 rounded-md font-semibold text-sm transition-all duration-150 focus-visible:outline-2 focus-visible:outline-[#0A2E4A] ${
+              className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg font-medium text-xs transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0A2E4A] ${
                 visibleRole === 'member' || role === 'admin'
-                  ? 'bg-[#0A2E4A] text-white shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-background/60'
+                  ? 'bg-background text-[#0A2E4A] dark:text-zinc-100 shadow-sm font-semibold'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
               aria-pressed={role === 'member' || role === 'admin'}
             >
-              <Users className="h-4 w-4" aria-hidden="true" />
-              <span className="text-xs">Membro</span>
+              <Users className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>Membro</span>
             </button>
 
             <button
               type="button"
               onClick={() => { setRole('guest'); setShowAdminAccess(false); setAdminKey('') }}
-              className={`flex flex-col items-center gap-1 py-3 px-4 rounded-md font-semibold text-sm transition-all duration-150 focus-visible:outline-2 focus-visible:outline-[#0A2E4A] ${
+              className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg font-medium text-xs transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0A2E4A] ${
                 role === 'guest'
-                  ? 'bg-[#0A2E4A] text-white shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-background/60'
+                  ? 'bg-background text-[#0A2E4A] dark:text-zinc-100 shadow-sm font-semibold'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
               aria-pressed={role === 'guest'}
             >
-              <Building2 className="h-4 w-4" aria-hidden="true" />
-              <span className="text-xs">Convidado</span>
+              <Building2 className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>Convidado</span>
             </button>
           </div>
 
           {/* ── Form ──────────────────────────────────────── */}
           <form onSubmit={isLogin ? handleLogin : handleRegister} className="space-y-4" noValidate>
+            
             {/* Register extra fields */}
             {!isLogin && step === 'credentials' && (
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="username" className="font-medium">Nome de Usuário</Label>
-                  <div className="relative mt-1.5">
-                    <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" aria-hidden="true" />
+              <div className="space-y-4 animate-in fade-in duration-200">
+                <div className="space-y-1.5">
+                  <Label htmlFor="username" className="text-xs font-medium text-foreground/80">Nome de Usuário</Label>
+                  <div className="relative">
+                    <User className="absolute left-3.5 top-3.5 h-4 w-4 text-muted-foreground/60" aria-hidden="true" />
                     <Input id="username" type="text" value={username} onChange={e => setUsername(e.target.value)}
-                      className="pl-10 h-11" placeholder="Seu nome de usuário" required />
+                      className="pl-11 h-11 rounded-xl bg-background/50 border-border/60 focus-visible:ring-muted-foreground/20" placeholder="Seu nome de usuário" required />
                   </div>
                 </div>
 
-                <div>
-                  <Label htmlFor="phone" className="font-medium">Telefone</Label>
-                  <div className="relative mt-1.5">
-                    <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                <div className="space-y-1.5">
+                  <Label htmlFor="phone" className="text-xs font-medium text-foreground/80">Telefone</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3.5 top-3.5 h-4 w-4 text-muted-foreground/60" aria-hidden="true" />
                     <Input id="phone" type="tel" value={phone} onChange={e => setPhone(e.target.value)}
-                      className="pl-10 h-11" placeholder="(244) 999-999-999" required />
+                      className="pl-11 h-11 rounded-xl bg-background/50 border-border/60 focus-visible:ring-muted-foreground/20" placeholder="(244) 999-999-999" required />
                   </div>
                 </div>
 
                 {role === 'guest' && (
-                  <div className="p-3 bg-[#4A90A4]/8 border border-[#4A90A4]/25 rounded-lg">
-                    <Label htmlFor="congregation" className="font-medium text-[#4A90A4] dark:text-[#7bbdd4]">
+                  <div className="p-4 bg-[#4A90A4]/5 border border-[#4A90A4]/15 rounded-xl space-y-1.5 animate-in slide-in-from-top-2 duration-200">
+                    <Label htmlFor="congregation" className="text-xs font-semibold text-[#4A90A4] dark:text-[#7bbdd4]">
                       Sua Congregação
                     </Label>
-                    <div className="relative mt-1.5">
-                      <Building2 className="absolute left-3 top-3 h-4 w-4 text-[#4A90A4]" aria-hidden="true" />
+                    <div className="relative">
+                      <Building2 className="absolute left-3.5 top-3.5 h-4 w-4 text-[#4A90A4]/80" aria-hidden="true" />
                       <Input id="congregation" type="text" value={congregation}
                         onChange={e => setCongregation(e.target.value)}
-                        className="pl-10 h-11 border-[#4A90A4]/30"
+                        className="pl-11 h-11 rounded-xl bg-background border-[#4A90A4]/20 focus-visible:ring-[#4A90A4]/20"
                         placeholder="Nome da sua congregação" required />
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1.5">
+                    <p className="text-[10px] text-muted-foreground/80 pt-0.5">
                       Compartilhe de qual congregação você faz parte
                     </p>
                   </div>
@@ -206,117 +211,124 @@ const AuthPage = () => {
             )}
 
             {/* Email */}
-            <div>
-              <Label htmlFor="identifier" className="font-medium">
+            <div className="space-y-1.5">
+              <Label htmlFor="identifier" className="text-xs font-medium text-foreground/80">
                 {isLogin ? 'Email, Usuário ou Telefone' : 'Email'}
               </Label>
-              <div className="relative mt-1.5">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" aria-hidden="true" />
+              <div className="relative">
+                <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-muted-foreground/60" aria-hidden="true" />
                 <Input id="identifier" type={isLogin ? 'text' : 'email'} value={identifier}
                   onChange={e => setIdentifier(e.target.value)}
-                  className="pl-10 h-11"
-                  placeholder={isLogin ? 'Digite email, usuário ou telefone' : 'seu@email.com'}
+                  className="pl-11 h-11 rounded-xl bg-background/50 border-border/60 focus-visible:ring-muted-foreground/20"
+                  placeholder={isLogin ? 'Digite seu acesso' : 'seu@email.com'}
                   required />
               </div>
             </div>
 
             {/* OTP */}
             {!isLogin && step === 'otp' && (
-              <div className="p-4 bg-[#0A2E4A]/6 border border-[#0A2E4A]/20 rounded-lg">
-                <Label htmlFor="otp" className="font-medium text-[#0A2E4A] dark:text-[#7bbdd4]">
+              <div className="p-4 bg-muted/40 border border-border/60 rounded-xl space-y-2 text-center animate-in zoom-in-95 duration-200">
+                <Label htmlFor="otp" className="text-xs font-semibold text-foreground/90">
                   Código de Verificação
                 </Label>
-                <div className="relative mt-1.5">
-                  <Key className="absolute left-3 top-3 h-4 w-4 text-[#0A2E4A] dark:text-[#4A90A4]" aria-hidden="true" />
+                <div className="relative max-w-[160px] mx-auto">
+                  <Key className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground/60" aria-hidden="true" />
                   <Input id="otp" type="text" value={otp} onChange={e => setOtp(e.target.value)}
-                    className="pl-10 h-11 text-center text-xl tracking-widest font-semibold"
+                    className="pl-9 h-11 text-center text-xl tracking-widest font-bold rounded-xl bg-background border-border/80 focus-visible:ring-muted-foreground/20"
                     placeholder="••••" maxLength={4} required />
                 </div>
-                <p className="text-xs text-muted-foreground mt-1.5 text-center">
+                <p className="text-[10px] text-muted-foreground/80">
                   Digite o código de 4 dígitos enviado para seu email
                 </p>
               </div>
             )}
 
             {/* Password */}
-            <div>
-              <Label htmlFor="password" className="font-medium">Senha</Label>
-              <div className="relative mt-1.5">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" aria-hidden="true" />
+            <div className="space-y-1.5">
+              <Label htmlFor="password" className="text-xs font-medium text-foreground/80">Senha</Label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-3.5 h-4 w-4 text-muted-foreground/60" aria-hidden="true" />
                 <Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)}
-                  className="pl-10 h-11" placeholder="••••••••" required />
+                  className="pl-11 h-11 rounded-xl bg-background/50 border-border/60 focus-visible:ring-muted-foreground/20" placeholder="••••••••" required />
               </div>
             </div>
 
-            {/* Admin key — only shown when admin access revealed */}
+            {/* Admin key */}
             {showAdminAccess && (
-              <div className="p-3 bg-[#D4A574]/10 border border-[#D4A574]/30 rounded-lg animate-in fade-in slide-in-from-top-2 duration-200">
-                <Label htmlFor="adminKey" className="font-medium text-[#8a6030] dark:text-[#D4A574] flex items-center gap-1.5">
+              <div className="p-4 bg-amber-500/5 border border-amber-500/15 rounded-xl space-y-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
+                <Label htmlFor="adminKey" className="text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
                   <Shield className="h-3.5 w-3.5" aria-hidden="true" />
                   Chave de Administrador
                 </Label>
-                <div className="relative mt-1.5">
-                  <Key className="absolute left-3 top-3 h-4 w-4 text-[#D4A574]" aria-hidden="true" />
+                <div className="relative">
+                  <Key className="absolute left-3.5 top-3.5 h-4 w-4 text-amber-500/60" aria-hidden="true" />
                   <Input id="adminKey" type="password" value={adminKey}
                     onChange={e => setAdminKey(e.target.value)}
-                    className="pl-10 h-11 border-[#D4A574]/30"
+                    className="pl-11 h-11 rounded-xl bg-background border-amber-500/20 focus-visible:ring-amber-500/20"
                     placeholder="••••••••••••" required />
                 </div>
-                <p className="text-xs text-muted-foreground mt-1.5">
+                <p className="text-[10px] text-muted-foreground/80">
                   Chave secreta para acesso administrativo
                 </p>
               </div>
             )}
 
-            {/* Submit */}
-            {!isLogin && step === 'credentials' ? (
-              <Button type="button" onClick={handleSendOtp} disabled={loading || !identifier}
-                className="w-full h-11 bg-[#0A2E4A] hover:bg-[#0d3a5c] active:bg-[#071f33] text-white font-semibold transition-colors duration-150">
-                {loading
-                  ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Enviando...</>
-                  : 'Enviar Código de Verificação'
-                }
-              </Button>
-            ) : (
-              <Button type="submit" disabled={loading}
-                className="w-full h-11 bg-[#0A2E4A] hover:bg-[#0d3a5c] active:bg-[#071f33] text-white font-semibold transition-colors duration-150">
-                {loading
-                  ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{isLogin ? 'Entrando...' : 'Criando conta...'}</>
-                  : isLogin ? 'Entrar' : 'Criar Conta'
-                }
-              </Button>
-            )}
+            {/* Submit Button */}
+            <div className="pt-2">
+              {!isLogin && step === 'credentials' ? (
+                <Button type="button" onClick={handleSendOtp} disabled={loading || !identifier}
+                  className="w-full h-11 bg-[#0A2E4A] hover:bg-[#0A2E4A]/90 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 text-white font-medium rounded-xl transition-all duration-150 shadow-sm text-sm">
+                  {loading ? (
+                    <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />Enviando...</span>
+                  ) : (
+                    'Enviar Código de Verificação'
+                  )}
+                </Button>
+              ) : (
+                <Button type="submit" disabled={loading}
+                  className="w-full h-11 bg-[#0A2E4A] hover:bg-[#0A2E4A]/90 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 text-white font-medium rounded-xl transition-all duration-150 shadow-sm text-sm">
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {isLogin ? 'Entrando...' : 'Criando conta...'}
+                    </span>
+                  ) : (
+                    isLogin ? 'Entrar' : 'Criar Conta'
+                  )}
+                </Button>
+              )}
+            </div>
           </form>
 
           {/* ── OAuth (login only) ─────────────────────────── */}
           {isLogin && (
             <>
-              <div className="relative my-5">
+              <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                  <div className="w-full border-t border-border" />
+                  <div className="w-full border-t border-border/60" />
                 </div>
-                <div className="relative flex justify-center text-xs">
-                  <span className="px-2 bg-card text-muted-foreground">Ou continue com</span>
+                <div className="relative flex justify-center text-[11px] uppercase tracking-wider">
+                  <span className="px-3 bg-card text-muted-foreground/80">Ou continue com</span>
                 </div>
               </div>
 
               <Button type="button" variant="outline" onClick={() => handleOAuthLogin('google')}
-                className="w-full h-11 font-medium hover:bg-muted/60 transition-colors duration-150">
-                <Chrome className="mr-2 h-4 w-4" aria-hidden="true" />
+                className="w-full h-11 rounded-xl font-medium border-border/80 hover:bg-muted/40 transition-colors duration-150 text-xs tracking-normal">
+                <Chrome className="mr-2 h-4 w-4 text-muted-foreground/80" aria-hidden="true" />
                 Continuar com Google
               </Button>
             </>
           )}
 
           {/* ── Toggle Login / Register ────────────────────── */}
-          <div className="mt-5 text-center text-sm">
+          <div className="mt-6 text-center text-xs">
             <span className="text-muted-foreground">
               {isLogin ? 'Não tem uma conta?' : 'Já tem uma conta?'}
             </span>{' '}
             <button
               type="button"
               onClick={() => { setIsLogin(!isLogin); setStep('credentials'); setOtp('') }}
-              className="text-[#0A2E4A] dark:text-[#7bbdd4] font-semibold hover:underline focus-visible:outline-2 focus-visible:outline-[#0A2E4A] rounded"
+              className="text-[#0A2E4A] dark:text-[#7bbdd4] font-semibold hover:underline rounded focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0A2E4A] px-1"
             >
               {isLogin ? 'Criar conta' : 'Entrar'}
             </button>
@@ -327,7 +339,7 @@ const AuthPage = () => {
             <button
               type="button"
               onClick={handleToggleAdminAccess}
-              className="text-[11px] leading-none text-muted-foreground/60 hover:text-muted-foreground transition-colors duration-150 focus-visible:outline-1 focus-visible:outline-muted-foreground rounded"
+              className="text-[10px] tracking-wide text-muted-foreground/50 hover:text-muted-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-muted-foreground rounded px-1.5 py-0.5"
               aria-expanded={showAdminAccess}
             >
               {showAdminAccess ? 'Ocultar acesso administrativo' : 'Acesso Administrativo'}
