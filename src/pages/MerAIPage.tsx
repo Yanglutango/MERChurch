@@ -166,16 +166,13 @@ const LogosAIPage = () => {
   // ── GUEST SCREEN (PREMIUM MINIMALIST) ──────────────────────────────────────
   if (isGuest) {
     return (
-      <Layout title="Logos by KAIRÓS">
+      <Layout title="Logos AI">
         <div className="flex flex-col items-center justify-center min-h-[80vh] px-4 animate-fade-in">
           <div className="w-full max-w-2xl text-center space-y-8">
             <div className="space-y-4">
               <div className="inline-flex p-3 text-[#0A2E4A] dark:text-blue-400">
                 <Sparkles className="h-10 w-10 animate-pulse" />
               </div>
-              <h1 className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl font-sans">
-                Logos <span className="text-muted-foreground font-light">by KAIRÓS</span>
-              </h1>
               <p className="text-base text-muted-foreground max-w-md mx-auto leading-relaxed">
                 Assistente bíblico avançado focado em respostas exaustivas fundamentadas estritamente nas Escrituras.
               </p>
@@ -215,7 +212,7 @@ const LogosAIPage = () => {
 
   // ── MEMBER / ADMIN SCREEN (AI CANVAS STYLE) ────────────────────────────────
   return (
-    <Layout title="Logos by KAIRÓS">
+    <Layout title="Logos AI">
       <div className="flex h-[calc(100vh-65px)] overflow-hidden bg-background font-sans">
         
         {/* Sidebar Estilo ChatGPT/Claude */}
@@ -306,12 +303,6 @@ const LogosAIPage = () => {
               <Menu className="h-5 w-5 text-muted-foreground" />
             </Button>
             
-            <div className="flex items-center gap-2 lg:absolute lg:top-4 lg:left-6 z-10">
-              <span className="text-sm font-semibold tracking-tight text-foreground/80 lg:text-base">
-                Logos <span className="text-muted-foreground font-normal">by KAIRÓS</span>
-              </span>
-            </div>
-
             <Button 
               variant="ghost" 
               size="sm" 
