@@ -113,21 +113,20 @@ const CommunityPage = () => {
     }
   }, [loadCommunityFeed])
 
-  // 3. SEÇÃO "EM DESTAQUE" - CALCULO EM TEMPO REAL COM DADOS DO BANCO
-  // Filtra posts fixados (isPinned) ou posts com alto engajamento dinâmico (Métrica real de relevância)
+  // 3. SEÇÃO "EM DESTAQUE" - CÁLCULO DINÂMICO REAL TIME
   const trendingPosts = useMemo(() => {
     return [...posts]
       .sort((a, b) => {
-        // Posts fixados pela liderança/admin vão primeiro
+        // Prioriza fixados estruturais primeiro
         if (a.isPinned && !b.isPinned) return -1
         if (!a.isPinned && b.isPinned) return 1
         
-        // Peso de Engajamento Real: Likes valem 1 ponto, comentários valem 2 pontos
+        // Algoritmo de engajamento humano: Likes (peso 1) + Comentários (peso 2)
         const engagementA = (a.likesCount * 1) + (a.commentsCount * 2)
         const engagementB = (b.likesCount * 1) + (b.commentsCount * 2)
         return engagementB - engagementA
       })
-      .slice(0, 3) // Exibe o Top 3 dinâmico real da comunidade
+      .slice(0, 3) // Exibe apenas o Top 3 quente do momento
   }, [posts])
 
   // Criação de nova publicação real
