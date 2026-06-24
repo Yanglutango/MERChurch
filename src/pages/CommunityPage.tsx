@@ -361,11 +361,6 @@ const CommunityPage = () => {
                 <h3 className="font-bold text-sm text-foreground">Em Destaque</h3>
               </div>
               <div className="space-y-2.5">
-                <div className="flex items-start gap-2.5 text-xs group cursor-pointer">
-                  <div className="p-1.5 bg-amber-500/10 rounded-lg text-amber-600 mt-0.5">
-                    <Flame className="h-3.5 w-3.5" />
-                  </div>
-                </div>
               </div>
             </Card>
           </div>
