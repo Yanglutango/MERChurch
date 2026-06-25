@@ -300,8 +300,8 @@ const AuthPage = () => {
             </div>
           </form>
 
-          {/* ── OAuth (Disponível estritamente para membros) ── */}
-          {isLogin && role === 'member' && (
+          {/* ── OAuth (Disponível estritamente para Membros e Administradores) ── */}
+          {isLogin && (role === 'member' || role === 'admin') && (
             <div className="animate-in fade-in zoom-in-95 duration-200">
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center" aria-hidden="true">
@@ -342,7 +342,7 @@ const AuthPage = () => {
               className="text-[10px] tracking-wide text-muted-foreground/50 hover:text-muted-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-muted-foreground rounded px-1.5 py-0.5"
               aria-expanded={showAdminAccess}
             >
-              {showAdminAccess ? 'Ocultar acesso administrativo' : 'Acesso Administrativo'}
+              {showAdminAccess ? 'Ocultar acesso administrativo' : 'Acesso Administrative'}
             </button>
           </div>
         </div>
