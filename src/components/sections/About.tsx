@@ -29,23 +29,35 @@ const About = () => {
       <div className="container-custom">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Left Column - Image */}
-          <div className="relative animate-fade-in">
+          <div className="relative motion-safe:animate-fade-in">
             <div className="aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl">
               <img
-                src="https://images.unsplash.com/photo-1507692049790-de58290a4334?w=800&h=600&fit=crop"
-                alt="Nossa Igreja"
-                className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
+                src="https://images.unsplash.com/photo-1507692049790-de58290a4334?w=800&h=600&fit=crop&q=80"
+                srcSet="
+                  https://images.unsplash.com/photo-1507692049790-de58290a4334?w=480&h=360&fit=crop&q=80 480w,
+                  https://images.unsplash.com/photo-1507692049790-de58290a4334?w=800&h=600&fit=crop&q=80 800w
+                "
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                width={800}
+                height={600}
+                loading="lazy"
+                decoding="async"
+                alt="Membros da congregação reunidos em culto na Missão Evangélica da Reconciliação"
+                className="w-full h-full object-cover motion-safe:hover:scale-105 motion-safe:transition-transform motion-safe:duration-700"
               />
             </div>
-            <div className="absolute -bottom-8 -right-8 w-64 h-64 bg-primary/10 rounded-full blur-3xl -z-10" />
+            <div
+              aria-hidden="true"
+              className="absolute -bottom-8 -right-8 w-64 h-64 bg-primary/10 rounded-full blur-3xl -z-10"
+            />
           </div>
 
           {/* Right Column - Content */}
-          <div className="space-y-6 animate-fade-in-up">
+          <div className="space-y-6 motion-safe:animate-fade-in-up">
             <div className="inline-block px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-semibold">
               Sobre Nós
             </div>
-            
+
             <h2 className="text-4xl md:text-5xl font-bold text-foreground">
               Uma História de{' '}
               <span className="text-gradient">Fé e Reconciliação</span>
@@ -60,13 +72,14 @@ const About = () => {
             </p>
 
             {/* Values Grid */}
-            <div className="grid grid-cols-2 gap-4 pt-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-6">
               {values.map((value, index) => (
                 <div
                   key={value.title}
-                  className={`p-6 rounded-2xl bg-card border border-border hover:border-primary/50 transition-all hover:shadow-lg group animate-fade-in-up animate-delay-${index * 100}`}
+                  style={{ animationDelay: `${index * 100}ms` }}
+                  className="p-6 rounded-2xl bg-card border border-border hover:border-primary/50 transition-all hover:shadow-lg group motion-safe:animate-fade-in-up"
                 >
-                  <value.icon className="h-8 w-8 text-primary mb-3 group-hover:scale-110 transition-transform" />
+                  <value.icon className="h-8 w-8 text-primary mb-3 motion-safe:group-hover:scale-110 motion-safe:transition-transform" />
                   <h3 className="font-bold text-foreground mb-1">{value.title}</h3>
                   <p className="text-sm text-muted-foreground">{value.description}</p>
                 </div>
