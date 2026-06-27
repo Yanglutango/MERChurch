@@ -6,7 +6,7 @@ import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 import {
   Radio, BookOpen, Calendar, Sparkles, Users, GraduationCap,
-  MessageCircle, Heart, Play, Shield, Bell, BarChart3, Flame, Clock, UserPlus,
+  MessageCircle, Heart, Play, Shield, BarChart3, Flame, Clock, UserPlus,
 } from 'lucide-react'
 import { Card } from '../components/ui/card'
 import { Button } from '../components/ui/button'
@@ -20,6 +20,21 @@ const StatSkeleton = () => (
   </div>
 )
 
+interface UpcomingEventPreview {
+  id: string
+  title: string
+  date: string
+  location: string | null
+}
+
+interface RecentSermonPreview {
+  id: string
+  title: string
+  speaker: string
+  date: string
+  views: number | null
+}
+
 const HomePage = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -32,39 +47,53 @@ const HomePage = () => {
   const [statsLoading, setStatsLoading] = useState(true)
   const [membersConnected, setMembersConnected] = useState(0)
   const [activeCells, setActiveCells] = useState(0)
-  const [upcomingEvent, setUpcomingEvent] = useState<any>(null)
-  const [recentSermon, setRecentSermon] = useState<any>(null)
+  const [upcomingEvent, setUpcomingEvent] = useState<UpcomingEventPreview | null>(null)
+  const [recentSermon, setRecentSermon] = useState<RecentSermonPreview | null>(null)
   const [isLive, setIsLive] = useState(false)
   const [nextSession, setNextSession] = useState<{ title: string; start_time: string } | null>(null)
 
   useEffect(() => {
+    let mounted = true
+
     const load = async () => {
       setStatsLoading(true)
-      const [membersRes, cellsRes, liveRes, sermonRes, eventRes, nextRes] = await Promise.all([
-        supabase.from('user_profiles').select('id', { count: 'exact', head: true }).eq('role', 'member'),
-        supabase.from('small_groups').select('id', { count: 'exact', head: true }).eq('is_active', true),
-        supabase.from('events').select('id, title, date, location').gte('date', new Date().toISOString()).order('date', { ascending: true }).limit(1).maybeSingle(),
-        supabase.from('sermons').select('id, title, speaker, date, views').order('date', { ascending: false }).limit(1).maybeSingle(),
-        supabase.from('live_sessions').select('*').eq('is_active', true).maybeSingle(),
-        supabase.from('live_sessions')   // ← a nova, no final
-    .select('title, start_time')
-    .eq('is_active', false)
-    .gte('start_time', new Date().toISOString())
-    .order('start_time', { ascending: true })
-    .limit(1)
-    .maybeSingle(),
+      try {
+        const [membersRes, cellsRes, liveRes, sermonRes, eventRes, nextRes] = await Promise.all([
+          supabase.from('user_profiles').select('id', { count: 'exact', head: true }).eq('role', 'member'),
+          supabase.from('small_groups').select('id', { count: 'exact', head: true }).eq('is_active', true),
+          supabase.from('events').select('id, title, date, location').gte('date', new Date().toISOString()).order('date', { ascending: true }).limit(1).maybeSingle(),
+          supabase.from('sermons').select('id, title, speaker, date, views').order('date', { ascending: false }).limit(1).maybeSingle(),
+          supabase.from('live_sessions').select('*').eq('is_active', true).maybeSingle(),
+          supabase.from('live_sessions')
+            .select('title, start_time')
+            .eq('is_active', false)
+            .gte('start_time', new Date().toISOString())
+            .order('start_time', { ascending: true })
+            .limit(1)
+            .maybeSingle(),
         ])
-      if (nextRes.data) setNextSession(nextRes.data)
 
-      setMembersConnected(membersRes.count || 0)
-      setActiveCells(cellsRes.count || 0)
-      if (eventRes.data) setUpcomingEvent(eventRes.data)
-      if (sermonRes.data) setRecentSermon(sermonRes.data)
-      if (liveRes.data) setIsLive(true)
-      setStatsLoading(false)
+        // Componente pode já ter desmontado (navegação rápida) — não actualiza estado morto
+        if (!mounted) return
 
+        if (nextRes.data) setNextSession(nextRes.data)
+        setMembersConnected(membersRes.count || 0)
+        setActiveCells(cellsRes.count || 0)
+        if (eventRes.data) setUpcomingEvent(eventRes.data)
+        if (sermonRes.data) setRecentSermon(sermonRes.data)
+        if (liveRes.data) setIsLive(true)
+      } catch (err) {
+        // Widgets secundários da home: uma falha de rede não deve travar a
+        // página para sempre — só regista o erro e mantém os fallbacks
+        // ("Nenhum evento agendado", "—") já presentes no JSX.
+        console.error('Erro ao carregar estatísticas da home:', err)
+      } finally {
+        if (mounted) setStatsLoading(false)
+      }
     }
+
     load()
+    return () => { mounted = false }
   }, [])
 
   // ── Quick actions: max 4 ─────────────────────────────────────────────────
@@ -104,6 +133,10 @@ const HomePage = () => {
             <img
               src="https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?w=1920&h=500&fit=crop&q=80"
               alt="Worship"
+              width={1920}
+              height={500}
+              decoding="async"
+              fetchPriority="high"
               className="w-full h-full object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-br from-[#0A2E4A]/96 via-[#1a4d6d]/94 to-[#4A90A4]/92" />
@@ -119,9 +152,10 @@ const HomePage = () => {
                 </div>
               ) : (
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/15 backdrop-blur-md rounded-full text-xs font-semibold">
-  {nextSession ? `Próximo: ${new Date(nextSession.start_time).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })} · ${new Date(nextSession.start_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
-    : 'Sem transmissão agendada'}
-</div>
+                  {nextSession
+                    ? `Próximo: ${new Date(nextSession.start_time).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })} · ${new Date(nextSession.start_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+                    : 'Sem transmissão agendada'}
+                </div>
               )}
 
               {/* Contextual title */}
@@ -160,8 +194,8 @@ const HomePage = () => {
               </div>
             </div>
 
-            {/* Decorative orbs */}
-            <div className="absolute top-0 right-0 w-48 h-48 bg-[#D4A574]/15 rounded-full blur-3xl pointer-events-none" />
+            {/* Decorative orb — puramente visual, irrelevante para leitores de ecrã */}
+            <div aria-hidden="true" className="absolute top-0 right-0 w-48 h-48 bg-[#D4A574]/15 rounded-full blur-3xl pointer-events-none" />
           </div>
         </Card>
 
@@ -293,7 +327,7 @@ const HomePage = () => {
                 <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">Painel Administrativo</p>
                 <p className="text-xs text-amber-700 dark:text-amber-300">Métricas ao vivo, relatórios e gestão.</p>
               </div>
-              <AdminAction label="" onClick={() => navigate('/dashboard')} size="sm">
+              <AdminAction>
                 <Button size="sm" onClick={() => navigate('/dashboard')} className="bg-amber-600 hover:bg-amber-700 text-white font-bold flex-shrink-0">
                   <BarChart3 className="h-3.5 w-3.5 mr-1.5" />Dashboard
                 </Button>
