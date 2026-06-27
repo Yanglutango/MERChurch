@@ -9,7 +9,7 @@ import {
   Send, Loader2, BookOpen, Heart, Lightbulb,
   PlusCircle, Trash2, Bookmark, BookmarkCheck,
   UserPlus, Copy, Check, Share2, ChevronRight,
-  Sparkles, MessageSquare, X, Menu
+  Sparkles, X, Menu
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { routeAIRequest } from '../lib/aiRouter'
@@ -41,23 +41,75 @@ const SUGGESTIONS = [
   { icon: Sparkles,  text: 'Explique a salvação pela graça',                category: 'Evangelho' },
 ]
 
+const STORAGE_KEY = 'kairos_logos_chats_v1'
+
+// Gera um id seguro mesmo em browsers sem crypto.randomUUID disponível.
+function generateChatId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+}
+
+// Lê e reconstrói o estado de conversas guardado nesta aba (sessionStorage).
+// Nunca lança erro — qualquer formato inválido/corrompido é ignorado em silêncio
+// e o chamador recebe null, caindo de volta no estado inicial padrão.
+function loadPersistedState(): { chats: Chat[]; currentChatId: string } | null {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (!parsed || !Array.isArray(parsed.chats) || parsed.chats.length === 0) return null
+
+    const chats: Chat[] = parsed.chats.map((c: any) => ({
+      id: String(c.id),
+      title: String(c.title || 'Conversa'),
+      lastUpdated: new Date(c.lastUpdated || Date.now()),
+      messages: Array.isArray(c.messages)
+        ? c.messages.map((m: any) => ({
+            role: m.role === 'assistant' ? 'assistant' : 'user',
+            content: String(m.content || ''),
+            timestamp: new Date(m.timestamp || Date.now()),
+            saved: !!m.saved,
+          }))
+        : [],
+    }))
+
+    const currentChatId = chats.some(c => c.id === parsed.currentChatId)
+      ? parsed.currentChatId
+      : chats[0].id
+
+    return { chats, currentChatId }
+  } catch {
+    return null
+  }
+}
+
 const LogosAIPage = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
   const isGuest = user?.role === 'guest'
 
-  const [chats, setChats] = useState<Chat[]>([
-    { id: '1', title: 'Nova Conversa', messages: [], lastUpdated: new Date() },
-  ])
-  const [currentChatId, setCurrentChatId] = useState('1')
+  const [chats, setChats] = useState<Chat[]>(() => {
+    const persisted = loadPersistedState()
+    return persisted?.chats || [{ id: generateChatId(), title: 'Nova Conversa', messages: [], lastUpdated: new Date() }]
+  })
+  const [currentChatId, setCurrentChatId] = useState<string>(() => {
+    const persisted = loadPersistedState()
+    return persisted?.currentChatId || chats[0]?.id
+  })
   const [input, setInput] = useState('')
-  const [loadingAI, setLoadingAI] = useState(false)
+  // loadingChatId guarda QUAL conversa está à espera de resposta da IA — não um
+  // booleano global. Isto evita mostrar "Pensando..." na conversa errada e
+  // evita bloquear o envio numa conversa B só porque a A está a carregar.
+  const [loadingChatId, setLoadingChatId] = useState<string | null>(null)
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
   const [showSidebar, setShowSidebar] = useState(false)
   const [usageStats, setUsageStats] = useState<UsageStats | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const currentChat = chats.find(c => c.id === currentChatId)!
+  const isCurrentChatLoading = loadingChatId === currentChat?.id
 
   useEffect(() => {
     const check = () => setShowSidebar(window.innerWidth >= 1024)
@@ -73,7 +125,17 @@ const LogosAIPage = () => {
   useEffect(() => {
     if (!isGuest) loadUsageStats()
   }, [isGuest, user])
-  
+
+  // Persiste o histórico nesta aba do browser. Falha em silêncio (modo privado,
+  // quota excedida, etc.) — o chat continua a funcionar, só perde a persistência.
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ chats, currentChatId }))
+    } catch {
+      // sem persistência neste browser — não bloqueia o uso do chat
+    }
+  }, [chats, currentChatId])
+
   const loadUsageStats = async () => {
     if (!user) return
     const today = new Date()
@@ -87,7 +149,7 @@ const LogosAIPage = () => {
   }
 
   const createNewChat = () => {
-    const id = Date.now().toString()
+    const id = generateChatId()
     setChats(prev => [{ id, title: 'Nova Conversa', messages: [], lastUpdated: new Date() }, ...prev])
     setCurrentChatId(id)
     if (window.innerWidth < 1024) setShowSidebar(false)
@@ -102,7 +164,8 @@ const LogosAIPage = () => {
 
   const handleSend = useCallback(async (text?: string) => {
     const msg = (text || input).trim()
-    if (!msg || loadingAI) return
+    if (!msg || !user) return
+    if (loadingChatId === currentChatId) return // já há uma resposta pendente NESTA conversa
     if (usageStats && usageStats.remaining <= 0) {
       toast.error('Limite diário atingido. Tente amanhã.')
       return
@@ -110,9 +173,10 @@ const LogosAIPage = () => {
 
     const userMessage: Message = { role: 'user', content: msg, timestamp: new Date() }
     const history = [...(currentChat?.messages || []), userMessage]
+    const targetChatId = currentChatId // congela o id desta conversa específica
 
     setChats(prev => prev.map(c =>
-      c.id === currentChatId
+      c.id === targetChatId
         ? {
             ...c,
             messages: history,
@@ -122,31 +186,35 @@ const LogosAIPage = () => {
         : c
     ))
     setInput('')
-    setLoadingAI(true)
+    setLoadingChatId(targetChatId)
 
-    const result = await routeAIRequest({
-      messages: history.map(m => ({ role: m.role, content: m.content })),
-      userId: user!.id,
-      topic: msg.slice(0, 60),
-    })
+    try {
+      const result = await routeAIRequest({
+        messages: history.map(m => ({ role: m.role, content: m.content })),
+        userId: user.id,
+        topic: msg.slice(0, 60),
+      })
 
-    if (result.error === 'quota_exceeded') {
-      setUsageStats(prev => prev ? { ...prev, remaining: 0 } : null)
+      if (result.error === 'quota_exceeded') {
+        setUsageStats(prev => prev ? { ...prev, remaining: 0 } : null)
+        setChats(prev => prev.map(c =>
+          c.id === targetChatId ? { ...c, messages: c.messages.slice(0, -1) } : c
+        ))
+        toast.error('Limite diário atingido.')
+        return
+      }
+
+      const aiMsg: Message = { role: 'assistant', content: result.content, timestamp: new Date() }
       setChats(prev => prev.map(c =>
-        c.id === currentChatId ? { ...c, messages: c.messages.slice(0, -1) } : c
+        c.id === targetChatId ? { ...c, messages: [...history, aiMsg] } : c
       ))
-      toast.error('Limite diário atingido.')
-      setLoadingAI(false)
-      return
+      if (result.success) loadUsageStats()
+    } finally {
+      // só limpa se ainda for esta a conversa "em carregamento" — evita apagar
+      // por engano o estado de uma requisição mais recente noutra conversa
+      setLoadingChatId(prev => (prev === targetChatId ? null : prev))
     }
-
-    const aiMsg: Message = { role: 'assistant', content: result.content, timestamp: new Date() }
-    setChats(prev => prev.map(c =>
-      c.id === currentChatId ? { ...c, messages: [...history, aiMsg] } : c
-    ))
-    if (result.success) loadUsageStats()
-    setLoadingAI(false)
-  }, [input, currentChat, currentChatId, loadingAI, usageStats, user])
+  }, [input, currentChat, currentChatId, loadingChatId, usageStats, user])
 
   const toggleSave = (idx: number) => {
     setChats(prev => prev.map(c =>
@@ -213,7 +281,12 @@ const LogosAIPage = () => {
   // ── MEMBER / ADMIN SCREEN (AI CANVAS STYLE) ────────────────────────────────
   return (
     <Layout title="Logos AI">
-      <div className="flex h-[calc(100vh-65px)] overflow-hidden bg-background font-sans">
+      {/* Altura calculada a partir do chrome real do Layout: header fixo de
+          3.5rem (h-14) + no mobile, 5rem extra de padding-bottom reservado
+          para a bottom tab bar (pb-20). O valor antigo (65px) não correspondia
+          a nada do Layout e fazia o input flutuante ficar atrás da tab bar
+          no mobile. */}
+      <div className="flex h-[calc(100vh-8.5rem)] lg:h-[calc(100vh-3.5rem)] overflow-hidden bg-background font-sans">
         
         {/* Sidebar Estilo ChatGPT/Claude */}
         {showSidebar && (
@@ -239,6 +312,7 @@ const LogosAIPage = () => {
             <button
               onClick={() => setShowSidebar(false)}
               className="p-2 rounded-lg hover:bg-muted text-muted-foreground lg:hidden ml-1"
+              aria-label="Fechar histórico de conversas"
             >
               <X className="h-4 w-4" />
             </button>
@@ -264,6 +338,7 @@ const LogosAIPage = () => {
                     onClick={e => { e.stopPropagation(); deleteChat(chat.id) }}
                     className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-background text-muted-foreground hover:text-destructive transition-all"
                     title="Excluir"
+                    aria-label={`Excluir conversa ${chat.title}`}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
@@ -299,6 +374,7 @@ const LogosAIPage = () => {
               size="icon"
               onClick={() => setShowSidebar(v => !v)}
               className="lg:hidden h-9 w-9"
+              aria-label="Abrir histórico de conversas"
             >
               <Menu className="h-5 w-5 text-muted-foreground" />
             </Button>
@@ -375,6 +451,7 @@ const LogosAIPage = () => {
                             onClick={() => copyMsg(msg.content, idx)}
                             className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-all"
                             title="Copiar"
+                            aria-label="Copiar resposta"
                           >
                             {copiedIndex === idx
                               ? <Check className="h-3.5 w-3.5 text-green-600" />
@@ -387,6 +464,7 @@ const LogosAIPage = () => {
                             }}
                             className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-all"
                             title="Compartilhar"
+                            aria-label="Compartilhar resposta"
                           >
                             <Share2 className="h-3.5 w-3.5" />
                           </button>
@@ -394,6 +472,7 @@ const LogosAIPage = () => {
                             onClick={() => toggleSave(idx)}
                             className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-all"
                             title={msg.saved ? 'Remover salvo' : 'Salvar'}
+                            aria-label={msg.saved ? 'Remover dos salvos' : 'Salvar resposta'}
                           >
                             {msg.saved
                               ? <BookmarkCheck className="h-3.5 w-3.5 text-foreground" />
@@ -405,8 +484,9 @@ const LogosAIPage = () => {
                   </div>
                 ))}
 
-                {/* Loading elegante e discreto */}
-                {loadingAI && (
+                {/* Loading elegante e discreto — só aparece na conversa que
+                    realmente está a aguardar resposta */}
+                {isCurrentChatLoading && (
                   <div className="flex gap-4 justify-start animate-pulse">
                     <div className="h-7 w-7 rounded-full border border-border bg-background flex items-center justify-center flex-shrink-0 text-muted-foreground shadow-sm">
                       <Sparkles className="h-3.5 w-3.5" />
@@ -440,15 +520,16 @@ const LogosAIPage = () => {
                   placeholder={usageStats?.remaining === 0 ? "Limite diário alcançado." : "Faça uma pergunta bíblica ou teológica..."}
                   className="flex-1 bg-transparent border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 h-11 text-base placeholder:text-muted-foreground/60"
                   maxLength={500}
-                  disabled={loadingAI || usageStats?.remaining === 0}
+                  disabled={isCurrentChatLoading || usageStats?.remaining === 0}
                 />
                 
                 <Button
                   onClick={() => handleSend()}
-                  disabled={loadingAI || !input.trim() || usageStats?.remaining === 0}
+                  disabled={isCurrentChatLoading || !input.trim() || usageStats?.remaining === 0}
                   className="h-9 w-9 p-0 bg-foreground text-background hover:bg-foreground/90 rounded-xl transition-all flex-shrink-0 shadow-sm disabled:opacity-20"
+                  aria-label="Enviar mensagem"
                 >
-                  {loadingAI
+                  {isCurrentChatLoading
                     ? <Loader2 className="h-4 w-4 animate-spin" />
                     : <Send className="h-4 w-4" />}
                 </Button>
