@@ -312,7 +312,7 @@ const CommunityPage = () => {
                 <div className="flex gap-3 items-start">
                   <button 
                     onClick={() => navigateToProfile()} 
-                    className="h-9 w-9 rounded-full bg-[#0A2E4A] text-white flex items-center justify-center font-bold text-sm shadow-sm overflow-hidden flex-shrink-0 transition-opacity hover:opacity-[...]
+                    className="h-9 w-9 rounded-full bg-[#0A2E4A] text-white flex items-center justify-center font-bold text-sm shadow-sm overflow-hidden flex-shrink-0 transition-opacity hover:opacity-80"
                   >
                     {user?.avatar_url ? (
                       <img src={user.avatar_url} alt={user.username} className="h-full w-full object-cover" />
@@ -385,7 +385,7 @@ const CommunityPage = () => {
                         <div className="flex items-center gap-2.5">
                           <button 
                             onClick={() => navigateToProfile(post.user_id)}
-                            className="h-9 w-9 rounded-full bg-[#4A90A4] text-white flex items-center justify-center font-bold text-sm shadow-sm overflow-hidden flex-shrink-0 transition-opacity hover:[...]"
+                            className="h-9 w-9 rounded-full bg-[#4A90A4] text-white flex items-center justify-center font-bold text-sm shadow-sm overflow-hidden flex-shrink-0 transition-opacity hover:opacity-80"
                           >
                             {hasAvatar ? (
                               <img src={post.user.avatar_url!} alt={post.user.username} className="h-full w-full object-cover" />
