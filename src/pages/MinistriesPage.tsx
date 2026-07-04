@@ -80,18 +80,19 @@ const MinistriesPage = () => {
       }))
       setMinistries(formatted)
 
-      // Atualiza os dados em tempo real caso o modal de detalhes já esteja aberto
-      if (selectedMinistryForDetails) {
-        const updatedCurrent = formatted.find(m => m.id === selectedMinistryForDetails.id)
-        if (updatedCurrent) setSelectedMinistryForDetails(updatedCurrent)
-      }
+      // Atualiza o modal de detalhes sem causar dependência cíclica no useCallback
+      setSelectedMinistryForDetails(prev => {
+        if (!prev) return null
+        const updated = formatted.find((m: any) => m.id === prev.id)
+        return updated || prev
+      })
     } catch (err) {
       console.error(err)
       toast.error('Erro inesperado ao carregar ministérios')
     } finally {
       setLoading(false)
     }
-  }, [selectedMinistryForDetails])
+  }, [])
 
   const loadJoinedMinistries = useCallback(async () => {
     try {
@@ -235,39 +236,46 @@ const MinistriesPage = () => {
   }
 
   const toggleJoin = useCallback(async (ministryId: string) => {
+    if (!user?.id) return
     if (pendingJoinIds.includes(ministryId)) return
     const isJoined = joinedMinistries.includes(ministryId)
 
+    // Optimistic update
     setPendingJoinIds(prev => [...prev, ministryId])
+    setJoinedMinistries(prev =>
+      isJoined ? prev.filter(id => id !== ministryId) : [...prev, ministryId]
+    )
+
     try {
       if (isJoined) {
         const { error } = await supabase
           .from('ministry_members')
           .delete()
           .eq('ministry_id', ministryId)
-          .eq('user_id', user!.id)
+          .eq('user_id', user.id)
 
         if (error) throw error
-
-        setJoinedMinistries(prev => prev.filter(id => id !== ministryId))
         toast.success('Você deixou o ministério')
       } else {
         const { error } = await supabase
           .from('ministry_members')
-          .insert({ ministry_id: ministryId, user_id: user!.id })
+          .insert({ ministry_id: ministryId, user_id: user.id })
 
         if (error) throw error
-
-        setJoinedMinistries(prev => [...prev, ministryId])
-        toast.success('Bem-vindo ao ministério! 🙏')
+        toast.success('Bem-vindo ao ministério!')
 
         const currentMin = ministries.find(m => m.id === ministryId)
-        logActivity({ type: 'ministry_joined', actorId: user!.id, actorName: user!.username, title: currentMin?.name || 'Ministério', referenceId: ministryId, referenceType: 'ministry' }).catch(() => null)
+        logActivity({ type: 'ministry_joined', actorId: user.id, actorName: user.username, title: currentMin?.name || 'Ministério', referenceId: ministryId, referenceType: 'ministry' }).catch(() => null)
       }
-      
-      await loadMinistries()
+
+      // Recarrega a lista para reflectir contagem de membros actualizada
+      loadMinistries()
     } catch (err: any) {
-      console.error(err)
+      console.error('toggleJoin error:', err)
+      // Reverte o optimistic update em caso de falha
+      setJoinedMinistries(prev =>
+        isJoined ? [...prev, ministryId] : prev.filter(id => id !== ministryId)
+      )
       toast.error(err.message || 'Erro de comunicação com o servidor')
     } finally {
       setPendingJoinIds(prev => prev.filter(id => id !== ministryId))

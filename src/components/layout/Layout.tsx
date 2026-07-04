@@ -165,7 +165,7 @@ const Layout = ({ children, title }: LayoutProps) => {
       {/* ── Sidebar (lg+ only) ───────────────────────────────────────── */}
       {/* Adicionado 'scrollbar-none' e 'scroll-smooth' */}
       <aside
-        className="hidden lg:flex fixed top-14 left-0 bottom-0 w-56 bg-card border-r border-border/50 z-40 flex-col overflow-y-auto scrollbar-none scroll-smooth"
+        className="hidden lg:flex fixed top-14 left-0 bottom-0 w-56 bg-card border-r border-border/50 z-40 flex-col overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
         aria-label="Navegação principal"
       >
         <nav className="flex-1 p-2 space-y-4">
@@ -278,7 +278,7 @@ const Layout = ({ children, title }: LayoutProps) => {
 
           {/* Drawer Content */}
           {/* Adicionado 'scrollbar-none' e 'scroll-smooth' */}
-          <div className="lg:hidden fixed bottom-16 left-0 right-0 z-50 max-h-[60vh] bg-card border-t border-border/50 overflow-y-auto rounded-t-lg scrollbar-none scroll-smooth">
+          <div className="lg:hidden fixed bottom-16 left-0 right-0 z-50 max-h-[60vh] bg-card border-t border-border/50 overflow-y-auto rounded-t-lg [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <div className="p-2 space-y-4">
               {/* Header + Close button */}
               <div className="flex items-center justify-between px-3 pt-2">
