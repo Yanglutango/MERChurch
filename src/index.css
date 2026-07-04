@@ -166,3 +166,29 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 .animate-slide-up { animation: slide-up 0.5s ease-out; }
+
+:root {
+  --logo-primary: #0F172A;     /* Slate 900 */
+  --logo-secondary: #334155;   /* Slate 700 */
+  --logo-accent: #C5A880;      /* Champagne Gold Muted */
+  --logo-subtitle: #64748B;    /* Slate 500 */
+}
+.dark {
+  --logo-primary: #F8FAFC;     /* Slate 50 */
+  --logo-secondary: #E2E8F0;   /* Slate 200 */
+  --logo-accent: #E5D5C0;      /* Champagne Gold Light */
+  --logo-subtitle: #94A3B8;    /* Slate 400 */
+}
+
+:root {
+  --logo-primary: #09090B;     /* Zinc 950 */
+  --logo-secondary: #71717A;   /* Zinc 500 */
+  --logo-accent: #991B1B;      /* Deep Crimson */
+  --logo-subtitle: #52525B;    /* Zinc 600 */
+}
+.dark {
+  --logo-primary: #FAFAFA;     /* Zinc 50 */
+  --logo-secondary: #D4D4D8;   /* Zinc 300 */
+  --logo-accent: #EF4444;      /* Vivid Crimson */
+  --logo-subtitle: #A1A1AA;    /* Zinc 400 */
+}
