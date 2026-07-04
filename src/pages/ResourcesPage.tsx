@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/layout/Layout'
 import { Card } from '../components/ui/card'
@@ -12,13 +12,15 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '../components/ui/alert-dialog'
+import { Progress } from '../components/ui/progress'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useAppStore } from '../stores/appStore'
 import {
   BookOpen, Download, Search, Plus, Trash2, FileText,
   BookMarked, Heart, GraduationCap, Upload, X, Shield,
-  FolderOpen, HardDrive, RefreshCw, LucideIcon,
+  FolderOpen, HardDrive, RefreshCw, LucideIcon, AlertCircle,
+  CheckCircle2, Loader2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { SpiritualResource } from '../types'
@@ -73,6 +75,10 @@ const CATEGORY_CONFIG: Record<SpiritualResource['category'], {
 const getCategoryConfig = (category: SpiritualResource['category']) =>
   CATEGORY_CONFIG[category] || CATEGORY_CONFIG.other
 
+// Tipos MIME aceitos
+const ACCEPTED_EXTENSIONS = ['.pdf', '.doc', '.docx', '.epub']
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+
 const ResourcesPage = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -82,12 +88,16 @@ const ResourcesPage = () => {
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [fileValidationError, setFileValidationError] = useState<string | null>(null)
   const [dragActive, setDragActive] = useState(false)
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [downloadingIds, setDownloadingIds] = useState<Set<string>>(new Set())
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
   const [newResource, setNewResource] = useState({
     title: '',
     description: '',
@@ -102,22 +112,33 @@ const ResourcesPage = () => {
     loadResources()
   }, [])
 
+  // Cleanup ao desmontar ou fechar dialog
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
+    }
+  }, [])
+
   const loadResources = async () => {
     setLoading(true)
-    const { data, error } = await supabase
-      .from('spiritual_resources')
-      .select('*')
-      .order('created_at', { ascending: false })
+    try {
+      const { data, error } = await supabase
+        .from('spiritual_resources')
+        .select('*')
+        .order('created_at', { ascending: false })
 
-    if (error) {
-      console.error('Error loading resources:', error)
-      toast.error('Erro ao carregar acervo de recursos')
+      if (error) {
+        console.error('Error loading resources:', error)
+        toast.error('Erro ao carregar acervo de recursos')
+        return
+      }
+
+      setResources(data as any)
+    } finally {
       setLoading(false)
-      return
     }
-
-    setResources(data as any)
-    setLoading(false)
   }
 
   // useMemo em vez de useEffect+state extra: elimina um ciclo de render
@@ -132,33 +153,53 @@ const ResourcesPage = () => {
 
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
-      filtered = filtered.filter(r =>
-        r.title.toLowerCase().includes(query) ||
-        r.description?.toLowerCase().includes(query) ||
-        r.tags?.some(tag => tag.toLowerCase().includes(query))
-      )
+      filtered = filtered.filter(r => {
+        const titleMatch = r.title.toLowerCase().includes(query)
+        const descriptionMatch = r.description?.toLowerCase().includes(query)
+        const tagsMatch = Array.isArray(r.tags) && r.tags.some(tag => 
+          String(tag).toLowerCase().includes(query)
+        )
+        return titleMatch || descriptionMatch || tagsMatch
+      })
     }
 
     return filtered
   }, [resources, searchQuery, categoryFilter])
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    validateAndSetFile(file)
-  }
+  const validateFile = useCallback((file: File | undefined): string | null => {
+    if (!file) return null
 
-  const validateAndSetFile = (file: File | undefined) => {
+    // Validar extensão
+    const fileExtension = '.' + (file.name.split('.').pop() || '').toLowerCase()
+    if (!ACCEPTED_EXTENSIONS.includes(fileExtension)) {
+      return 'Formato não aceito. Use PDF, DOC, DOCX ou EPUB.'
+    }
+
+    // Validar tamanho
+    if (file.size > MAX_FILE_SIZE) {
+      return `O arquivo deve ter no máximo ${MAX_FILE_SIZE / (1024 * 1024)}MB`
+    }
+
+    return null
+  }, [])
+
+  const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
     if (!file) return
 
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('O arquivo deve ter no máximo 10MB')
+    const error = validateFile(file)
+    if (error) {
+      setFileValidationError(error)
+      setSelectedFile(null)
+      toast.error(error)
       return
     }
 
+    setFileValidationError(null)
     setSelectedFile(file)
-  }
+  }, [validateFile])
 
-  const handleDrag = (e: React.DragEvent) => {
+  const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
     if (e.type === "dragenter" || e.type === "dragover") {
@@ -166,16 +207,27 @@ const ResourcesPage = () => {
     } else if (e.type === "dragleave") {
       setDragActive(false)
     }
-  }
+  }, [])
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
     setDragActive(false)
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      validateAndSetFile(e.dataTransfer.files[0])
+
+    const file = e.dataTransfer.files?.[0]
+    if (!file) return
+
+    const error = validateFile(file)
+    if (error) {
+      setFileValidationError(error)
+      setSelectedFile(null)
+      toast.error(error)
+      return
     }
-  }
+
+    setFileValidationError(null)
+    setSelectedFile(file)
+  }, [validateFile])
 
   const uploadResource = async () => {
     if (!selectedFile || !newResource.title.trim()) {
@@ -183,15 +235,36 @@ const ResourcesPage = () => {
       return
     }
 
+    // Validação final
+    const validationError = validateFile(selectedFile)
+    if (validationError) {
+      toast.error(validationError)
+      return
+    }
+
     setUploading(true)
+    setUploadProgress(0)
+    abortControllerRef.current = new AbortController()
+
     try {
-      const fileExt = selectedFile.name.split('.').pop()
+      const fileExt = selectedFile.name.split('.').pop()?.toLowerCase()
       const fileName = `${Date.now()}-${selectedFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
       const filePath = `${fileName}`
 
+      // Simular progresso de upload (Supabase não expõe evento de progresso nativamente)
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => Math.min(prev + Math.random() * 30, 90))
+      }, 300)
+
       const { error: uploadError } = await supabase.storage
         .from('spiritual-resources')
-        .upload(filePath, selectedFile)
+        .upload(filePath, selectedFile, {
+          cacheControl: '3600',
+          upsert: false,
+        })
+
+      clearInterval(progressInterval)
+      setUploadProgress(95)
 
       if (uploadError) throw uploadError
 
@@ -199,7 +272,10 @@ const ResourcesPage = () => {
         .from('spiritual-resources')
         .getPublicUrl(filePath)
 
-      const tags = newResource.tags.split(',').map(t => t.trim()).filter(Boolean)
+      const tags = newResource.tags
+        .split(',')
+        .map(t => t.trim())
+        .filter(Boolean)
 
       const { error: dbError } = await supabase
         .from('spiritual_resources')
@@ -212,44 +288,102 @@ const ResourcesPage = () => {
           file_size: selectedFile.size,
           tags,
           created_by: user!.id,
+          downloads_count: 0,
         })
 
       if (dbError) throw dbError
 
+      setUploadProgress(100)
+      await new Promise(resolve => setTimeout(resolve, 500)) // Mostrar 100% por um pouco
+
       toast.success('Recurso publicado com sucesso no acervo!')
       setDialogOpen(false)
       setSelectedFile(null)
+      setFileValidationError(null)
       setNewResource({ title: '', description: '', category: 'study', tags: '' })
+      setUploadProgress(0)
       loadResources()
     } catch (error: any) {
       console.error('Upload error:', error)
       toast.error(error.message || 'Erro ao efetuar publicação do arquivo')
+      setUploadProgress(0)
     } finally {
       setUploading(false)
+      if (abortControllerRef.current) {
+        abortControllerRef.current = null
+      }
     }
   }
 
   const handleDownload = async (resource: SpiritualResource) => {
+    const resourceId = resource.id
+
+    // Verificar se já está baixando
+    if (downloadingIds.has(resourceId)) {
+      toast.info('Este arquivo já está sendo baixado')
+      return
+    }
+
     // Atualização optimista local — evita recarregar toda a lista de
     // recursos da rede só para reflectir +1 num contador.
-    setResources(prev => prev.map(r =>
-      r.id === resource.id ? { ...r, downloadsCount: (r.downloadsCount || 0) + 1 } : r
-    ))
+    setDownloadingIds(prev => new Set([...prev, resourceId]))
 
-    window.open(resource.fileUrl, '_blank')
-    toast.success('Download iniciado com sucesso!')
+    try {
+      // Corrigir: usar file_url do banco que mapeia para fileUrl
+      const downloadUrl = (resource as any).file_url || (resource as any).fileUrl
+      if (!downloadUrl) {
+        toast.error('URL de download não disponível')
+        return
+      }
 
-    const { error } = await supabase
-      .from('spiritual_resources')
-      .update({ downloads_count: (resource.downloadsCount || 0) + 1 })
-      .eq('id', resource.id)
+      window.open(downloadUrl, '_blank')
+      toast.success('Download iniciado com sucesso!')
 
-    if (error) {
-      // Não bloqueia o download (já aconteceu) — só regista.
-      // Nota: este incremento não é atómico; em concorrência alta o ideal
-      // é uma função RPC (increment_downloads), no mesmo padrão já usado
-      // para likes/orações neste projecto.
-      console.warn('Não foi possível registar o download no servidor:', error)
+      // Usar RPC para incrementar de forma atômica (se disponível)
+      const { error: rpcError } = await supabase.rpc('increment_resource_downloads', {
+        resource_id: resourceId,
+      })
+
+      if (rpcError) {
+        // Não bloqueia o download (já aconteceu) — só regista.
+        console.warn('Não foi possível registar o download no servidor (RPC):', rpcError)
+        // Fallback: tentar update direto
+        await supabase
+          .from('spiritual_resources')
+          .update({ downloads_count: ((resource as any).downloads_count || 0) + 1 })
+          .eq('id', resourceId)
+      }
+
+      // Atualizar estado local
+      setResources(prev => prev.map(r =>
+        r.id === resourceId 
+          ? { ...r, downloads_count: ((r as any).downloads_count || 0) + 1 } 
+          : r
+      ))
+    } finally {
+      setDownloadingIds(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(resourceId)
+        return newSet
+      })
+    }
+  }
+
+  const deleteResourceFile = async (filePath: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase.storage
+        .from('spiritual-resources')
+        .remove([filePath])
+
+      if (error) {
+        console.warn('Erro ao deletar arquivo do storage:', error)
+        // Não bloqueia a deleção do registro
+        return false
+      }
+      return true
+    } catch (error) {
+      console.warn('Erro ao deletar arquivo:', error)
+      return false
     }
   }
 
@@ -257,28 +391,49 @@ const ResourcesPage = () => {
     if (!deleteTargetId) return
     setDeleting(true)
 
-    const { data, error } = await supabase
-      .from('spiritual_resources')
-      .delete()
-      .eq('id', deleteTargetId)
-      .select('id')
+    try {
+      // Obter o recurso para pegar o caminho do arquivo
+      const resourceToDelete = resources.find(r => r.id === deleteTargetId)
+      if (!resourceToDelete) {
+        toast.error('Recurso não encontrado')
+        return
+      }
 
-    setDeleting(false)
+      // Deletar arquivo do storage primeiro
+      const fileUrl = (resourceToDelete as any).file_url || (resourceToDelete as any).fileUrl
+      if (fileUrl) {
+        const filePathMatch = fileUrl.match(/\/storage\/v1\/object\/public\/spiritual-resources\/(.+)/)
+        if (filePathMatch?.[1]) {
+          await deleteResourceFile(decodeURIComponent(filePathMatch[1]))
+        }
+      }
 
-    if (error) {
-      toast.error('Não foi possível remover o recurso do banco')
+      // Depois deletar registro da DB
+      const { data, error } = await supabase
+        .from('spiritual_resources')
+        .delete()
+        .eq('id', deleteTargetId)
+        .select('id')
+
+      if (error) {
+        toast.error('Não foi possível remover o recurso do banco')
+        return
+      }
+
+      if (!data || data.length === 0) {
+        toast.error('Sem permissão para remover este recurso')
+        return
+      }
+
+      setResources(prev => prev.filter(r => r.id !== deleteTargetId))
+      toast.success('Recurso removido com sucesso!')
+    } catch (error: any) {
+      console.error('Delete error:', error)
+      toast.error(error.message || 'Erro ao remover recurso')
+    } finally {
+      setDeleting(false)
       setDeleteTargetId(null)
-      return
     }
-    if (!data || data.length === 0) {
-      toast.error('Sem permissão para remover este recurso')
-      setDeleteTargetId(null)
-      return
-    }
-
-    setResources(prev => prev.filter(r => r.id !== deleteTargetId))
-    toast.success('Recurso removido com sucesso!')
-    setDeleteTargetId(null)
   }
 
   const clearFilters = () => {
@@ -290,6 +445,21 @@ const ResourcesPage = () => {
     if (bytes < 1024) return `${bytes} B`
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  }
+
+  const handleDialogOpenChange = (open: boolean) => {
+    // Impedir fechar durante upload
+    if (uploading) {
+      toast.error('Operação em andamento. Aguarde...')
+      return
+    }
+    setDialogOpen(open)
+    if (!open) {
+      // Resetar form ao fechar
+      setSelectedFile(null)
+      setFileValidationError(null)
+      setUploadProgress(0)
+    }
   }
 
   if (loading) {
@@ -336,7 +506,9 @@ const ResourcesPage = () => {
                 <Button
                   size="lg"
                   onClick={() => setDialogOpen(true)}
-                  className="bg-white text-indigo-950 hover:bg-slate-50 font-bold px-6 py-6 h-auto text-base rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 border border-slate-100 shrink-0 self-start md:self-center"
+                  disabled={uploading}
+                  className="bg-white text-indigo-950 hover:bg-slate-50 font-bold px-6 py-6 h-auto text-base rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 border border-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Adicionar novo recurso ao acervo"
                 >
                   <Plus className="mr-2 h-5 w-5 stroke-[2.5]" />
                   Adicionar Recurso
@@ -347,9 +519,9 @@ const ResourcesPage = () => {
         </Card>
 
         {/* Upload Dialog */}
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="max-w-2xl rounded-2xl p-6">
-            <DialogHeader className="flex flex-row items-center justify-between border-b pb-4">
+        <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
+          <DialogContent className="max-w-2xl rounded-2xl p-6 max-h-[90vh] overflow-y-auto">
+            <DialogHeader className="flex flex-row items-center justify-between border-b pb-4 sticky top-0 bg-background">
               <div className="space-y-1">
                 <DialogTitle className="text-xl font-bold flex items-center gap-2">
                   <Shield className="h-5 w-5 text-indigo-600" />
@@ -362,7 +534,8 @@ const ResourcesPage = () => {
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 rounded-full"
-                onClick={() => setDialogOpen(false)}
+                onClick={() => handleDialogOpenChange(false)}
+                disabled={uploading}
                 aria-label="Fechar"
               >
                 <X className="h-4 w-4" />
@@ -370,22 +543,38 @@ const ResourcesPage = () => {
             </DialogHeader>
 
             <div className="space-y-5 pt-4">
+              {/* Validação de arquivo */}
+              {fileValidationError && (
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/30">
+                  <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-destructive">{fileValidationError}</p>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="md:col-span-2 space-y-1.5">
-                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Título do Recurso *</Label>
+                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Título do Recurso <span className="text-destructive">*</span>
+                  </Label>
                   <Input
                     value={newResource.title}
                     onChange={(e) => setNewResource({ ...newResource, title: e.target.value })}
                     placeholder="Ex: Teologia Sistemática e Hermenêutica"
                     className="rounded-xl h-11"
+                    disabled={uploading}
+                    maxLength={200}
                   />
+                  <p className="text-xs text-muted-foreground">{newResource.title.length}/200</p>
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Categoria *</Label>
+                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Categoria <span className="text-destructive">*</span>
+                  </Label>
                   <Select
                     value={newResource.category}
                     onValueChange={(value: any) => setNewResource({ ...newResource, category: value })}
+                    disabled={uploading}
                   >
                     <SelectTrigger className="rounded-xl h-11">
                       <SelectValue />
@@ -407,7 +596,10 @@ const ResourcesPage = () => {
                   placeholder="Insira detalhes resumidos sobre a finalidade pedagógica ou espiritual deste arquivo..."
                   className="rounded-xl resize-none"
                   rows={3}
+                  disabled={uploading}
+                  maxLength={500}
                 />
+                <p className="text-xs text-muted-foreground">{newResource.description.length}/500</p>
               </div>
 
               <div className="space-y-1.5">
@@ -415,19 +607,23 @@ const ResourcesPage = () => {
                 <Input
                   value={newResource.tags}
                   onChange={(e) => setNewResource({ ...newResource, tags: e.target.value })}
-                  placeholder="ex: lideranca, devocional, igreja"
+                  placeholder="ex: liderança, devocional, igreja"
                   className="rounded-xl h-11"
+                  disabled={uploading}
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Upload de Arquivo (Máx 10MB) *</Label>
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Upload de Arquivo (Máx 10MB) <span className="text-destructive">*</span>
+                </Label>
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept=".pdf,.doc,.docx,.epub"
                   onChange={handleFileSelect}
                   className="hidden"
+                  disabled={uploading}
                 />
 
                 <div
@@ -435,7 +631,7 @@ const ResourcesPage = () => {
                     dragActive
                       ? 'border-indigo-600 bg-indigo-50/20 dark:bg-indigo-950/20'
                       : 'border-slate-200 bg-slate-50/50 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900/40 dark:hover:bg-slate-900/60'
-                  }`}
+                  } ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   onDragEnter={handleDrag}
                   onDragOver={handleDrag}
                   onDragLeave={handleDrag}
@@ -443,7 +639,7 @@ const ResourcesPage = () => {
                 >
                   {selectedFile ? (
                     <div className="flex items-center gap-4 w-full text-left bg-card border rounded-xl p-3 shadow-sm">
-                      <div className="h-12 w-12 bg-indigo-50 border border-indigo-100 dark:bg-indigo-950/40 dark:border-indigo-900 rounded-xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
+                      <div className="h-12 w-12 bg-indigo-50 border border-indigo-100 dark:bg-indigo-950/40 dark:border-indigo-900 rounded-xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 flex-shrink-0">
                         <FileText className="h-6 w-6" />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -454,7 +650,11 @@ const ResourcesPage = () => {
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => setSelectedFile(null)}
+                        onClick={() => {
+                          setSelectedFile(null)
+                          setFileValidationError(null)
+                        }}
+                        disabled={uploading}
                         className="h-8 w-8 p-0 rounded-full text-muted-foreground hover:text-foreground shrink-0"
                         aria-label="Remover arquivo selecionado"
                       >
@@ -464,14 +664,15 @@ const ResourcesPage = () => {
                   ) : (
                     <button
                       type="button"
-                      className="space-y-2 cursor-pointer w-full"
-                      onClick={() => fileInputRef.current?.click()}
+                      className="space-y-2 cursor-pointer w-full disabled:cursor-not-allowed"
+                      onClick={() => !uploading && fileInputRef.current?.click()}
+                      disabled={uploading}
                     >
                       <div className="mx-auto h-10 w-10 text-muted-foreground bg-white dark:bg-slate-800 border dark:border-slate-700 shadow-sm rounded-xl flex items-center justify-center">
                         <Upload className="h-5 w-5" />
                       </div>
                       <div className="text-sm">
-                        <span className="font-semibold text-indigo-600 hover:text-indigo-500">Clique para selecionar</span> ou arraste o documento aqui
+                        <span className="font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300">Clique para selecionar</span> ou arraste o documento aqui
                       </div>
                       <p className="text-xs text-muted-foreground">Formatos aceitos: PDF, DOC, DOCX ou EPUB de até 10 megabytes</p>
                     </button>
@@ -479,21 +680,42 @@ const ResourcesPage = () => {
                 </div>
               </div>
 
+              {/* Progress Bar */}
+              {uploading && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Publicando recurso...</span>
+                    <span className="text-sm text-muted-foreground">{Math.round(uploadProgress)}%</span>
+                  </div>
+                  <Progress value={uploadProgress} className="h-2" />
+                </div>
+              )}
+
               <div className="flex items-center gap-3 pt-2">
                 <Button
                   variant="outline"
                   className="flex-1 h-12 rounded-xl font-semibold"
-                  onClick={() => setDialogOpen(false)}
+                  onClick={() => handleDialogOpenChange(false)}
                   disabled={uploading}
                 >
                   Cancelar
                 </Button>
                 <Button
                   onClick={uploadResource}
-                  disabled={uploading}
-                  className="flex-1 h-12 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-100"
+                  disabled={uploading || !selectedFile || !newResource.title.trim()}
+                  className="flex-1 h-12 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-100 hover:shadow-indigo-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {uploading ? 'Processando upload...' : 'Publicar no Acervo'}
+                  {uploading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processando...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="mr-2 h-4 w-4" />
+                      Publicar no Acervo
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
@@ -523,7 +745,7 @@ const ResourcesPage = () => {
           <StatCard
             icon={Download}
             label="Total Downloads"
-            value={resources.reduce((sum, r) => sum + (r.downloadsCount || 0), 0)}
+            value={resources.reduce((sum, r) => sum + ((r as any).downloads_count || 0), 0)}
             gradient="from-emerald-600 to-teal-600"
           />
         </div>
@@ -541,7 +763,7 @@ const ResourcesPage = () => {
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground rounded-full"
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground rounded-full transition-colors"
                 aria-label="Limpar busca"
               >
                 <X className="h-4 w-4" />
@@ -572,16 +794,17 @@ const ResourcesPage = () => {
             {filteredResources.map((resource) => {
               const config = getCategoryConfig(resource.category)
               const CategoryIcon = config.icon
+              const isDownloading = downloadingIds.has(resource.id)
 
               return (
                 <Card
                   key={resource.id}
-                  className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border-2 border-slate-100 dark:border-slate-800 hover:border-indigo-500/30 transition-all duration-300 hover:shadow-xl bg-card"
+                  className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border-2 border-slate-100 dark:border-slate-800 hover:border-indigo-500/30 hover:shadow-lg transition-all duration-300"
                 >
                   <div className="p-5 md:p-6 flex-1">
-                    <div className="flex justify-between items-center mb-5">
+                    <div className="flex justify-between items-start gap-3 mb-5">
                       <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide border ${config.badge}`}>
-                        <CategoryIcon className="h-3.5 w-3.5" />
+                        <CategoryIcon className="h-3.5 w-3.5 flex-shrink-0" />
                         {config.label}
                       </span>
 
@@ -591,7 +814,8 @@ const ResourcesPage = () => {
                             size="sm"
                             variant="ghost"
                             onClick={() => setDeleteTargetId(resource.id)}
-                            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100"
+                            disabled={deleting}
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 disabled:opacity-50"
                             title="Remover Recurso"
                             aria-label={`Remover ${resource.title}`}
                           >
@@ -614,35 +838,51 @@ const ResourcesPage = () => {
                     {resource.tags && resource.tags.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mb-4">
                         {resource.tags.slice(0, 3).map((tag, idx) => (
-                          <span key={idx} className="px-2 py-0.5 bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-[11px] font-medium rounded-md">
+                          <span key={idx} className="px-2 py-0.5 bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-[11px] font-medium rounded-md whitespace-nowrap">
                             #{tag}
                           </span>
                         ))}
+                        {resource.tags.length > 3 && (
+                          <span className="px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                            +{resource.tags.length - 3}
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>
 
                   <div className="px-5 md:px-6 pb-5 md:pb-6 mt-auto space-y-4">
                     <div className="grid grid-cols-3 gap-1 pt-3 border-t text-[11px] font-medium text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <FileText className="h-3 w-3 shrink-0" />
-                        <span className="truncate">{resource.fileType?.toUpperCase() || 'DOC'}</span>
+                      <div className="flex items-center gap-1 truncate" title={`Tipo: ${(resource as any).file_type?.toUpperCase() || 'DOC'}`}>
+                        <FileText className="h-3 w-3 flex-shrink-0" />
+                        <span className="truncate">{(resource as any).file_type?.toUpperCase() || 'DOC'}</span>
                       </div>
-                      <div className="flex items-center gap-1 justify-center">
-                        <HardDrive className="h-3 w-3 shrink-0" />
-                        <span>{formatFileSize(resource.fileSize || 0)}</span>
+                      <div className="flex items-center gap-1 justify-center" title={`Tamanho: ${formatFileSize((resource as any).file_size || 0)}`}>
+                        <HardDrive className="h-3 w-3 flex-shrink-0" />
+                        <span className="truncate">{formatFileSize((resource as any).file_size || 0)}</span>
                       </div>
-                      <div className="text-right truncate">
-                        {resource.downloadsCount || 0} downloads
+                      <div className="text-right truncate" title={`Downloads: ${(resource as any).downloads_count || 0}`}>
+                        {(resource as any).downloads_count || 0} downloads
                       </div>
                     </div>
 
                     <Button
                       onClick={() => handleDownload(resource)}
-                      className={`w-full font-bold h-11 rounded-xl shadow-sm bg-gradient-to-r ${config.gradient} text-white hover:opacity-95 transition-opacity`}
+                      disabled={isDownloading || isGuest}
+                      className={`w-full font-bold h-11 rounded-xl shadow-sm bg-gradient-to-r ${config.gradient} text-white hover:opacity-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed`}
+                      title={isGuest ? 'Faça login para baixar' : 'Baixar arquivo'}
                     >
-                      <Download className="mr-2 h-4 w-4" />
-                      Baixar Arquivo
+                      {isDownloading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Baixando...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="mr-2 h-4 w-4" />
+                          Baixar Arquivo
+                        </>
+                      )}
                     </Button>
                   </div>
                 </Card>
@@ -684,13 +924,24 @@ const ResourcesPage = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Remover recurso?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação não pode ser desfeita. O arquivo deixará de estar disponível para download.
+              Esta ação não pode ser desfeita. O arquivo deixará de estar disponível para download e será removido do servidor.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} disabled={deleting} className="bg-red-600 hover:bg-red-700 text-white">
-              {deleting ? 'Removendo...' : 'Remover'}
+            <AlertDialogAction 
+              onClick={confirmDelete} 
+              disabled={deleting} 
+              className="bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin inline" />
+                  Removendo...
+                </>
+              ) : (
+                'Remover'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
