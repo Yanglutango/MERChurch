@@ -74,23 +74,16 @@ export const Logo = memo(({
       role={shouldRenderText ? undefined : 'img'}
     >
       {/* Container do Logo (Mantido o fluxo de imagem original) */}
-      <div class="relative w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full
-            /* Light Mode: Efeito Cerâmico 3D */
-            bg-gradient-to-b from-white to-slate-50/90 
-            border border-slate-900/[0.05] 
-            shadow-[0_3px_8px_-1px_rgba(0,0,0,0.04),0_1px_3px_0px_rgba(0,0,0,0.02)]
-            
-  /* Dark Mode: Reset Absoluto (Invisível) */
-            dark:bg-none dark:from-transparent dark:to-transparent dark:border-0 dark:shadow-none">
-  <img 
-    src="https://cdn-ai.onspace.ai/onspace/files/XApskyyhcaqpHfkzKVPzqb/kairoslogo.png" 
-    alt="" 
-    width="32" 
-    height="32" 
-    decoding="async" 
-    class="w-full h-full object-contain drop-shadow-sm select-none pointer-events-none p-1 dark:p-0"
-  >
-</div>
+      <div className={`${sizes.container} relative flex-shrink-0 flex items-center justify-center rounded-full bg-gradient-to-b from-white to-slate-50/90 border border-slate-900/[0.05] shadow-[0_3px_8px_-1px_rgba(0,0,0,0.04),0_1px_3px_0px_rgba(0,0,0,0.02)] dark:bg-none dark:from-transparent dark:to-transparent dark:border-0 dark:shadow-none`}>
+        <img
+          src="https://cdn-ai.onspace.ai/onspace/files/XApskyyhcaqpHfkzKVPzqb/kairoslogo.png"
+          alt=""
+          width="32"
+          height="32"
+          decoding="async"
+          className="w-full h-full object-contain drop-shadow-sm select-none pointer-events-none p-1 dark:p-0"
+        />
+      </div>
       {/* Bloco de Identidade Nominal da Marca */}
       {shouldRenderText && (
         <div className="flex flex-col leading-none py-0.5 px-[2px] items-start justify-center">
