@@ -74,18 +74,15 @@ export const Logo = memo(({
       role={shouldRenderText ? undefined : 'img'}
     >
       {/* Container do Logo (Mantido o fluxo de imagem original) */}
-      <div class="relative w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full
-            bg-gradient-to-tr from-sky-100/80 via-sky-50/40 to-white 
-            ring-1 ring-indigo-950/[0.06] 
-            shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.8),0_2px_6px_rgba(15,23,42,0.04)] 
-            dark:bg-transparent dark:ring-0 dark:shadow-none">
-        <img src="https://cdn-ai.onspace.ai/onspace/files/XApskyyhcaqpHfkzKVPzqb/kairoslogo.png" 
-          alt="" 
-          width="32" 
-          height="32" 
-          decoding="async" 
-          class="w-full h-full object-contain drop-shadow-sm select-none pointer-events-none p-1 dark:p-0"
-        >
+      <div className="relative w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full bg-gradient-to-tr from-sky-100/80 via-sky-50/40 to-white ring-1 ring-indigo-950/[0.06] shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.8),0_2px_6px_rgba(15,23,42,0.04)] dark:bg-transparent dark:ring-0 dark:shadow-none">
+        <img
+          src="https://cdn-ai.onspace.ai/onspace/files/XApskyyhcaqpHfkzKVPzqb/kairoslogo.png"
+          alt=""
+          width="32"
+          height="32"
+          decoding="async"
+          className="w-full h-full object-contain drop-shadow-sm select-none pointer-events-none p-1 dark:p-0"
+        />
       </div>
 
       {/* Bloco de Identidade Nominal da Marca */}
