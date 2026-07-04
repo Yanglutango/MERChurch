@@ -49,22 +49,21 @@ const CommunityPage = () => {
   const loadPosts = async () => {
     try {
       setLoading(true)
-      // Busca os posts com os perfis dos usuários vinculados
+      // community_posts é o nome real da tabela (não 'posts')
       const { data, error } = await supabase
-        .from('posts')
+        .from('community_posts')
         .select('*, user:user_profiles(username, avatar_url)')
         .order('created_at', { ascending: false })
 
       if (error) throw error
 
-      // Se houver um usuário logado, podemos verificar quais posts ele curtiu
       let postsWithLikes = (data || []) as Post[]
       if (user && !isGuest) {
         const { data: userLikes } = await supabase
           .from('post_likes')
           .select('post_id')
           .eq('user_id', user.id)
-        
+
         const likedPostIds = new Set(userLikes?.map(l => l.post_id) || [])
         postsWithLikes = postsWithLikes.map(p => ({
           ...p,
@@ -91,7 +90,7 @@ const CommunityPage = () => {
       setPublishing(true)
       
       const { data, error } = await supabase
-        .from('posts')
+        .from('community_posts')
         .insert({
           user_id: user!.id,
           content: newPostContent.trim(),
@@ -132,16 +131,31 @@ const CommunityPage = () => {
       return
     }
 
+    // Optimistic update first
+    setPosts(prev => prev.map(p =>
+      p.id === postId
+        ? { ...p, has_liked: !hasLiked, likes_count: hasLiked ? Math.max(0, p.likes_count - 1) : p.likes_count + 1 }
+        : p
+    ))
+
     try {
       if (hasLiked) {
-        await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', user!.id)
-        setPosts(posts.map(p => p.id === postId ? { ...p, has_liked: false, likes_count: Math.max(0, p.likes_count - 1) } : p))
+        const { error } = await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', user!.id)
+        if (error) throw error
+        await supabase.rpc('decrement_likes', { post_id: postId })
       } else {
-        await supabase.from('post_likes').insert({ post_id: postId, user_id: user!.id })
-        setPosts(posts.map(p => p.id === postId ? { ...p, has_liked: true, likes_count: p.likes_count + 1 } : p))
+        const { error } = await supabase.from('post_likes').insert({ post_id: postId, user_id: user!.id })
+        if (error) throw error
+        await supabase.rpc('increment_likes', { post_id: postId })
       }
-    } catch (error) {
-      console.error(error)
+    } catch (error: any) {
+      // Revert optimistic update on error
+      setPosts(prev => prev.map(p =>
+        p.id === postId
+          ? { ...p, has_liked: hasLiked, likes_count: hasLiked ? p.likes_count + 1 : Math.max(0, p.likes_count - 1) }
+          : p
+      ))
+      console.error('Like error:', error)
     }
   }
 
