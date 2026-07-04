@@ -192,3 +192,15 @@
   --logo-accent: #EF4444;      /* Vivid Crimson */
   --logo-subtitle: #A1A1AA;    /* Zinc 400 */
 }
+
+:root {
+  --logo-primary: #0F172A;     /* Slate 900: Imponente, sóbrio e altamente profissional */
+  --logo-subtitle: #64748B;    /* Slate 500: Elegância secundária com excelente leitura */
+  --logo-fallback-bg: #0A2E4A; /* Fundo do fallback caso a imagem falhe */
+}
+
+.dark {
+  --logo-primary: #F8FAFC;     /* Slate 50: Contraste perfeito no modo escuro */
+  --logo-subtitle: #94A3B8;    /* Slate 400 */
+  --logo-fallback-bg: #1E293B;
+}
