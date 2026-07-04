@@ -25,6 +25,11 @@ interface Post {
   has_liked?: boolean;
 }
 
+interface Comment {
+  id: string; post_id: string; user_id: string; content: string; created_at: string;
+  user: { username: string; avatar_url: string | null };
+}
+
 const CommunityPage = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -39,6 +44,12 @@ const CommunityPage = () => {
   const [showImageField, setShowImageField] = useState(false)
   const [publishing, setPublishing] = useState(false)
   
+  // Comments state
+  const [commentsByPost, setCommentsByPost] = useState<Record<string, Comment[]>>({})
+  const [showCommentsFor, setShowCommentsFor] = useState<Record<string, boolean>>({})
+  const [commentInput, setCommentInput] = useState<Record<string, string>>({})
+  const [loadingComments, setLoadingComments] = useState<Record<string, boolean>>({})
+
   const fileInputRef = useRef<HTMLInputElement>(null)
   const isGuest = user?.role === 'guest'
 
@@ -64,7 +75,7 @@ const CommunityPage = () => {
           .select('post_id')
           .eq('user_id', user.id)
 
-        const likedPostIds = new Set(userLikes?.map(l => l.post_id) || [])
+        const likedPostIds = new Set(userLikes?.map((l: any) => l.post_id) || [])
         postsWithLikes = postsWithLikes.map(p => ({
           ...p,
           has_liked: likedPostIds.has(p.id)
@@ -77,6 +88,92 @@ const CommunityPage = () => {
       toast.error('Erro ao carregar o feed da comunidade')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadCommentsForPost = async (postId: string) => {
+    // prevent reloading if already loaded
+    if (commentsByPost[postId]?.length) return
+    try {
+      setLoadingComments(prev => ({ ...prev, [postId]: true }))
+      const { data, error } = await supabase
+        .from('post_comments')
+        .select('*, user:user_profiles(username, avatar_url)')
+        .eq('post_id', postId)
+        .order('created_at', { ascending: true })
+
+      if (error) throw error
+      setCommentsByPost(prev => ({ ...prev, [postId]: (data || []) as Comment[] }))
+    } catch (error) {
+      console.error('Error loading comments', error)
+      toast.error('Não foi possível carregar os comentários')
+    } finally {
+      setLoadingComments(prev => ({ ...prev, [postId]: false }))
+    }
+  }
+
+  const toggleComments = async (postId: string) => {
+    setShowCommentsFor(prev => ({ ...prev, [postId]: !prev[postId] }))
+    if (!commentsByPost[postId]) await loadCommentsForPost(postId)
+  }
+
+  const handleAddComment = async (postId: string) => {
+    if (isGuest) {
+      toast.error('Crie uma conta para interagir com as publicações')
+      return
+    }
+
+    const content = (commentInput[postId] || '').trim()
+    if (!content) {
+      toast.error('Escreva algo antes de comentar!')
+      return
+    }
+
+    // optimistic UI update
+    const tempComment: Comment = {
+      id: `temp-${Date.now()}`,
+      post_id: postId,
+      user_id: user!.id,
+      content,
+      created_at: new Date().toISOString(),
+      user: { username: user!.username, avatar_url: user!.avatar_url || null }
+    }
+
+    setCommentsByPost(prev => ({ ...prev, [postId]: [...(prev[postId] || []), tempComment] }))
+    setCommentInput(prev => ({ ...prev, [postId]: '' }))
+    setPosts(prev => prev.map(p => p.id === postId ? { ...p, comments_count: (p.comments_count || 0) + 1 } : p))
+
+    try {
+      const { data, error } = await supabase
+        .from('post_comments')
+        .insert({ post_id: postId, user_id: user!.id, content })
+        .select('*, user:user_profiles(username, avatar_url)')
+        .single()
+
+      if (error) throw error
+
+      // Replace temp comment with saved comment
+      setCommentsByPost(prev => ({
+        ...prev,
+        [postId]: (prev[postId] || []).map(c => c.id === tempComment.id ? (data as Comment) : c)
+      }))
+
+      // Optional: log activity
+      await logActivity({
+        type: 'comment_created',
+        actorId: user!.id,
+        actorName: user!.username,
+        title: content.substring(0, 30) + '...',
+        referenceId: postId,
+        referenceType: 'post_comment'
+      })
+
+    } catch (error) {
+      console.error('Error adding comment', error)
+      toast.error('Não foi possível adicionar seu comentário')
+      // revert optimistic update
+      setCommentsByPost(prev => ({ ...prev, [postId]: (prev[postId] || []).filter(c => c.id !== tempComment.id) }))
+      setPosts(prev => prev.map(p => p.id === postId ? { ...p, comments_count: Math.max(0, (p.comments_count || 1) - 1) } : p))
     }
   }
 
@@ -215,7 +312,7 @@ const CommunityPage = () => {
                 <div className="flex gap-3 items-start">
                   <button 
                     onClick={() => navigateToProfile()} 
-                    className="h-9 w-9 rounded-full bg-[#0A2E4A] text-white flex items-center justify-center font-bold text-sm shadow-sm overflow-hidden flex-shrink-0 transition-opacity hover:opacity-90"
+                    className="h-9 w-9 rounded-full bg-[#0A2E4A] text-white flex items-center justify-center font-bold text-sm shadow-sm overflow-hidden flex-shrink-0 transition-opacity hover:opacity-[...]
                   >
                     {user?.avatar_url ? (
                       <img src={user.avatar_url} alt={user.username} className="h-full w-full object-cover" />
@@ -288,7 +385,7 @@ const CommunityPage = () => {
                         <div className="flex items-center gap-2.5">
                           <button 
                             onClick={() => navigateToProfile(post.user_id)}
-                            className="h-9 w-9 rounded-full bg-[#4A90A4] text-white flex items-center justify-center font-bold text-sm shadow-sm overflow-hidden flex-shrink-0 transition-opacity hover:opacity-90"
+                            className="h-9 w-9 rounded-full bg-[#4A90A4] text-white flex items-center justify-center font-bold text-sm shadow-sm overflow-hidden flex-shrink-0 transition-opacity hover:[...]"
                           >
                             {hasAvatar ? (
                               <img src={post.user.avatar_url!} alt={post.user.username} className="h-full w-full object-cover" />
@@ -343,13 +440,84 @@ const CommunityPage = () => {
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          onClick={() => !isGuest && navigate(`/community/post/${post.id}`)}
+                          onClick={() => toggleComments(post.id)}
                           className="h-8 rounded-xl px-3 text-xs font-medium text-muted-foreground gap-1.5"
                         >
                           <MessageSquare className="h-4 w-4" />
                           <span>{post.comments_count || 0}</span>
                         </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => !isGuest && navigate(`/community/post/${post.id}`)}
+                          className="h-8 rounded-xl px-3 text-xs font-medium text-muted-foreground gap-1.5"
+                        >
+                          <Share2 className="h-4 w-4" />
+                        </Button>
                       </div>
+
+                      {/* Comments Section (collapsible) */}
+                      {showCommentsFor[post.id] && (
+                        <div className="pt-3">
+                          {loadingComments[post.id] ? (
+                            <div className="text-sm text-muted-foreground">Carregando comentários...</div>
+                          ) : (
+                            <div className="space-y-3">
+                              {(commentsByPost[post.id] || []).length === 0 ? (
+                                <div className="text-sm text-muted-foreground">Seja o primeiro a comentar.</div>
+                              ) : (
+                                (commentsByPost[post.id] || []).map(comment => (
+                                  <div key={comment.id} className="flex items-start gap-3">
+                                    <div className="h-8 w-8 rounded-full bg-[#4A90A4] text-white flex items-center justify-center font-bold text-sm overflow-hidden flex-shrink-0">
+                                      {comment.user?.avatar_url ? (
+                                        <img src={comment.user.avatar_url} alt={comment.user.username} className="h-full w-full object-cover" />
+                                      ) : (
+                                        comment.user?.username?.charAt(0).toUpperCase() || 'U'
+                                      )}
+                                    </div>
+                                    <div className="flex-1">
+                                      <div className="flex items-center justify-between">
+                                        <div>
+                                          <div className="font-semibold text-sm">{comment.user?.username || 'Usuário'}</div>
+                                          <div className="text-[11px] text-muted-foreground/80">{new Date(comment.created_at).toLocaleString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</div>
+                                        </div>
+                                      </div>
+                                      <p className="text-sm text-foreground/90 mt-1 whitespace-pre-wrap">{comment.content}</p>
+                                    </div>
+                                  </div>
+                                ))
+                              )}
+
+                              {/* Add comment input */}
+                              {!isGuest ? (
+                                <div className="flex items-start gap-3">
+                                  <div className="h-9 w-9 rounded-full bg-[#0A2E4A] text-white flex items-center justify-center font-bold text-sm overflow-hidden flex-shrink-0">
+                                    {user?.avatar_url ? (
+                                      <img src={user.avatar_url} alt={user.username} className="h-full w-full object-cover" />
+                                    ) : (
+                                      user?.username?.charAt(0).toUpperCase()
+                                    )}
+                                  </div>
+                                  <div className="flex-1">
+                                    <Textarea
+                                      value={commentInput[post.id] || ''}
+                                      onChange={e => setCommentInput(prev => ({ ...prev, [post.id]: e.target.value }))}
+                                      placeholder="Escreva um comentário..."
+                                      className="min-h-[48px] border-none focus-visible:ring-0 resize-none p-0 text-sm bg-transparent placeholder:text-muted-foreground/60"
+                                    />
+                                    <div className="flex justify-end pt-2">
+                                      <Button size="sm" onClick={() => handleAddComment(post.id)} className="h-8 bg-[#0A2E4A] text-white rounded-xl px-3">Comentar</Button>
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="text-sm text-muted-foreground">Crie uma conta para comentar.</div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                     </Card>
                   )
                 })
