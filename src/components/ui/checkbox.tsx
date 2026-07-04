@@ -9,6 +9,15 @@ interface CheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>
 
 const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
   ({ className, checked, onCheckedChange, ...props }, ref) => {
+    const disabled = (props as any).disabled
+
+    // Toggle handler for the visual box (so clicks on the styled element also toggle)
+    const handleToggle = (e: React.MouseEvent) => {
+      e.stopPropagation()
+      if (disabled) return
+      onCheckedChange?.(!checked)
+    }
+
     return (
       <div className="relative inline-flex items-center">
         <input
@@ -20,8 +29,10 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
           {...props}
         />
         <div
+          onClick={handleToggle}
+          role="presentation"
           className={cn(
-            "h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 peer-checked:bg-primary peer-checked:text-primary-foreground",
+            "h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 peer-checked:bg-primary peer-checked:text-primary-foreground cursor-pointer",
             className
           )}
         >
