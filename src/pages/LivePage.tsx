@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/layout/Layout'
 import { Card } from '../components/ui/card'
@@ -29,6 +29,11 @@ interface LiveSession {
   description: string | null
 }
 
+interface UserProfile {
+  username: string | null
+  avatar_url: string | null
+}
+
 const LivePage = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -47,15 +52,73 @@ const LivePage = () => {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [liveViewers, setLiveViewers] = useState(0)
 
-  // Refs
+  // Refs & Cache
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const chatContainerRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const playerContainerRef = useRef<HTMLDivElement>(null)
+  const profileCache = useRef<Record<string, UserProfile>>({})
 
   const isGuest = user?.role === 'guest'
   const isAdmin = user?.role === 'admin'
   const isOnline = !!activeSession?.is_active
+
+  // ===== UTILS & HELPERS =====
+  const isYouTubeUrl = useCallback((url: string) => url.includes('youtube.com') || url.includes('youtu.be'), [])
+
+  const getYouTubeId = useCallback((url: string) => {
+    const match = url.match(/(?:v=|youtu\.be\/|embed\/)([^&\s?]+)/)
+    return match ? match[1] : null
+  }, [])
+
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
+    messagesEndRef.current?.scrollIntoView({ behavior })
+    setShowScrollButton(false)
+  }, [])
+
+  // ===== DATA LOADING =====
+  const loadSession = useCallback(async () => {
+    try {
+      const [activeRes, nextRes, prayersRes] = await Promise.all([
+        supabase.from('live_sessions').select('*').eq('is_active', true).limit(1).maybeSingle(),
+        supabase.from('live_sessions').select('*').eq('is_active', false).gte('start_time', new Date().toISOString()).order('start_time', { ascending: true }).limit(1).maybeSingle(),
+        supabase.from('prayer_requests').select('id', { count: 'exact', head: true }),
+      ])
+      setActiveSession(activeRes.data as LiveSession | null)
+      setNextSession(nextRes.data as LiveSession | null)
+      setPrayerCount(prayersRes.count || 0)
+      setLiveViewers(Math.floor(Math.random() * (500 - 50 + 1) + 50)) // Mock viewers
+    } catch (err) {
+      console.error('Erro ao carregar dados da transmissão:', err)
+    } finally {
+      setSessionLoading(false)
+    }
+  }, [])
+
+  const loadInitialMessages = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('live_messages')
+        .select('*, user:user_profiles(username, avatar_url)')
+        .order('created_at', { ascending: false })
+        .limit(60)
+
+      if (error) throw error
+
+      const chronologicalMessages = (data || []).reverse().map((msg) => ({
+        ...msg,
+        createdAt: msg.created_at,
+        user: msg.user as unknown as UserProfile
+      })) as unknown as LiveMessage[]
+
+      setMessages(chronologicalMessages)
+    } catch (error) {
+      console.error('Erro ao carregar chat:', error)
+    } finally {
+      setLoadingMessages(false)
+      setTimeout(() => scrollToBottom('auto'), 100)
+    }
+  }, [scrollToBottom])
 
   // ===== INITIALIZATION & REALTIME SUBSCRIPTIONS =====
   useEffect(() => {
@@ -69,15 +132,26 @@ const LivePage = () => {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'live_messages' },
         async (payload) => {
-          const { data: profile } = await supabase
-            .from('user_profiles')
-            .select('username, avatar_url')
-            .eq('id', payload.new.user_id)
-            .single()
+          const userId = payload.new.user_id
+          let profile = profileCache.current[userId]
+
+          // Otimização: Só busca o perfil no banco se ele não estiver mapeado no cache local
+          if (!profile) {
+            const { data } = await supabase
+              .from('user_profiles')
+              .select('username, avatar_url')
+              .eq('id', userId)
+              .single()
+            
+            if (data) {
+              profile = data as UserProfile
+              profileCache.current[userId] = profile
+            }
+          }
 
           const formattedMessage = {
             ...payload.new,
-            user: profile,
+            user: profile || { username: 'Membro', avatar_url: null },
             createdAt: payload.new.created_at || payload.new.createdAt
           } as unknown as LiveMessage
 
@@ -98,7 +172,7 @@ const LivePage = () => {
       supabase.removeChannel(chatChannel)
       supabase.removeChannel(sessionChannel)
     }
-  }, [])
+  }, [loadSession, loadInitialMessages])
 
   // ===== AUTO-SCROLL MANAGEMENT =====
   useEffect(() => {
@@ -111,75 +185,42 @@ const LivePage = () => {
     } else {
       setShowScrollButton(true)
     }
-  }, [messages])
+  }, [messages, scrollToBottom])
 
-  // ===== HLS/NATIVE STREAMING SUPPORT =====
+  // ===== HLS/NATIVE STREAMING SUPPORT & CLEANUP =====
   useEffect(() => {
     if (!videoRef.current || !activeSession?.stream_url || isYouTubeUrl(activeSession.stream_url)) return
 
     const video = videoRef.current
     const streamUrl = activeSession.stream_url
+    let hls: Hls | null = null
 
     if (video.canPlayType('application/vnd.apple.mpegurl')) {
       video.src = streamUrl
     } else if (Hls.isSupported()) {
-      const hls = new Hls()
+      hls = new Hls()
       hls.loadSource(streamUrl)
       hls.attachMedia(video)
-      return () => hls.destroy()
     }
-  }, [activeSession?.stream_url])
 
-  // ===== DATA LOADING =====
-  const loadSession = async () => {
-    try {
-      const [activeRes, nextRes, prayersRes] = await Promise.all([
-        supabase.from('live_sessions').select('*').eq('is_active', true).limit(1).maybeSingle(),
-        supabase.from('live_sessions').select('*').eq('is_active', false).gte('start_time', new Date().toISOString()).order('start_time', { ascending: true }).limit(1).maybeSingle(),
-        supabase.from('prayer_requests').select('id', { count: 'exact', head: true }),
-      ])
-      setActiveSession(activeRes.data)
-      setNextSession(nextRes.data)
-      setPrayerCount(prayersRes.count || 0)
-      setLiveViewers(Math.floor(Math.random() * (500 - 50 + 1) + 50)) // Mock viewers
-    } catch (err) {
-      console.error('Erro ao carregar dados da transmissão:', err)
-    } finally {
-      setSessionLoading(false)
+    // Cleanup para evitar memory leaks de áudio/vídeo rodando oculto
+    return () => {
+      if (hls) {
+        hls.destroy()
+      }
+      video.removeAttribute('src')
+      video.load()
     }
-  }
+  }, [activeSession?.stream_url, isYouTubeUrl])
 
-  const loadInitialMessages = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('live_messages')
-        .select('*, user:user_profiles(username, avatar_url)')
-        .order('created_at', { ascending: false })
-        .limit(60)
-
-      if (error) throw error
-
-      const chronologicalMessages = (data || []).reverse().map((msg: any) => ({
-        ...msg,
-        createdAt: msg.created_at
-      }))
-
-      setMessages(chronologicalMessages as any)
-    } catch (error) {
-      console.error('Erro ao carregar chat:', error)
-    } finally {
-      setLoadingMessages(false)
-      setTimeout(() => scrollToBottom('auto'), 100)
-    }
-  }
-
-  const sendMessage = async () => {
-    if (!newMessage.trim() || sending) return
+  // ===== ACTIONS =====
+  const sendMessage = useCallback(async () => {
+    if (!newMessage.trim() || sending || !user?.id) return
     setSending(true)
 
     const { error } = await supabase
       .from('live_messages')
-      .insert({ user_id: user!.id, message: newMessage.trim() })
+      .insert({ user_id: user.id, message: newMessage.trim() })
 
     if (error) {
       toast.error('Erro ao enviar mensagem')
@@ -187,25 +228,13 @@ const LivePage = () => {
       setNewMessage('')
     }
     setSending(false)
-  }
+  }, [newMessage, sending, user])
 
   const handleScroll = () => {
     if (!chatContainerRef.current) return
     const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current
     const isNearBottom = scrollHeight - scrollTop - clientHeight < 100
     if (isNearBottom) setShowScrollButton(false)
-  }
-
-  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
-    messagesEndRef.current?.scrollIntoView({ behavior })
-    setShowScrollButton(false)
-  }
-
-  const isYouTubeUrl = (url: string) => url.includes('youtube.com') || url.includes('youtu.be')
-
-  const getYouTubeId = (url: string) => {
-    const match = url.match(/(?:v=|youtu\.be\/|embed\/)([^&\s?]+)/)
-    return match ? match[1] : null
   }
 
   const handlePinMessage = (id: string) => {
@@ -217,7 +246,7 @@ const LivePage = () => {
   }
 
   const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen)
+    setIsFullscreen((prev) => !prev)
   }
 
   // ===== RENDER =====
@@ -295,7 +324,6 @@ const LivePage = () => {
 
             {/* ===== VIDEO PLAYER SECTION ===== */}
             <div ref={playerContainerRef} className="lg:col-span-2 space-y-4">
-              {/* Player Card */}
               <Card className="overflow-hidden border border-border/50 shadow-2xl rounded-2xl bg-black group">
                 <div className="relative aspect-video bg-black">
                   {sessionLoading ? (
@@ -321,7 +349,6 @@ const LivePage = () => {
                           playsInline
                         />
                       )}
-                      {/* Fullscreen Button Overlay */}
                       <button
                         onClick={toggleFullscreen}
                         className="absolute bottom-4 right-4 z-10 p-2 bg-black/60 hover:bg-black/80 rounded-lg text-white transition-all opacity-0 group-hover:opacity-100"
@@ -331,15 +358,12 @@ const LivePage = () => {
                       </button>
                     </>
                   ) : (
-                    /* Offline State - Enhanced */
-                    <div className="absolute inset-0 relative bg-gradient-to-br from-slate-900 via-slate-950 to-black overflow-hidden">
-                      {/* Animated Background */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-black overflow-hidden">
                       <div className="absolute inset-0 opacity-20">
                         <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-primary/30 to-transparent rounded-full blur-3xl animate-pulse"></div>
                         <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-primary/20 to-transparent rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
                       </div>
 
-                      {/* Content */}
                       <div className="absolute inset-0 flex items-center justify-center p-6">
                         <div className="text-center max-w-lg space-y-6 relative z-10">
                           <div className="inline-flex p-5 bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 rounded-3xl text-primary shadow-lg">
@@ -401,11 +425,9 @@ const LivePage = () => {
                 </div>
               </Card>
 
-              {/* Session Metadata Card */}
               {isOnline && activeSession && (
                 <Card className="p-6 border border-border/50 shadow-lg rounded-2xl bg-gradient-to-br from-primary/5 to-transparent">
                   <div className="space-y-4">
-                    {/* Title & Description */}
                     <div>
                       <h3 className="text-xl font-black text-foreground leading-tight">{activeSession.title}</h3>
                       {activeSession.description && (
@@ -415,7 +437,6 @@ const LivePage = () => {
                       )}
                     </div>
 
-                    {/* Metadata Pills */}
                     <div className="flex flex-wrap gap-2 pt-3 border-t border-border/30">
                       {activeSession.preacher_name && (
                         <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-primary/20 to-primary/5 border border-primary/30 rounded-full text-xs font-bold text-primary">
@@ -437,7 +458,6 @@ const LivePage = () => {
                       </div>
                     </div>
 
-                    {/* CTA Buttons */}
                     <div className="flex flex-wrap gap-2 pt-2">
                       <Button size="sm" className="font-bold shadow-md" onClick={() => navigate('/prayer')}>
                         <Heart className="h-4 w-4 mr-1.5 fill-current" /> Pedir Oração
@@ -453,7 +473,6 @@ const LivePage = () => {
                 </Card>
               )}
 
-              {/* Guest CTA Card */}
               {isGuest && (
                 <Card className="p-4 border-l-4 border-l-primary shadow-md rounded-lg bg-gradient-to-r from-primary/5 to-transparent">
                   <div className="flex items-start justify-between gap-4">
@@ -472,8 +491,7 @@ const LivePage = () => {
             {/* ===== LIVE CHAT SECTION ===== */}
             <div className="lg:col-span-1 h-[600px] lg:h-[calc(100vh-220px)]">
               <Card className="flex flex-col border border-border/50 shadow-2xl rounded-2xl overflow-hidden h-full bg-gradient-to-b from-muted/50 to-background/50 backdrop-blur">
-
-                {/* Chat Header */}
+                
                 <div className="p-4 border-b border-border/30 bg-gradient-to-r from-primary/10 to-transparent flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
                     <div className="p-2.5 bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 rounded-lg text-primary">
@@ -492,7 +510,6 @@ const LivePage = () => {
                   )}
                 </div>
 
-                {/* Chat Body */}
                 <div
                   ref={chatContainerRef}
                   onScroll={handleScroll}
@@ -549,7 +566,6 @@ const LivePage = () => {
                           <p className="text-xs text-foreground/85 break-words leading-relaxed">{msg.message}</p>
                         </div>
 
-                        {/* Admin Tools */}
                         {isAdmin && (
                           <div className="absolute right-2 top-2 flex items-center gap-1 bg-background border border-border/50 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-10">
                             <button
@@ -575,7 +591,6 @@ const LivePage = () => {
 
                   <div ref={messagesEndRef} />
 
-                  {/* Scroll to Bottom Button */}
                   {showScrollButton && (
                     <button
                       onClick={() => scrollToBottom('smooth')}
@@ -587,7 +602,6 @@ const LivePage = () => {
                   )}
                 </div>
 
-                {/* Chat Input */}
                 {!isGuest ? (
                   <div className="p-3 border-t border-border/30 bg-gradient-to-t from-background to-background/80 shrink-0 space-y-2">
                     <div className="flex gap-2">
