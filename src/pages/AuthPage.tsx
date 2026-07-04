@@ -313,7 +313,7 @@ const AuthPage = () => {
               </div>
 
               <Button type="button" variant="outline" onClick={() => handleOAuthLogin('google')}
-                className="w-full h-11 rounded-xl font-medium border-border/80 hover:bg-muted/40 transition-colors duration-150 text-xs tracking-normal">
+                className="w-full h-11 rounded-xl font-medium border-border/80 hover:bg-muted/60 transition-colors duration-170 text-xs tracking-normal">
                 <Chrome className="mr-2 h-4 w-4 text-muted-foreground/80" aria-hidden="true" />
                 Continuar com Google
               </Button>
