@@ -74,15 +74,30 @@ export const Logo = memo(({
       role={shouldRenderText ? undefined : 'img'}
     >
       {/* Container do Logo (Mantido o fluxo de imagem original) */}
-      <div className="relative w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full bg-gradient-to-tr from-sky-100/80 via-sky-50/40 to-white ring-1 ring-indigo-950/[0.06] shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.8),0_2px_6px_rgba(15,23,42,0.04)] dark:bg-transparent dark:ring-0 dark:shadow-none">
-        <img
-          src="https://cdn-ai.onspace.ai/onspace/files/XApskyyhcaqpHfkzKVPzqb/kairoslogo.png"
-          alt=""
-          width="32"
-          height="32"
-          decoding="async"
-          className="w-full h-full object-contain drop-shadow-sm select-none pointer-events-none p-1 dark:p-0"
-        />
+      <div 
+        className={`relative ${sizes.container} flex-shrink-0 flex items-center justify-center rounded-full
+          bg-white/80 ring-1 ring-slate-100/50 shadow-sm dark:bg-transparent dark:ring-0 dark:shadow-none
+          ${animated ? 'transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-110 active:scale-95 motion-reduce:transition-none' : ''}`}
+      >
+        {imgFailed ? (
+          <div 
+            className={`w-full h-full rounded-full flex items-center justify-center text-white font-bold tracking-wider shadow-sm ${sizes.fallbackText}`}
+            style={{ backgroundColor: 'var(--logo-fallback-bg, #0A2E4A)' }}
+            aria-hidden="true"
+          >
+            K
+          </div>
+        ) : (
+          <img
+            src={LOGO_URL}
+            alt={shouldRenderText ? "" : `Logo ${brandName}`}
+            width={sizes.px}
+            height={sizes.px}
+            decoding="async"
+            onError={() => setImgFailed(true)}
+            className="w-full h-full object-contain drop-shadow-sm select-none pointer-events-none p-1 dark:p-0"
+          />
+        )}
       </div>
 
       {/* Bloco de Identidade Nominal da Marca */}
