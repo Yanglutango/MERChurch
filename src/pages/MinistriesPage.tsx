@@ -141,10 +141,10 @@ const MinistriesPage = () => {
 
   const openCreate = useCallback(() => {
     setEditingMinistry(null)
-    setNewMinistry({ ...EMPTY_FORM, leaderId: user?.id || '' })
+    setNewMinistry(EMPTY_FORM)
     setColorError(null)
     setEditorOpen(true)
-  }, [user?.id])
+  }, [])
 
   const openEdit = useCallback((m: Ministry) => {
     setEditingMinistry(m)
@@ -236,7 +236,15 @@ const MinistriesPage = () => {
   }
 
   const toggleJoin = useCallback(async (ministryId: string) => {
-    if (!user?.id) return
+    if (!user?.id) {
+      toast.error('Você precisa estar autenticado')
+      return
+    }
+    if (!user.username) {
+      toast.error('Dados de usuário incompletos. Faça login novamente.')
+      console.error('Missing user data:', { userId: user.id, username: user.username })
+      return
+    }
     if (pendingJoinIds.includes(ministryId)) return
     const isJoined = joinedMinistries.includes(ministryId)
 
@@ -261,7 +269,16 @@ const MinistriesPage = () => {
           .from('ministry_members')
           .insert({ ministry_id: ministryId, user_id: user.id })
 
-        if (error) throw error
+        if (error) {
+          console.error('Insert error details:', {
+            message: error.message,
+            code: error.code,
+            status: error.status,
+            details: error.details,
+            hint: error.hint
+          })
+          throw error
+        }
         toast.success('Bem-vindo ao ministério!')
 
         const currentMin = ministries.find(m => m.id === ministryId)
@@ -269,14 +286,31 @@ const MinistriesPage = () => {
       }
 
       // Recarrega a lista para reflectir contagem de membros actualizada
-      loadMinistries()
+      await loadMinistries()
     } catch (err: any) {
-      console.error('toggleJoin error:', err)
+      console.error('toggleJoin full error:', {
+        message: err.message,
+        code: err.code,
+        status: err.status,
+        details: err.details,
+        hint: err.hint,
+        stack: err.stack
+      })
       // Reverte o optimistic update em caso de falha
       setJoinedMinistries(prev =>
         isJoined ? [...prev, ministryId] : prev.filter(id => id !== ministryId)
       )
-      toast.error(err.message || 'Erro de comunicação com o servidor')
+      
+      // Mensagem de erro mais específica
+      if (err.message?.includes('duplicate') || err.code === '23505') {
+        toast.error('Você já é membro deste ministério')
+      } else if (err.code === 'PGRST116' || err.code === '42501') {
+        toast.error('Permissão negada. Verifique as configurações de acesso.')
+      } else if (err.status === 401) {
+        toast.error('Sua sessão expirou. Faça login novamente.')
+      } else {
+        toast.error(err.message || 'Erro ao processar sua inscrição. Tente novamente.')
+      }
     } finally {
       setPendingJoinIds(prev => prev.filter(id => id !== ministryId))
     }
@@ -391,6 +425,7 @@ const MinistriesPage = () => {
                   onEdit={(m) => { openEdit(m) }}
                   onDelete={setDeleteTargetId}
                   onAuthNavigate={() => navigate('/auth')}
+                  onViewDetails={(m) => setSelectedMinistryForDetails(m)}
                 />
               </div>
             ))}
