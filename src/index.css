@@ -6,7 +6,8 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    /* Light mode - improved for eye comfort */
+    --background: 240 20% 97%;
     --foreground: 205 50% 12%;
     --card: 0 0% 100%;
     --card-foreground: 205 50% 12%;
@@ -16,13 +17,13 @@
     --primary-foreground: 0 0% 100%;
     --secondary: 192 40% 50%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 205 30% 97%;
+    --muted: 205 25% 88%;
     --muted-foreground: 205 15% 50%;
     --accent: 40 55% 60%;
     --accent-foreground: 205 60% 15%;
     --destructive: 0 70% 55%;
     --destructive-foreground: 0 0% 100%;
-    --border: 205 20% 92%;
+    --border: 205 20% 88%;
     --input: 205 20% 92%;
     --ring: 192 40% 50%;
     --radius: 0.5rem;
