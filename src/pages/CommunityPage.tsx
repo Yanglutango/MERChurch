@@ -11,7 +11,7 @@ import { useRealTime } from '../hooks/useRealTime'
 import { logActivity } from '../lib/activityLogger'
 import { 
   Heart, MessageSquare, Share2, Image, Send, 
-  Search, TrendingUp, Sparkles, UserPlus, X, Flame 
+  Search, TrendingUp, Sparkles, UserPlus, X, Flame, Trash2, Loader2
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { LoadingState } from '../components/shared/LoadingState'
@@ -43,12 +43,16 @@ const CommunityPage = () => {
   const [imageInput, setImageInput] = useState('') // URL direta ou base64 de imagem
   const [showImageField, setShowImageField] = useState(false)
   const [publishing, setPublishing] = useState(false)
+  const [uploadingImage, setUploadingImage] = useState(false)
   
   // Comments state
   const [commentsByPost, setCommentsByPost] = useState<Record<string, Comment[]>>({})
   const [showCommentsFor, setShowCommentsFor] = useState<Record<string, boolean>>({})
   const [commentInput, setCommentInput] = useState<Record<string, string>>({})
   const [loadingComments, setLoadingComments] = useState<Record<string, boolean>>({})
+  
+  // Delete state
+  const [deletingPostId, setDeletingPostId] = useState<string | null>(null)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const isGuest = user?.role === 'guest'
@@ -177,6 +181,59 @@ const CommunityPage = () => {
     }
   }
 
+  const handleImageUpload = async (file: File) => {
+    try {
+      setUploadingImage(true)
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`
+      const filePath = `community-posts/${user!.id}/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('public')
+        .upload(filePath, file, { upsert: false })
+
+      if (uploadError) throw uploadError
+
+      const { data: publicUrlData } = supabase.storage
+        .from('public')
+        .getPublicUrl(filePath)
+
+      setImageInput(publicUrlData.publicUrl)
+      toast.success('Imagem carregada com sucesso!')
+    } catch (error) {
+      console.error('Error uploading image:', error)
+      toast.error('Erro ao fazer upload da imagem')
+    } finally {
+      setUploadingImage(false)
+    }
+  }
+
+  const handleImageIconClick = () => {
+    setShowImageField(!showImageField)
+    if (!showImageField && fileInputRef.current) {
+      fileInputRef.current.click()
+    }
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validate file size (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Arquivo muito grande. Máximo 5MB.')
+        return
+      }
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error('Por favor, selecione um arquivo de imagem válido')
+        return
+      }
+
+      handleImageUpload(file)
+    }
+  }
+
   const handleCreatePost = async () => {
     if (!newPostContent.trim() && !imageInput.trim()) {
       toast.error('Escreva algo ou adicione uma imagem para publicar!')
@@ -222,6 +279,70 @@ const CommunityPage = () => {
     }
   }
 
+  const handleDeletePost = async (postId: string, imageUrl: string | null) => {
+    if (!confirm('Tem certeza que deseja deletar este post?')) {
+      return
+    }
+
+    try {
+      setDeletingPostId(postId)
+
+      // Delete image if exists
+      if (imageUrl) {
+        try {
+          const urlParts = imageUrl.split('/storage/v1/object/public/public/')
+          if (urlParts.length > 1) {
+            const filePath = urlParts[1]
+            await supabase.storage.from('public').remove([filePath])
+          }
+        } catch (imgError) {
+          console.error('Error deleting image:', imgError)
+          // Continue with post deletion even if image deletion fails
+        }
+      }
+
+      // Delete post
+      const { error } = await supabase
+        .from('community_posts')
+        .delete()
+        .eq('id', postId)
+        .eq('user_id', user!.id)
+
+      if (error) throw error
+
+      // Remove from local state
+      setPosts(prev => prev.filter(p => p.id !== postId))
+
+      // Delete associated comments
+      await supabase
+        .from('post_comments')
+        .delete()
+        .eq('post_id', postId)
+
+      // Delete associated likes
+      await supabase
+        .from('post_likes')
+        .delete()
+        .eq('post_id', postId)
+
+      toast.success('Post deletado com sucesso')
+
+      await logActivity({
+        type: 'post_deleted',
+        actorId: user!.id,
+        actorName: user!.username,
+        title: 'Post deletado',
+        referenceId: postId,
+        referenceType: 'post'
+      })
+    } catch (error) {
+      console.error('Error deleting post:', error)
+      toast.error('Não foi possível deletar o post')
+    } finally {
+      setDeletingPostId(null)
+    }
+  }
+
   const handleLike = async (postId: string, hasLiked: boolean) => {
     if (isGuest) {
       toast.error('Crie uma conta para interagir com as publicações')
@@ -254,11 +375,6 @@ const CommunityPage = () => {
       ))
       console.error('Like error:', error)
     }
-  }
-
-  // Simulação/Tratamento de upload local para link visual (ou input de URL de imagem)
-  const handleImageIconClick = () => {
-    setShowImageField(!showImageField)
   }
 
   const navigateToProfile = (userId?: string) => {
@@ -314,8 +430,8 @@ const CommunityPage = () => {
                     onClick={() => navigateToProfile()} 
                     className="h-9 w-9 rounded-full bg-[#0A2E4A] text-white flex items-center justify-center font-bold text-sm shadow-sm overflow-hidden flex-shrink-0 transition-opacity hover:opacity-80"
                   >
-                    {user?.avatar_url ? (
-                      <img src={user.avatar_url} alt={user.username} className="h-full w-full object-cover" />
+                    {user?.avatar ? (
+                      <img src={user.avatar} alt={user.username} className="h-full w-full object-cover" />
                     ) : (
                       user?.username?.charAt(0).toUpperCase()
                     )}
@@ -334,14 +450,23 @@ const CommunityPage = () => {
                 {showImageField && (
                   <div className="relative flex items-center gap-2 bg-muted/50 p-2 rounded-xl border border-border/40 animate-in fade-in slide-in-from-top-1 duration-200">
                     <Image className="h-4 w-4 text-muted-foreground ml-1" />
-                    <Input 
-                      value={imageInput}
-                      onChange={e => setImageInput(e.target.value)}
-                      placeholder="Cole a URL de uma imagem da internet aqui..." 
-                      className="h-7 border-none bg-transparent text-xs focus-visible:ring-0 p-0 flex-1"
-                    />
-                    {imageInput && (
-                      <img src={imageInput} className="h-7 w-7 rounded object-cover border border-border/40" alt="Preview" />
+                    {uploadingImage ? (
+                      <div className="flex items-center gap-2 flex-1">
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">Enviando imagem...</span>
+                      </div>
+                    ) : (
+                      <>
+                        <Input 
+                          value={imageInput}
+                          onChange={e => setImageInput(e.target.value)}
+                          placeholder="Cole a URL de uma imagem ou use o botão para fazer upload..." 
+                          className="h-7 border-none bg-transparent text-xs focus-visible:ring-0 p-0 flex-1"
+                        />
+                        {imageInput && (
+                          <img src={imageInput} className="h-7 w-7 rounded object-cover border border-border/40" alt="Preview" onError={() => setImageInput('')} />
+                        )}
+                      </>
                     )}
                     <button onClick={() => { setShowImageField(false); setImageInput('') }} className="p-1 hover:bg-muted rounded-lg text-muted-foreground">
                       <X className="h-3.5 w-3.5" />
@@ -349,15 +474,24 @@ const CommunityPage = () => {
                   </div>
                 )}
 
+                <input 
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+
                 <div className="flex items-center justify-between pt-2 border-t border-border/40">
                   <Button 
                     type="button"
                     variant="ghost" 
                     size="sm" 
                     onClick={handleImageIconClick}
+                    disabled={uploadingImage}
                     className={`h-8 rounded-xl px-3 text-xs font-medium transition-colors ${showImageField ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
                   >
-                    <Image className="h-4 w-4 mr-1.5 text-emerald-500" /> Adicionar Foto
+                    <Image className="h-4 w-4 mr-1.5 text-emerald-500" /> {uploadingImage ? 'Enviando...' : 'Adicionar Foto'}
                   </Button>
                   <Button 
                     onClick={handleCreatePost}
@@ -378,6 +512,7 @@ const CommunityPage = () => {
               ) : (
                 filteredPosts.map(post => {
                   const hasAvatar = !!post.user?.avatar_url
+                  const isOwnPost = user?.id === post.user_id
                   return (
                     <Card key={post.id} className="p-4 border border-border/40 bg-card rounded-2xl shadow-sm space-y-3.5">
                       {/* Top Meta Header */}
@@ -405,6 +540,21 @@ const CommunityPage = () => {
                             </span>
                           </div>
                         </div>
+                        {isOwnPost && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleDeletePost(post.id, post.image_url)}
+                            disabled={deletingPostId === post.id}
+                            className="h-8 w-8 p-0 rounded-xl text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          >
+                            {deletingPostId === post.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </Button>
+                        )}
                       </div>
 
                       {/* Content Section */}
@@ -492,8 +642,8 @@ const CommunityPage = () => {
                               {!isGuest ? (
                                 <div className="flex items-start gap-3">
                                   <div className="h-9 w-9 rounded-full bg-[#0A2E4A] text-white flex items-center justify-center font-bold text-sm overflow-hidden flex-shrink-0">
-                                    {user?.avatar_url ? (
-                                      <img src={user.avatar_url} alt={user.username} className="h-full w-full object-cover" />
+                                    {user?.avatar ? (
+                                      <img src={user.avatar} alt={user.username} className="h-full w-full object-cover" />
                                     ) : (
                                       user?.username?.charAt(0).toUpperCase()
                                     )}
