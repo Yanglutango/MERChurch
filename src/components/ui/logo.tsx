@@ -42,11 +42,12 @@ export const Logo = memo(({
       {/* Container do Logo / Ícone */}
       <div 
         className={`relative ${sizes.container} flex-shrink-0 flex items-center justify-center rounded-full
+          bg-white/80 ring-1 ring-slate-100 shadow-sm dark:bg-transparent dark:ring-0 dark:shadow-none
           ${animated ? 'transition-transform duration-300 ease-out hover:scale-105 motion-reduce:transition-none' : ''}`}
       >
         {imgFailed ? (
           <div 
-            className={`w-full h-full rounded-full bg-gradient-to-br from-[#0A2E4A] to-[#4A90A4] 
+            className={`w-full h-full rounded-full bg-gradient-to-br from-[#072a40] via-[#0f6b8e] to-[#b87e3d] dark:from-[#0A2E4A] dark:via-[#4A90A4] dark:to-[#D4A574]
               flex items-center justify-center text-white font-bold tracking-wider shadow-sm ${sizes.fallbackText}`}
             aria-hidden="true"
           >
@@ -60,7 +61,7 @@ export const Logo = memo(({
             height={sizes.px}
             decoding="async"
             onError={() => setImgFailed(true)}
-            className="w-full h-full object-contain drop-shadow-sm select-none pointer-events-none"
+            className="w-full h-full object-contain drop-shadow-sm select-none pointer-events-none p-1 dark:p-0"
           />
         )}
       </div>
@@ -68,10 +69,10 @@ export const Logo = memo(({
       {/* Bloco de Identidade Nominal da Marca */}
       {shouldRenderText && (
         <div className="flex flex-col leading-none py-0.5 px-[2px] items-start justify-center">
-          <span className={`${sizes.text} font-bold tracking-tight bg-gradient-to-r from-[#0A2E4A] via-[#4A90A4] to-[#D4A574] bg-clip-text text-transparent pb-0.5`}>
+          <span className={`${sizes.text} font-bold tracking-tight bg-gradient-to-r from-[#072a40] via-[#0f6b8e] to-[#b87e3d] dark:from-[#0A2E4A] dark:via-[#4A90A4] dark:to-[#D4A574] bg-clip-text text-transparent pb-0.5`}>
             {brandName}
           </span>
-          <span className={`${sizes.subtitle} text-muted-foreground font-semibold uppercase tracking-widest block mt-0.5`}>
+          <span className={`${sizes.subtitle} font-semibold uppercase tracking-widest block mt-0.5 text-slate-700 dark:text-slate-300`}>
             {t('brand.church')}
           </span>
         </div>
