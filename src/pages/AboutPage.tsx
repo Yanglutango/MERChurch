@@ -175,8 +175,9 @@ const AboutPage = () => {
   const schedules = [
     { day: getTitle('schedule_sunday', 'Domingo'), time: getContent('schedule_sunday', 'Culto de Celebração: 09:00 e 18:00') },
     { day: getTitle('schedule_tuesday', 'Terça-feira'), time: getContent('schedule_tuesday', 'Culto de Adoração: 17:00') },
-    { day: getTitle('schedule_wednesday', 'Quarta & Sexta-feira'), time: getContent('schedule_wednesday', 'Culto de Palavra: 16:30') },
+    { day: getTitle('schedule_wednesday', 'Quarta-feira'), time: getContent('schedule_wednesday', 'Culto de Palavra: 16:30') },
     { day: getTitle('schedule_thursday', 'Quinta-feira'), time: getContent('schedule_thursday', 'Culto de Oração: 16:30') },
+    { day: getTitle('schedule_friday', 'Sexta-feira'), time: getContent('schedule_friday', 'Culto de Palavra: 16:30') },
     { day: getTitle('schedule_saturday', 'Sábado'), time: getContent('schedule_saturday', 'Culto de Jovens: 15:00') },
   ]
 
