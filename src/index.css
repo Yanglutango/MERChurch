@@ -62,6 +62,22 @@
     transition: background-color 0.3s ease, color 0.3s ease;
   }
 
+  /* Hide vertical scrollbar globally but keep scrolling functional */
+  html, body {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch; /* smooth scrolling on iOS */
+    -ms-overflow-style: none; /* IE and Edge Legacy */
+    scrollbar-width: none; /* Firefox */
+  }
+
+  /* Hide scrollbar in WebKit browsers (Chrome, Safari, Edge Chromium) */
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    background: transparent;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
     font-family: Inter, system-ui, -apple-system, sans-serif;
