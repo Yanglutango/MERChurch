@@ -93,16 +93,17 @@ const AuthPage = () => {
   const visibleRole = role === 'admin' ? 'admin' : role
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-background relative overflow-hidden font-sans antialiased">
+    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-gradient-to-br from-slate-100 via-blue-50/40 to-teal-50/30 dark:bg-background dark:bg-none dark:from-transparent relative overflow-hidden font-sans antialiased">
       
       {/* ── Background Gradients ── */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-[120px]" />
-        <div className="absolute -bottom-40 -right-40 w-[600px] h-[600px] bg-[#4A90A4]/5 rounded-full blur-[120px]" />
+        <div className="absolute -top-32 -left-32 w-[500px] h-[500px] bg-[#0A2E4A]/6 dark:bg-blue-500/5 rounded-full blur-[100px]" />
+        <div className="absolute -bottom-32 -right-32 w-[500px] h-[500px] bg-[#4A90A4]/8 dark:bg-[#4A90A4]/5 rounded-full blur-[100px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-gradient-to-r from-blue-100/20 via-teal-100/15 to-transparent dark:hidden rounded-full blur-3xl" />
       </div>
 
-      <Card className="w-full max-w-[480px] relative z-10 bg-card/60 dark:bg-card/40 backdrop-blur-md border border-border/50 shadow-sm rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-md">
-        <div className="p-10 sm:p-12">
+      <Card className="w-full max-w-[440px] relative z-10 bg-white dark:bg-card/40 border border-slate-200 dark:border-border/50 shadow-xl shadow-slate-200/50 dark:shadow-none rounded-2xl overflow-hidden">
+        <div className="p-8 sm:p-10">
           
           {/* ── Header ── */}
           <div className="text-center mb-9">
@@ -112,29 +113,29 @@ const AuthPage = () => {
             <h1 className="text-2xl font-bold tracking-tight text-[#0A2E4A] dark:text-zinc-100 font-sans">
               KAIRÓS
             </h1>
-            <p className="text-[11px] font-medium tracking-wider uppercase text-muted-foreground/80 mt-1">
+            <p className="text-[11px] font-semibold tracking-wider uppercase text-[#4A90A4] dark:text-muted-foreground/70 mt-1">
               Missão Evangélica da Reconciliação
             </p>
 
             <div className="mt-6 space-y-1">
-              <h2 className="text-lg font-medium text-foreground tracking-tight">
+              <h2 className="text-lg font-semibold text-[#0A2E4A] dark:text-foreground tracking-tight">
                 {isLogin ? 'Bem-vindo de volta' : 'Crie sua conta'}
               </h2>
-              <p className="text-xs text-muted-foreground/80">
+              <p className="text-xs text-slate-500 dark:text-muted-foreground/80">
                 {isLogin ? 'Continue sua jornada de fé' : 'Comece sua jornada conosco'}
               </p>
             </div>
           </div>
 
           {/* ── Role Selector ── */}
-          <div className="grid grid-cols-2 gap-1 mb-7 p-1 bg-muted/60 dark:bg-muted/40 rounded-xl" role="group" aria-label="Tipo de acesso">
+          <div className="grid grid-cols-2 gap-1 mb-6 p-1 bg-slate-100 dark:bg-muted/40 rounded-xl" role="group" aria-label="Tipo de acesso">
             <button
               type="button"
               onClick={() => { setRole('member'); setShowAdminAccess(false); setAdminKey('') }}
               className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg font-medium text-xs transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-offset-0 focus-visible:ring-ring ${
                 visibleRole === 'member' || role === 'admin'
-                  ? 'bg-background text-[#0A2E4A] dark:text-zinc-100 shadow-sm font-semibold'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-background/40 dark:hover:bg-background/10'
+                  ? 'bg-white dark:bg-background text-[#0A2E4A] dark:text-zinc-100 shadow-sm font-semibold border border-slate-200/80 dark:border-transparent'
+                  : 'text-slate-500 dark:text-muted-foreground hover:text-[#0A2E4A] dark:hover:text-foreground hover:bg-white/60 dark:hover:bg-background/10'
               }`}
               aria-pressed={role === 'member' || role === 'admin'}
             >
@@ -147,8 +148,8 @@ const AuthPage = () => {
               onClick={() => { setRole('guest'); setShowAdminAccess(false); setAdminKey('') }}
               className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg font-medium text-xs transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-offset-0 focus-visible:ring-ring ${
                 role === 'guest'
-                  ? 'bg-background text-[#0A2E4A] dark:text-zinc-100 shadow-sm font-semibold'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-background/40 dark:hover:bg-background/10'
+                  ? 'bg-white dark:bg-background text-[#0A2E4A] dark:text-zinc-100 shadow-sm font-semibold border border-slate-200/80 dark:border-transparent'
+                  : 'text-slate-500 dark:text-muted-foreground hover:text-[#0A2E4A] dark:hover:text-foreground hover:bg-white/60 dark:hover:bg-background/10'
               }`}
               aria-pressed={role === 'guest'}
             >
@@ -201,7 +202,7 @@ const AuthPage = () => {
 
             {/* Email */}
             <div className="space-y-1.5">
-              <Label htmlFor="identifier" className="text-xs font-medium text-foreground/80">
+              <Label htmlFor="identifier" className="text-xs font-semibold text-slate-700 dark:text-foreground/80">
                 {isLogin ? 'Email, Usuário ou Telefone' : 'Email'}
               </Label>
               <div className="relative group">
@@ -231,7 +232,7 @@ const AuthPage = () => {
 
             {/* Password */}
             <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-xs font-medium text-foreground/80">Senha</Label>
+              <Label htmlFor="password" className="text-xs font-semibold text-slate-700 dark:text-foreground/80">Senha</Label>
               <div className="relative group">
                 <Lock className="absolute left-3.5 top-3.5 h-4 w-4 text-muted-foreground/60 group-hover:text-muted-foreground transition-colors duration-200" aria-hidden="true" />
                 <Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)}
@@ -289,17 +290,17 @@ const AuthPage = () => {
           {/* ── OAuth ── */}
           {isLogin && (role === 'member' || role === 'admin') && (
             <div className="animate-in fade-in zoom-in-95 duration-200">
-              <div className="relative my-7">
+              <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                  <div className="w-full border-t border-border/60" />
+                  <div className="w-full border-t border-slate-200 dark:border-border/60" />
                 </div>
                 <div className="relative flex justify-center text-[11px] uppercase tracking-wider">
-                  <span className="px-3 bg-card text-muted-foreground/80">Ou continue com</span>
+                  <span className="px-3 bg-white dark:bg-card text-slate-400 dark:text-muted-foreground/80">Ou continue com</span>
                 </div>
               </div>
 
               <Button type="button" variant="outline" onClick={() => handleOAuthLogin('google')}
-                className="w-full h-12 rounded-xl font-medium border-border/80 text-xs tracking-normal transform transition-all duration-200 ease-out hover:bg-muted hover:border-border hover:-translate-y-0.5 hover:shadow-sm active:translate-y-0"
+                className="w-full h-12 rounded-xl font-medium border-slate-200 dark:border-border/80 text-xs text-slate-700 dark:text-foreground bg-white dark:bg-transparent hover:bg-slate-50 dark:hover:bg-muted transform transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-sm active:translate-y-0"
               >
                 <Chrome className="mr-2 h-4 w-4 text-muted-foreground/80" aria-hidden="true" />
                 Continuar com Google
@@ -308,8 +309,8 @@ const AuthPage = () => {
           )}
 
           {/* ── Toggle Login / Register ── */}
-          <div className="mt-8 text-center text-xs">
-            <span className="text-muted-foreground">
+          <div className="mt-7 text-center text-xs">
+            <span className="text-slate-500 dark:text-muted-foreground">
               {isLogin ? 'Não tem uma conta?' : 'Já tem uma conta?'}
             </span>{' '}
             <button

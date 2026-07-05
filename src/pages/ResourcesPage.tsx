@@ -20,7 +20,8 @@ import {
   BookOpen, Download, Search, Plus, Trash2, FileText,
   BookMarked, Heart, GraduationCap, Upload, X, Shield,
   FolderOpen, HardDrive, RefreshCw, LucideIcon, AlertCircle,
-  CheckCircle2, Loader2,
+  CheckCircle2, Loader2, Music, Video as VideoIcon, Image as ImageIcon, Archive, FileSpreadsheet,
+  Presentation, FileCode,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { SpiritualResource } from '../types'
@@ -30,10 +31,6 @@ import { LoadingState } from '../components/shared/LoadingState'
 import { AdminAction } from '../components/shared/AdminAction'
 import { GuestPrompt } from '../components/shared/GuestPrompt'
 
-// Configuração estruturada por categoria — substitui a indexação por posição
-// de string (`gradientParts[2]`), que quebrava silenciosamente se alguém
-// editasse uma única entrada de `categoryColors` sem actualizar as outras.
-// Já inclui variantes `dark:` que faltavam em todos os badges.
 const CATEGORY_CONFIG: Record<SpiritualResource['category'], {
   icon: LucideIcon
   label: string
@@ -75,9 +72,31 @@ const CATEGORY_CONFIG: Record<SpiritualResource['category'], {
 const getCategoryConfig = (category: SpiritualResource['category']) =>
   CATEGORY_CONFIG[category] || CATEGORY_CONFIG.other
 
-// Tipos MIME aceitos
-const ACCEPTED_EXTENSIONS = ['.pdf', '.doc', '.docx', '.epub']
-const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+// Função para determinar o ícone de acordo com o tipo de arquivo
+const getFileIcon = (fileType: string | undefined): LucideIcon => {
+  const ext = (fileType || '').toLowerCase()
+  if (['mp3', 'wav', 'ogg', 'm4a', 'aac'].includes(ext)) return Music
+  if (['mp4', 'mov', 'avi', 'mkv', 'webm'].includes(ext)) return VideoIcon
+  if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)) return ImageIcon
+  if (['zip', 'rar', '7z'].includes(ext)) return Archive
+  if (['xls', 'xlsx', 'ods', 'csv'].includes(ext)) return FileSpreadsheet
+  if (['ppt', 'pptx', 'odp'].includes(ext)) return Presentation
+  if (['js', 'ts', 'html', 'css', 'json'].includes(ext)) return FileCode
+  return FileText
+}
+
+// Todos os tipos de arquivo aceitos — plataforma ministerial completa
+const ACCEPTED_EXTENSIONS = [
+  '.pdf', '.doc', '.docx', '.epub', '.odt', '.txt', '.rtf',
+  '.ppt', '.pptx', '.odp',
+  '.xls', '.xlsx', '.ods', '.csv',
+  '.mp3', '.wav', '.ogg', '.m4a', '.aac',
+  '.mp4', '.mov', '.avi', '.mkv', '.webm',
+  '.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg',
+  '.zip', '.rar', '.7z',
+]
+const ACCEPTED_MIME_ACCEPT = ACCEPTED_EXTENSIONS.join(',')
+const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
 
 const ResourcesPage = () => {
   const navigate = useNavigate()
@@ -101,24 +120,19 @@ const ResourcesPage = () => {
   const [newResource, setNewResource] = useState({
     title: '',
     description: '',
-    category: 'study' as const,
+    category: 'study' as SpiritualResource['category'],
     tags: '',
   })
 
   const isGuest = user?.role === 'guest'
   const isAdmin = user?.role === 'admin'
+  // Todos os membros autenticados podem contribuir
+  const canUpload = !!user && !isGuest
+
+  useEffect(() => { loadResources() }, [])
 
   useEffect(() => {
-    loadResources()
-  }, [])
-
-  // Cleanup ao desmontar ou fechar dialog
-  useEffect(() => {
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort()
-      }
-    }
+    return () => { abortControllerRef.current?.abort() }
   }, [])
 
   const loadResources = async () => {
@@ -134,97 +148,60 @@ const ResourcesPage = () => {
         toast.error('Erro ao carregar acervo de recursos')
         return
       }
-
       setResources(data as any)
     } finally {
       setLoading(false)
     }
   }
 
-  // useMemo em vez de useEffect+state extra: elimina um ciclo de render
-  // por cada tecla digitada na busca (antes: render → effect → setState →
-  // render de novo; agora: cálculo directo no mesmo render).
   const filteredResources = useMemo(() => {
     let filtered = resources
-
-    if (categoryFilter !== 'all') {
-      filtered = filtered.filter(r => r.category === categoryFilter)
-    }
-
+    if (categoryFilter !== 'all') filtered = filtered.filter(r => r.category === categoryFilter)
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
-      filtered = filtered.filter(r => {
-        const titleMatch = r.title.toLowerCase().includes(query)
-        const descriptionMatch = r.description?.toLowerCase().includes(query)
-        const tagsMatch = Array.isArray(r.tags) && r.tags.some(tag => 
-          String(tag).toLowerCase().includes(query)
-        )
-        return titleMatch || descriptionMatch || tagsMatch
-      })
+      filtered = filtered.filter(r =>
+        r.title.toLowerCase().includes(query) ||
+        r.description?.toLowerCase().includes(query) ||
+        (Array.isArray(r.tags) && r.tags.some(tag => String(tag).toLowerCase().includes(query)))
+      )
     }
-
     return filtered
   }, [resources, searchQuery, categoryFilter])
 
   const validateFile = useCallback((file: File | undefined): string | null => {
     if (!file) return null
-
-    // Validar extensão
     const fileExtension = '.' + (file.name.split('.').pop() || '').toLowerCase()
     if (!ACCEPTED_EXTENSIONS.includes(fileExtension)) {
-      return 'Formato não aceito. Use PDF, DOC, DOCX ou EPUB.'
+      return `Formato "${fileExtension}" não é suportado. Consulte os tipos aceitos abaixo.`
     }
-
-    // Validar tamanho
     if (file.size > MAX_FILE_SIZE) {
-      return `O arquivo deve ter no máximo ${MAX_FILE_SIZE / (1024 * 1024)}MB`
+      return `O arquivo excede o limite de ${MAX_FILE_SIZE / (1024 * 1024)}MB.`
     }
-
     return null
   }, [])
 
   const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
-
     const error = validateFile(file)
-    if (error) {
-      setFileValidationError(error)
-      setSelectedFile(null)
-      toast.error(error)
-      return
-    }
-
+    if (error) { setFileValidationError(error); setSelectedFile(null); toast.error(error); return }
     setFileValidationError(null)
     setSelectedFile(file)
   }, [validateFile])
 
   const handleDrag = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true)
-    } else if (e.type === "dragleave") {
-      setDragActive(false)
-    }
+    e.preventDefault(); e.stopPropagation()
+    if (e.type === 'dragenter' || e.type === 'dragover') setDragActive(true)
+    else if (e.type === 'dragleave') setDragActive(false)
   }, [])
 
   const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
+    e.preventDefault(); e.stopPropagation()
     setDragActive(false)
-
     const file = e.dataTransfer.files?.[0]
     if (!file) return
-
     const error = validateFile(file)
-    if (error) {
-      setFileValidationError(error)
-      setSelectedFile(null)
-      toast.error(error)
-      return
-    }
-
+    if (error) { setFileValidationError(error); setSelectedFile(null); toast.error(error); return }
     setFileValidationError(null)
     setSelectedFile(file)
   }, [validateFile])
@@ -234,13 +211,8 @@ const ResourcesPage = () => {
       toast.error('Preencha o título e selecione um arquivo válido')
       return
     }
-
-    // Validação final
     const validationError = validateFile(selectedFile)
-    if (validationError) {
-      toast.error(validationError)
-      return
-    }
+    if (validationError) { toast.error(validationError); return }
 
     setUploading(true)
     setUploadProgress(0)
@@ -248,23 +220,19 @@ const ResourcesPage = () => {
 
     try {
       const fileExt = selectedFile.name.split('.').pop()?.toLowerCase()
-      const fileName = `${Date.now()}-${selectedFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
-      const filePath = `${fileName}`
+      const safeName = selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+      const filePath = `${user!.id}/${Date.now()}-${safeName}`
 
-      // Simular progresso de upload (Supabase não expõe evento de progresso nativamente)
       const progressInterval = setInterval(() => {
-        setUploadProgress(prev => Math.min(prev + Math.random() * 30, 90))
-      }, 300)
+        setUploadProgress(prev => Math.min(prev + Math.random() * 20, 88))
+      }, 400)
 
       const { error: uploadError } = await supabase.storage
         .from('spiritual-resources')
-        .upload(filePath, selectedFile, {
-          cacheControl: '3600',
-          upsert: false,
-        })
+        .upload(filePath, selectedFile, { cacheControl: '3600', upsert: false })
 
       clearInterval(progressInterval)
-      setUploadProgress(95)
+      setUploadProgress(93)
 
       if (uploadError) throw uploadError
 
@@ -272,10 +240,7 @@ const ResourcesPage = () => {
         .from('spiritual-resources')
         .getPublicUrl(filePath)
 
-      const tags = newResource.tags
-        .split(',')
-        .map(t => t.trim())
-        .filter(Boolean)
+      const tags = newResource.tags.split(',').map(t => t.trim()).filter(Boolean)
 
       const { error: dbError } = await supabase
         .from('spiritual_resources')
@@ -294,7 +259,7 @@ const ResourcesPage = () => {
       if (dbError) throw dbError
 
       setUploadProgress(100)
-      await new Promise(resolve => setTimeout(resolve, 500)) // Mostrar 100% por um pouco
+      await new Promise(resolve => setTimeout(resolve, 500))
 
       toast.success('Recurso publicado com sucesso no acervo!')
       setDialogOpen(false)
@@ -305,130 +270,63 @@ const ResourcesPage = () => {
       loadResources()
     } catch (error: any) {
       console.error('Upload error:', error)
-      toast.error(error.message || 'Erro ao efetuar publicação do arquivo')
+      toast.error(error.message || 'Erro ao publicar o arquivo')
       setUploadProgress(0)
     } finally {
       setUploading(false)
-      if (abortControllerRef.current) {
-        abortControllerRef.current = null
-      }
+      abortControllerRef.current = null
     }
   }
 
   const handleDownload = async (resource: SpiritualResource) => {
     const resourceId = resource.id
-
-    // Verificar se já está baixando
-    if (downloadingIds.has(resourceId)) {
-      toast.info('Este arquivo já está sendo baixado')
-      return
-    }
-
-    // Atualização optimista local — evita recarregar toda a lista de
-    // recursos da rede só para reflectir +1 num contador.
+    if (downloadingIds.has(resourceId)) { toast.info('Este arquivo já está sendo baixado'); return }
     setDownloadingIds(prev => new Set([...prev, resourceId]))
 
     try {
-      // Corrigir: usar file_url do banco que mapeia para fileUrl
       const downloadUrl = (resource as any).file_url || (resource as any).fileUrl
-      if (!downloadUrl) {
-        toast.error('URL de download não disponível')
-        return
-      }
-
+      if (!downloadUrl) { toast.error('URL de download não disponível'); return }
       window.open(downloadUrl, '_blank')
-      toast.success('Download iniciado com sucesso!')
+      toast.success('Download iniciado!')
 
-      // Usar RPC para incrementar de forma atômica (se disponível)
-      const { error: rpcError } = await supabase.rpc('increment_resource_downloads', {
-        resource_id: resourceId,
-      })
+      // Fallback update sem RPC customizada que pode não existir
+      await supabase
+        .from('spiritual_resources')
+        .update({ downloads_count: ((resource as any).downloads_count || 0) + 1 })
+        .eq('id', resourceId)
 
-      if (rpcError) {
-        // Não bloqueia o download (já aconteceu) — só regista.
-        console.warn('Não foi possível registar o download no servidor (RPC):', rpcError)
-        // Fallback: tentar update direto
-        await supabase
-          .from('spiritual_resources')
-          .update({ downloads_count: ((resource as any).downloads_count || 0) + 1 })
-          .eq('id', resourceId)
-      }
-
-      // Atualizar estado local
       setResources(prev => prev.map(r =>
-        r.id === resourceId 
-          ? { ...r, downloads_count: ((r as any).downloads_count || 0) + 1 } 
-          : r
+        r.id === resourceId ? { ...r, downloads_count: ((r as any).downloads_count || 0) + 1 } : r
       ))
     } finally {
-      setDownloadingIds(prev => {
-        const newSet = new Set(prev)
-        newSet.delete(resourceId)
-        return newSet
-      })
-    }
-  }
-
-  const deleteResourceFile = async (filePath: string): Promise<boolean> => {
-    try {
-      const { error } = await supabase.storage
-        .from('spiritual-resources')
-        .remove([filePath])
-
-      if (error) {
-        console.warn('Erro ao deletar arquivo do storage:', error)
-        // Não bloqueia a deleção do registro
-        return false
-      }
-      return true
-    } catch (error) {
-      console.warn('Erro ao deletar arquivo:', error)
-      return false
+      setDownloadingIds(prev => { const s = new Set(prev); s.delete(resourceId); return s })
     }
   }
 
   const confirmDelete = async () => {
     if (!deleteTargetId) return
     setDeleting(true)
-
     try {
-      // Obter o recurso para pegar o caminho do arquivo
       const resourceToDelete = resources.find(r => r.id === deleteTargetId)
-      if (!resourceToDelete) {
-        toast.error('Recurso não encontrado')
-        return
-      }
+      if (!resourceToDelete) { toast.error('Recurso não encontrado'); return }
 
-      // Deletar arquivo do storage primeiro
-      const fileUrl = (resourceToDelete as any).file_url || (resourceToDelete as any).fileUrl
+      const fileUrl = (resourceToDelete as any).file_url
       if (fileUrl) {
-        const filePathMatch = fileUrl.match(/\/storage\/v1\/object\/public\/spiritual-resources\/(.+)/)
-        if (filePathMatch?.[1]) {
-          await deleteResourceFile(decodeURIComponent(filePathMatch[1]))
+        const match = fileUrl.match(/\/storage\/v1\/object\/public\/spiritual-resources\/(.+)/)
+        if (match?.[1]) {
+          await supabase.storage.from('spiritual-resources').remove([decodeURIComponent(match[1])])
         }
       }
 
-      // Depois deletar registro da DB
       const { data, error } = await supabase
-        .from('spiritual_resources')
-        .delete()
-        .eq('id', deleteTargetId)
-        .select('id')
+        .from('spiritual_resources').delete().eq('id', deleteTargetId).select('id')
 
-      if (error) {
-        toast.error('Não foi possível remover o recurso do banco')
-        return
-      }
-
-      if (!data || data.length === 0) {
-        toast.error('Sem permissão para remover este recurso')
-        return
-      }
+      if (error) { toast.error('Não foi possível remover o recurso'); return }
+      if (!data || data.length === 0) { toast.error('Sem permissão para remover este recurso'); return }
 
       setResources(prev => prev.filter(r => r.id !== deleteTargetId))
       toast.success('Recurso removido com sucesso!')
     } catch (error: any) {
-      console.error('Delete error:', error)
       toast.error(error.message || 'Erro ao remover recurso')
     } finally {
       setDeleting(false)
@@ -436,49 +334,32 @@ const ResourcesPage = () => {
     }
   }
 
-  const clearFilters = () => {
-    setSearchQuery('')
-    setCategoryFilter('all')
-  }
-
   const formatFileSize = (bytes: number): string => {
+    if (!bytes) return '—'
     if (bytes < 1024) return `${bytes} B`
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   }
 
   const handleDialogOpenChange = (open: boolean) => {
-    // Impedir fechar durante upload
-    if (uploading) {
-      toast.error('Operação em andamento. Aguarde...')
-      return
-    }
+    if (uploading) { toast.error('Operação em andamento. Aguarde...'); return }
     setDialogOpen(open)
-    if (!open) {
-      // Resetar form ao fechar
-      setSelectedFile(null)
-      setFileValidationError(null)
-      setUploadProgress(0)
-    }
+    if (!open) { setSelectedFile(null); setFileValidationError(null); setUploadProgress(0) }
   }
 
   if (loading) {
-    return (
-      <Layout title="Recursos Espirituais">
-        <LoadingState fullScreen message="Sincronizando acervo espiritual..." />
-      </Layout>
-    )
+    return <Layout title="Recursos Espirituais"><LoadingState fullScreen message="Sincronizando acervo espiritual..." /></Layout>
   }
 
   return (
     <Layout title="Recursos Espirituais">
       <div className="p-4 md:p-6 space-y-8 max-w-7xl mx-auto">
 
-        {/* Hero Section — fora do Dialog: não tem relação com o modal de upload */}
+        {/* ===== HERO ===== */}
         <Card className="relative overflow-hidden border-0 shadow-xl rounded-3xl bg-slate-950">
           <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/90 via-purple-600/80 to-pink-600/70 mix-blend-multiply" />
-          <div aria-hidden="true" className="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
-          <div aria-hidden="true" className="absolute -left-10 -bottom-10 w-60 h-60 bg-indigo-500/20 rounded-full blur-3xl" />
+          <div aria-hidden className="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
+          <div aria-hidden className="absolute -left-10 -bottom-10 w-60 h-60 bg-indigo-500/20 rounded-full blur-3xl" />
 
           <div className="relative z-10 p-6 md:p-12 lg:p-16 text-white flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="max-w-2xl space-y-4">
@@ -486,64 +367,52 @@ const ResourcesPage = () => {
                 <BookOpen className="h-4 w-4 text-amber-300" />
                 <span className="text-xs md:text-sm font-semibold tracking-wider uppercase text-slate-100">Biblioteca Ministerial</span>
               </div>
-
               <h1 className="text-3xl md:text-5xl font-black tracking-tight leading-tight">
                 Recursos{' '}
                 <span className="bg-gradient-to-r from-amber-200 via-white to-orange-200 bg-clip-text text-transparent">
                   Espirituais
                 </span>
               </h1>
-
               <p className="text-base md:text-lg text-slate-100/90 font-normal leading-relaxed">
                 {isAdmin
-                  ? 'Publique, acompanhe downloads e gerencie e-books, estudos e devocionais.'
-                  : 'Acesse e-books, estudos teológicos, devocionais e guias práticos desenvolvidos para apoiar seu crescimento integral.'}
+                  ? 'Gerencie, publique e acompanhe downloads de todos os materiais ministeriais da comunidade.'
+                  : isGuest
+                  ? 'Acesse materiais ministeriais. Crie uma conta para fazer upload e download de recursos.'
+                  : 'Acesse e contribua com PDF, vídeos, áudios, apresentações e mais — para edificar a comunidade.'}
               </p>
             </div>
 
-            {isAdmin && (
-              <AdminAction>
-                <Button
-                  size="lg"
-                  onClick={() => setDialogOpen(true)}
-                  disabled={uploading}
-                  className="bg-white text-indigo-950 hover:bg-slate-50 font-bold px-6 py-6 h-auto text-base rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 border border-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Adicionar novo recurso ao acervo"
-                >
-                  <Plus className="mr-2 h-5 w-5 stroke-[2.5]" />
-                  Adicionar Recurso
-                </Button>
-              </AdminAction>
+            {canUpload && (
+              <Button
+                size="lg"
+                onClick={() => setDialogOpen(true)}
+                disabled={uploading}
+                className="bg-white text-indigo-950 hover:bg-slate-50 font-bold px-6 py-6 h-auto text-base rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 border border-slate-100 disabled:opacity-50 disabled:cursor-not-allowed self-start md:self-auto"
+              >
+                <Upload className="mr-2 h-5 w-5 stroke-[2.5]" />
+                {isAdmin ? 'Adicionar Recurso' : 'Contribuir com Recurso'}
+              </Button>
             )}
           </div>
         </Card>
 
-        {/* Upload Dialog */}
+        {/* ===== UPLOAD DIALOG ===== */}
         <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
           <DialogContent className="max-w-2xl rounded-2xl p-6 max-h-[90vh] overflow-y-auto">
-            <DialogHeader className="flex flex-row items-center justify-between border-b pb-4 sticky top-0 bg-background">
+            <DialogHeader className="flex flex-row items-center justify-between border-b pb-4">
               <div className="space-y-1">
                 <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-indigo-600" />
-                  Novo Recurso
+                  <Upload className="h-5 w-5 text-indigo-600" />
+                  {isAdmin ? 'Adicionar Recurso' : 'Contribuir com Recurso'}
                 </DialogTitle>
-                <p className="text-xs text-muted-foreground">Adicione e disponibilize arquivos para download geral.</p>
+                <p className="text-xs text-muted-foreground">PDF, Word, PowerPoint, MP3, MP4, imagens, ZIP e muito mais.</p>
               </div>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-full"
-                onClick={() => handleDialogOpenChange(false)}
-                disabled={uploading}
-                aria-label="Fechar"
-              >
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleDialogOpenChange(false)} disabled={uploading} aria-label="Fechar">
                 <X className="h-4 w-4" />
               </Button>
             </DialogHeader>
 
             <div className="space-y-5 pt-4">
-              {/* Validação de arquivo */}
               {fileValidationError && (
                 <div className="flex items-start gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/30">
                   <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
@@ -554,31 +423,18 @@ const ResourcesPage = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="md:col-span-2 space-y-1.5">
                   <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Título do Recurso <span className="text-destructive">*</span>
+                    Título <span className="text-destructive">*</span>
                   </Label>
-                  <Input
-                    value={newResource.title}
-                    onChange={(e) => setNewResource({ ...newResource, title: e.target.value })}
-                    placeholder="Ex: Teologia Sistemática e Hermenêutica"
-                    className="rounded-xl h-11"
-                    disabled={uploading}
-                    maxLength={200}
-                  />
+                  <Input value={newResource.title} onChange={e => setNewResource({ ...newResource, title: e.target.value })}
+                    placeholder="Ex: Guia de Discipulado — Módulo I" className="rounded-xl h-11" disabled={uploading} maxLength={200} />
                   <p className="text-xs text-muted-foreground">{newResource.title.length}/200</p>
                 </div>
-
                 <div className="space-y-1.5">
                   <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                     Categoria <span className="text-destructive">*</span>
                   </Label>
-                  <Select
-                    value={newResource.category}
-                    onValueChange={(value: any) => setNewResource({ ...newResource, category: value })}
-                    disabled={uploading}
-                  >
-                    <SelectTrigger className="rounded-xl h-11">
-                      <SelectValue />
-                    </SelectTrigger>
+                  <Select value={newResource.category} onValueChange={(v: any) => setNewResource({ ...newResource, category: v })} disabled={uploading}>
+                    <SelectTrigger className="rounded-xl h-11"><SelectValue /></SelectTrigger>
                     <SelectContent className="rounded-xl">
                       {(Object.keys(CATEGORY_CONFIG) as SpiritualResource['category'][]).map(key => (
                         <SelectItem key={key} value={key}>{CATEGORY_CONFIG[key].label}</SelectItem>
@@ -589,102 +445,66 @@ const ResourcesPage = () => {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Descrição Breve</Label>
-                <Textarea
-                  value={newResource.description}
-                  onChange={(e) => setNewResource({ ...newResource, description: e.target.value })}
-                  placeholder="Insira detalhes resumidos sobre a finalidade pedagógica ou espiritual deste arquivo..."
-                  className="rounded-xl resize-none"
-                  rows={3}
-                  disabled={uploading}
-                  maxLength={500}
-                />
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Descrição</Label>
+                <Textarea value={newResource.description} onChange={e => setNewResource({ ...newResource, description: e.target.value })}
+                  placeholder="Descreva brevemente o conteúdo e a finalidade deste recurso..." className="rounded-xl resize-none" rows={3} disabled={uploading} maxLength={500} />
                 <p className="text-xs text-muted-foreground">{newResource.description.length}/500</p>
               </div>
 
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Tags (separadas por vírgula)</Label>
-                <Input
-                  value={newResource.tags}
-                  onChange={(e) => setNewResource({ ...newResource, tags: e.target.value })}
-                  placeholder="ex: liderança, devocional, igreja"
-                  className="rounded-xl h-11"
-                  disabled={uploading}
-                />
+                <Input value={newResource.tags} onChange={e => setNewResource({ ...newResource, tags: e.target.value })}
+                  placeholder="ex: liderança, oração, família" className="rounded-xl h-11" disabled={uploading} />
               </div>
 
+              {/* File Upload Zone */}
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Upload de Arquivo (Máx 10MB) <span className="text-destructive">*</span>
+                  Arquivo (Máx 50MB) <span className="text-destructive">*</span>
                 </Label>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".pdf,.doc,.docx,.epub"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  disabled={uploading}
-                />
+                <p className="text-xs text-muted-foreground">PDF, Word, PowerPoint, Excel, MP3, MP4, imagens (JPG/PNG), ZIP e mais</p>
+                <input ref={fileInputRef} type="file" accept={ACCEPTED_MIME_ACCEPT} onChange={handleFileSelect} className="hidden" disabled={uploading} />
 
                 <div
-                  className={`mt-1 border-2 border-dashed rounded-2xl p-6 transition-all duration-200 text-center flex flex-col items-center justify-center min-h-[140px] ${
-                    dragActive
-                      ? 'border-indigo-600 bg-indigo-50/20 dark:bg-indigo-950/20'
-                      : 'border-slate-200 bg-slate-50/50 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900/40 dark:hover:bg-slate-900/60'
+                  className={`mt-1 border-2 border-dashed rounded-2xl p-6 transition-all duration-200 text-center flex flex-col items-center justify-center min-h-[140px] cursor-pointer ${
+                    dragActive ? 'border-indigo-600 bg-indigo-50/20 dark:bg-indigo-950/20' : 'border-slate-200 bg-slate-50/50 hover:bg-slate-100/80 dark:border-slate-700 dark:bg-slate-900/40 dark:hover:bg-slate-900/60'
                   } ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  onDragEnter={handleDrag}
-                  onDragOver={handleDrag}
-                  onDragLeave={handleDrag}
-                  onDrop={handleDrop}
+                  onDragEnter={handleDrag} onDragOver={handleDrag} onDragLeave={handleDrag} onDrop={handleDrop}
+                  onClick={() => !uploading && !selectedFile && fileInputRef.current?.click()}
                 >
                   {selectedFile ? (
-                    <div className="flex items-center gap-4 w-full text-left bg-card border rounded-xl p-3 shadow-sm">
+                    <div className="flex items-center gap-4 w-full text-left bg-card border rounded-xl p-3 shadow-sm" onClick={e => e.stopPropagation()}>
                       <div className="h-12 w-12 bg-indigo-50 border border-indigo-100 dark:bg-indigo-950/40 dark:border-indigo-900 rounded-xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 flex-shrink-0">
-                        <FileText className="h-6 w-6" />
+                        {(() => { const Icon = getFileIcon(selectedFile.name.split('.').pop()); return <Icon className="h-6 w-6" /> })()}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="font-semibold text-sm truncate text-foreground">{selectedFile.name}</div>
                         <div className="text-xs text-muted-foreground">{formatFileSize(selectedFile.size)}</div>
                       </div>
-
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          setSelectedFile(null)
-                          setFileValidationError(null)
-                        }}
-                        disabled={uploading}
-                        className="h-8 w-8 p-0 rounded-full text-muted-foreground hover:text-foreground shrink-0"
-                        aria-label="Remover arquivo selecionado"
-                      >
+                      <Button size="sm" variant="ghost" onClick={() => { setSelectedFile(null); setFileValidationError(null) }} disabled={uploading}
+                        className="h-8 w-8 p-0 rounded-full text-muted-foreground hover:text-foreground shrink-0" aria-label="Remover">
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
                   ) : (
-                    <button
-                      type="button"
-                      className="space-y-2 cursor-pointer w-full disabled:cursor-not-allowed"
-                      onClick={() => !uploading && fileInputRef.current?.click()}
-                      disabled={uploading}
-                    >
-                      <div className="mx-auto h-10 w-10 text-muted-foreground bg-white dark:bg-slate-800 border dark:border-slate-700 shadow-sm rounded-xl flex items-center justify-center">
-                        <Upload className="h-5 w-5" />
+                    <div className="space-y-2 pointer-events-none">
+                      <div className="mx-auto h-12 w-12 text-muted-foreground bg-white dark:bg-slate-800 border dark:border-slate-700 shadow-sm rounded-xl flex items-center justify-center">
+                        <Upload className="h-6 w-6" />
                       </div>
                       <div className="text-sm">
-                        <span className="font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300">Clique para selecionar</span> ou arraste o documento aqui
+                        <span className="font-semibold text-indigo-600 dark:text-indigo-400">Clique para selecionar</span>{' '}
+                        ou arraste o arquivo aqui
                       </div>
-                      <p className="text-xs text-muted-foreground">Formatos aceitos: PDF, DOC, DOCX ou EPUB de até 10 megabytes</p>
-                    </button>
+                      <p className="text-xs text-muted-foreground">Qualquer formato de documento, mídia ou arquivo — até 50MB</p>
+                    </div>
                   )}
                 </div>
               </div>
 
-              {/* Progress Bar */}
               {uploading && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Publicando recurso...</span>
+                    <span className="text-sm font-medium">Enviando arquivo...</span>
                     <span className="text-sm text-muted-foreground">{Math.round(uploadProgress)}%</span>
                   </div>
                   <Progress value={uploadProgress} className="h-2" />
@@ -692,29 +512,15 @@ const ResourcesPage = () => {
               )}
 
               <div className="flex items-center gap-3 pt-2">
-                <Button
-                  variant="outline"
-                  className="flex-1 h-12 rounded-xl font-semibold"
-                  onClick={() => handleDialogOpenChange(false)}
-                  disabled={uploading}
-                >
+                <Button variant="outline" className="flex-1 h-12 rounded-xl font-semibold" onClick={() => handleDialogOpenChange(false)} disabled={uploading}>
                   Cancelar
                 </Button>
-                <Button
-                  onClick={uploadResource}
-                  disabled={uploading || !selectedFile || !newResource.title.trim()}
-                  className="flex-1 h-12 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-100 hover:shadow-indigo-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
+                <Button onClick={uploadResource} disabled={uploading || !selectedFile || !newResource.title.trim()}
+                  className="flex-1 h-12 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
                   {uploading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processando...
-                    </>
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Publicando...</>
                   ) : (
-                    <>
-                      <CheckCircle2 className="mr-2 h-4 w-4" />
-                      Publicar no Acervo
-                    </>
+                    <><CheckCircle2 className="mr-2 h-4 w-4" />Publicar no Acervo</>
                   )}
                 </Button>
               </div>
@@ -722,57 +528,30 @@ const ResourcesPage = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Analytics Section */}
+        {/* ===== STATS ===== */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard
-            icon={BookOpen}
-            label="Total Cadastrado"
-            value={resources.length}
-            gradient="from-indigo-600 to-purple-600"
-          />
-          <StatCard
-            icon={FileText}
-            label="Estudos Bíblicos"
-            value={resources.filter(r => r.category === 'study').length}
-            gradient="from-purple-600 to-pink-600"
-          />
-          <StatCard
-            icon={Heart}
-            label="Devocionais"
-            value={resources.filter(r => r.category === 'devotional').length}
-            gradient="from-rose-600 to-orange-600"
-          />
-          <StatCard
-            icon={Download}
-            label="Total Downloads"
-            value={resources.reduce((sum, r) => sum + ((r as any).downloads_count || 0), 0)}
-            gradient="from-emerald-600 to-teal-600"
-          />
+          <StatCard icon={BookOpen} label="Total Cadastrado" value={resources.length} gradient="from-indigo-600 to-purple-600" />
+          <StatCard icon={FileText} label="Estudos Bíblicos" value={resources.filter(r => r.category === 'study').length} gradient="from-purple-600 to-pink-600" />
+          <StatCard icon={Heart} label="Devocionais" value={resources.filter(r => r.category === 'devotional').length} gradient="from-rose-600 to-orange-600" />
+          <StatCard icon={Download} label="Total Downloads" value={resources.reduce((sum, r) => sum + ((r as any).downloads_count || 0), 0)} gradient="from-emerald-600 to-teal-600" />
         </div>
 
-        {/* Filter Bar */}
+        {/* ===== FILTERS ===== */}
         <div className="flex flex-col md:flex-row gap-4 items-center bg-card p-4 rounded-2xl border shadow-sm">
           <div className="relative w-full flex-1">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+            <Input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
               placeholder="Buscar por títulos, palavras-chave ou tags..."
-              className="pl-11 h-12 rounded-xl border-slate-200 dark:border-slate-700 focus-visible:ring-indigo-500 bg-muted/30"
-            />
+              className="pl-11 h-12 rounded-xl border-slate-200 dark:border-slate-700 focus-visible:ring-indigo-500 bg-muted/30" />
             {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground rounded-full transition-colors"
-                aria-label="Limpar busca"
-              >
+              <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground rounded-full transition-colors" aria-label="Limpar">
                 <X className="h-4 w-4" />
               </button>
             )}
           </div>
           <div className="w-full md:w-72">
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="h-12 rounded-xl border-slate-200 dark:border-slate-700 focus:ring-indigo-500 bg-muted/30">
+              <SelectTrigger className="h-12 rounded-xl border-slate-200 dark:border-slate-700 bg-muted/30">
                 <div className="flex items-center gap-2">
                   <FolderOpen className="h-4 w-4 text-muted-foreground" />
                   <SelectValue placeholder="Filtrar por Categoria" />
@@ -788,100 +567,78 @@ const ResourcesPage = () => {
           </div>
         </div>
 
-        {/* Resources Grid */}
+        {/* ===== RESOURCES GRID ===== */}
         {filteredResources.length > 0 ? (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredResources.map((resource) => {
               const config = getCategoryConfig(resource.category)
               const CategoryIcon = config.icon
+              const FileIcon = getFileIcon((resource as any).file_type)
               const isDownloading = downloadingIds.has(resource.id)
 
               return (
-                <Card
-                  key={resource.id}
-                  className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border-2 border-slate-100 dark:border-slate-800 hover:border-indigo-500/30 hover:shadow-lg transition-all duration-300"
-                >
+                <Card key={resource.id} className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border-2 border-slate-100 dark:border-slate-800 hover:border-indigo-500/30 hover:shadow-lg transition-all duration-300">
                   <div className="p-5 md:p-6 flex-1">
-                    <div className="flex justify-between items-start gap-3 mb-5">
+                    <div className="flex justify-between items-start gap-3 mb-4">
                       <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide border ${config.badge}`}>
                         <CategoryIcon className="h-3.5 w-3.5 flex-shrink-0" />
                         {config.label}
                       </span>
-
                       {isAdmin && (
                         <AdminAction>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => setDeleteTargetId(resource.id)}
-                            disabled={deleting}
+                          <Button size="sm" variant="ghost" onClick={() => setDeleteTargetId(resource.id)} disabled={deleting}
                             className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 disabled:opacity-50"
-                            title="Remover Recurso"
-                            aria-label={`Remover ${resource.title}`}
-                          >
+                            title="Remover Recurso" aria-label={`Remover ${resource.title}`}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </AdminAction>
                       )}
                     </div>
 
-                    <h3 className="text-lg font-bold text-foreground mb-2 line-clamp-2 leading-snug group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                    <h3 className="text-base font-bold text-foreground mb-2 line-clamp-2 leading-snug group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                       {resource.title}
                     </h3>
 
                     {resource.description && (
-                      <p className="text-sm text-muted-foreground mb-4 line-clamp-3 leading-relaxed">
-                        {resource.description}
-                      </p>
+                      <p className="text-sm text-muted-foreground mb-4 line-clamp-3 leading-relaxed">{resource.description}</p>
                     )}
 
-                    {resource.tags && resource.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mb-4">
+                    {Array.isArray(resource.tags) && resource.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mb-3">
                         {resource.tags.slice(0, 3).map((tag, idx) => (
                           <span key={idx} className="px-2 py-0.5 bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-[11px] font-medium rounded-md whitespace-nowrap">
                             #{tag}
                           </span>
                         ))}
                         {resource.tags.length > 3 && (
-                          <span className="px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                            +{resource.tags.length - 3}
-                          </span>
+                          <span className="px-2 py-0.5 text-[11px] font-medium text-muted-foreground">+{resource.tags.length - 3}</span>
                         )}
                       </div>
                     )}
                   </div>
 
-                  <div className="px-5 md:px-6 pb-5 md:pb-6 mt-auto space-y-4">
-                    <div className="grid grid-cols-3 gap-1 pt-3 border-t text-[11px] font-medium text-muted-foreground">
-                      <div className="flex items-center gap-1 truncate" title={`Tipo: ${(resource as any).file_type?.toUpperCase() || 'DOC'}`}>
-                        <FileText className="h-3 w-3 flex-shrink-0" />
-                        <span className="truncate">{(resource as any).file_type?.toUpperCase() || 'DOC'}</span>
+                  <div className="px-5 md:px-6 pb-5 md:pb-6 mt-auto space-y-3">
+                    <div className="flex items-center justify-between pt-3 border-t text-[11px] font-medium text-muted-foreground">
+                      <div className="flex items-center gap-1.5">
+                        <FileIcon className="h-3.5 w-3.5 flex-shrink-0 text-indigo-500" />
+                        <span className="font-semibold text-indigo-600 dark:text-indigo-400">
+                          {(resource as any).file_type?.toUpperCase() || '—'}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-1 justify-center" title={`Tamanho: ${formatFileSize((resource as any).file_size || 0)}`}>
-                        <HardDrive className="h-3 w-3 flex-shrink-0" />
-                        <span className="truncate">{formatFileSize((resource as any).file_size || 0)}</span>
+                      <div className="flex items-center gap-1">
+                        <HardDrive className="h-3 w-3" />
+                        <span>{formatFileSize((resource as any).file_size || 0)}</span>
                       </div>
-                      <div className="text-right truncate" title={`Downloads: ${(resource as any).downloads_count || 0}`}>
-                        {(resource as any).downloads_count || 0} downloads
-                      </div>
+                      <div>{(resource as any).downloads_count || 0} downloads</div>
                     </div>
 
-                    <Button
-                      onClick={() => handleDownload(resource)}
-                      disabled={isDownloading || isGuest}
+                    <Button onClick={() => handleDownload(resource)} disabled={isDownloading || isGuest}
                       className={`w-full font-bold h-11 rounded-xl shadow-sm bg-gradient-to-r ${config.gradient} text-white hover:opacity-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed`}
-                      title={isGuest ? 'Faça login para baixar' : 'Baixar arquivo'}
-                    >
+                      title={isGuest ? 'Faça login para baixar' : 'Baixar arquivo'}>
                       {isDownloading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Baixando...
-                        </>
+                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Baixando...</>
                       ) : (
-                        <>
-                          <Download className="mr-2 h-4 w-4" />
-                          Baixar Arquivo
-                        </>
+                        <><Download className="mr-2 h-4 w-4" />Baixar Arquivo</>
                       )}
                     </Button>
                   </div>
@@ -890,32 +647,19 @@ const ResourcesPage = () => {
             })}
           </div>
         ) : (
-          <EmptyState
-            icon={BookOpen}
-            title="Nenhum registro localizado"
-            description={
-              searchQuery || categoryFilter !== 'all'
-                ? 'Redefina os parâmetros de pesquisa para encontrar conteúdos adicionais.'
-                : 'Novas diretrizes e recursos serão postados pelo administrador em breve.'
-            }
-            action={
-              (searchQuery || categoryFilter !== 'all') ? (
-                <Button variant="outline" onClick={clearFilters} className="rounded-xl">
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Limpar Filtros e Busca
-                </Button>
-              ) : undefined
-            }
+          <EmptyState icon={BookOpen} title="Nenhum registro localizado"
+            description={searchQuery || categoryFilter !== 'all' ? 'Redefina os filtros para encontrar outros conteúdos.' : 'Nenhum recurso publicado ainda. Seja o primeiro a contribuir!'}
+            action={(searchQuery || categoryFilter !== 'all') ? (
+              <Button variant="outline" onClick={() => { setSearchQuery(''); setCategoryFilter('all') }} className="rounded-xl">
+                <RefreshCw className="mr-2 h-4 w-4" />Limpar Filtros
+              </Button>
+            ) : undefined}
           />
         )}
 
         {isGuest && resources.length > 0 && (
-          <GuestPrompt
-            title="Acesso total aos recursos estratégicos"
-            description="Membros matriculados ativos ganham permissão irrestrita para download e arquivamento de todos os materiais teológicos e ebooks."
-            actionLabel="Criar Conta"
-            onAction={() => navigate('/auth')}
-          />
+          <GuestPrompt title="Acesso total aos recursos" description="Membros têm acesso irrestrito a downloads e podem contribuir com materiais para a comunidade."
+            actionLabel="Criar Conta" onAction={() => navigate('/auth')} />
         )}
       </div>
 
@@ -923,25 +667,12 @@ const ResourcesPage = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Remover recurso?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação não pode ser desfeita. O arquivo deixará de estar disponível para download e será removido do servidor.
-            </AlertDialogDescription>
+            <AlertDialogDescription>Esta ação não pode ser desfeita. O arquivo será removido do servidor permanentemente.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={confirmDelete} 
-              disabled={deleting} 
-              className="bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {deleting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin inline" />
-                  Removendo...
-                </>
-              ) : (
-                'Remover'
-              )}
+            <AlertDialogAction onClick={confirmDelete} disabled={deleting} className="bg-red-600 hover:bg-red-700 text-white">
+              {deleting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin inline" />Removendo...</> : 'Remover'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

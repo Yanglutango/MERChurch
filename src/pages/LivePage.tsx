@@ -16,7 +16,6 @@ import {
 import { toast } from 'sonner'
 import type { LiveMessage } from '../types'
 import { LoadingState } from '../components/shared/LoadingState'
-import Hls from 'hls.js'
 
 interface LiveSession {
   id: string
@@ -193,21 +192,13 @@ const LivePage = () => {
 
     const video = videoRef.current
     const streamUrl = activeSession.stream_url
-    let hls: Hls | null = null
 
-    if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = streamUrl
-    } else if (Hls.isSupported()) {
-      hls = new Hls()
-      hls.loadSource(streamUrl)
-      hls.attachMedia(video)
-    }
+    // Suporte nativo HLS (Safari/iOS) ou src directo para outros formatos
+    video.src = streamUrl
+    video.load()
 
-    // Cleanup para evitar memory leaks de áudio/vídeo rodando oculto
     return () => {
-      if (hls) {
-        hls.destroy()
-      }
+      video.pause()
       video.removeAttribute('src')
       video.load()
     }

@@ -186,23 +186,25 @@ const CommunityPage = () => {
       setUploadingImage(true)
       const fileExt = file.name.split('.').pop()
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`
-      const filePath = `community-posts/${user!.id}/${fileName}`
+      // Usar o bucket 'avatars' existente para imagens de comunidade (pasta separada)
+      // ou fazer upload para spiritual-resources com path específico
+      const filePath = `community/${user!.id}/${fileName}`
 
       const { error: uploadError } = await supabase.storage
-        .from('public')
+        .from('avatars')
         .upload(filePath, file, { upsert: false })
 
       if (uploadError) throw uploadError
 
       const { data: publicUrlData } = supabase.storage
-        .from('public')
+        .from('avatars')
         .getPublicUrl(filePath)
 
       setImageInput(publicUrlData.publicUrl)
       toast.success('Imagem carregada com sucesso!')
     } catch (error) {
       console.error('Error uploading image:', error)
-      toast.error('Erro ao fazer upload da imagem')
+      toast.error('Erro ao fazer upload — use uma URL de imagem diretamente')
     } finally {
       setUploadingImage(false)
     }
@@ -693,6 +695,32 @@ const CommunityPage = () => {
                 <h3 className="font-bold text-sm text-foreground">Em Destaque</h3>
               </div>
               <div className="space-y-2.5">
+                {posts
+                  .filter(p => (p.likes_count || 0) > 0)
+                  .sort((a, b) => (b.likes_count || 0) - (a.likes_count || 0))
+                  .slice(0, 5)
+                  .map((post, idx) => (
+                    <div key={post.id} className="flex items-start gap-2.5 group">
+                      <span className={`text-[11px] font-black w-5 flex-shrink-0 mt-0.5 ${
+                        idx === 0 ? 'text-amber-500' : idx === 1 ? 'text-slate-400' : 'text-slate-300'
+                      }`}>{idx + 1}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-foreground line-clamp-2 leading-snug group-hover:text-[#0A2E4A] dark:group-hover:text-zinc-100 transition-colors">
+                          {post.content.substring(0, 60)}{post.content.length > 60 ? '...' : ''}
+                        </p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[10px] text-rose-500 font-semibold flex items-center gap-0.5">
+                            <Heart className="h-2.5 w-2.5 fill-rose-500" /> {post.likes_count}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">{post.user?.username}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                }
+                {posts.filter(p => (p.likes_count || 0) > 0).length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center py-2">Nenhum post em destaque ainda</p>
+                )}
               </div>
             </Card>
           </div>

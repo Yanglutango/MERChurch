@@ -1,48 +1,82 @@
 import * as React from "react"
-import * as AvatarPrimitive from "@radix-ui/react-avatar"
+import { cn } from "../../lib/utils"
 
-import { cn } from "@/lib/utils"
+interface AvatarProps extends React.HTMLAttributes<HTMLDivElement> {
+  children?: React.ReactNode
+}
 
-const Avatar = React.forwardRef<
-  React.ElementRef<typeof AvatarPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root>
->(({ className, ...props }, ref) => (
-  <AvatarPrimitive.Root
-    ref={ref}
-    className={cn(
-      "relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full",
-      className
-    )}
-    {...props}
-  />
-))
-Avatar.displayName = AvatarPrimitive.Root.displayName
+const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
+  ({ className, children, ...props }, ref) => (
+    <div
+      ref={ref}
+      className={cn(
+        "relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </div>
+  )
+)
+Avatar.displayName = "Avatar"
 
-const AvatarImage = React.forwardRef<
-  React.ElementRef<typeof AvatarPrimitive.Image>,
-  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image>
->(({ className, ...props }, ref) => (
-  <AvatarPrimitive.Image
-    ref={ref}
-    className={cn("aspect-square h-full w-full", className)}
-    {...props}
-  />
-))
-AvatarImage.displayName = AvatarPrimitive.Image.displayName
+interface AvatarImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
+  onLoadingStatusChange?: (status: "loading" | "loaded" | "error") => void
+}
 
-const AvatarFallback = React.forwardRef<
-  React.ElementRef<typeof AvatarPrimitive.Fallback>,
-  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Fallback>
->(({ className, ...props }, ref) => (
-  <AvatarPrimitive.Fallback
-    ref={ref}
-    className={cn(
-      "flex h-full w-full items-center justify-center rounded-full bg-muted",
-      className
-    )}
-    {...props}
-  />
-))
-AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName
+const AvatarImage = React.forwardRef<HTMLImageElement, AvatarImageProps>(
+  ({ className, src, onError, onLoad, onLoadingStatusChange, ...props }, ref) => {
+    const [status, setStatus] = React.useState<"loading" | "loaded" | "error">(
+      src ? "loading" : "error"
+    )
+
+    React.useEffect(() => {
+      setStatus(src ? "loading" : "error")
+    }, [src])
+
+    if (status === "error" || !src) return null
+
+    return (
+      <img
+        ref={ref}
+        src={src}
+        className={cn("aspect-square h-full w-full object-cover", className)}
+        onLoad={(e) => {
+          setStatus("loaded")
+          onLoad?.(e)
+          onLoadingStatusChange?.("loaded")
+        }}
+        onError={(e) => {
+          setStatus("error")
+          onError?.(e)
+          onLoadingStatusChange?.("error")
+        }}
+        {...props}
+      />
+    )
+  }
+)
+AvatarImage.displayName = "AvatarImage"
+
+interface AvatarFallbackProps extends React.HTMLAttributes<HTMLDivElement> {
+  delayMs?: number
+}
+
+const AvatarFallback = React.forwardRef<HTMLDivElement, AvatarFallbackProps>(
+  ({ className, children, ...props }, ref) => (
+    <div
+      ref={ref}
+      className={cn(
+        "flex h-full w-full items-center justify-center rounded-full bg-muted text-muted-foreground text-sm font-medium",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </div>
+  )
+)
+AvatarFallback.displayName = "AvatarFallback"
 
 export { Avatar, AvatarImage, AvatarFallback }

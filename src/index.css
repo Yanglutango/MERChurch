@@ -6,49 +6,51 @@
 
 @layer base {
   :root {
-    /* Light mode - improved for eye comfort */
-    --background: 240 20% 97%;
-    --foreground: 205 50% 12%;
+    /* Light mode — refined church palette */
+    --background: 220 20% 97%;
+    --foreground: 215 45% 10%;
     --card: 0 0% 100%;
-    --card-foreground: 205 50% 12%;
+    --card-foreground: 215 45% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 205 50% 12%;
-    --primary: 205 60% 18%;
+    --popover-foreground: 215 45% 10%;
+    --primary: 210 65% 17%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 192 40% 50%;
+    --secondary: 196 38% 46%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 205 25% 88%;
-    --muted-foreground: 205 15% 50%;
-    --accent: 40 55% 60%;
-    --accent-foreground: 205 60% 15%;
-    --destructive: 0 70% 55%;
+    --muted: 215 20% 91%;
+    --muted-foreground: 215 12% 46%;
+    /* Accent: warm parchment sand — understated, professional */
+    --accent: 34 38% 62%;
+    --accent-foreground: 215 45% 10%;
+    --destructive: 0 68% 54%;
     --destructive-foreground: 0 0% 100%;
-    --border: 205 20% 88%;
-    --input: 205 20% 92%;
-    --ring: 192 40% 50%;
+    --border: 215 18% 86%;
+    --input: 215 18% 92%;
+    --ring: 196 38% 46%;
     --radius: 0.5rem;
   }
 
   html.dark {
-    --background: 205 50% 6%;
-    --foreground: 205 15% 92%;
-    --card: 205 45% 10%;
-    --card-foreground: 205 15% 92%;
-    --popover: 205 45% 10%;
-    --popover-foreground: 205 15% 92%;
-    --primary: 192 40% 50%;
-    --primary-foreground: 205 50% 8%;
-    --secondary: 205 45% 22%;
-    --secondary-foreground: 205 15% 92%;
-    --muted: 205 40% 14%;
-    --muted-foreground: 205 12% 60%;
-    --accent: 40 60% 58%;
-    --accent-foreground: 205 50% 8%;
-    --destructive: 0 65% 52%;
-    --destructive-foreground: 205 15% 92%;
-    --border: 205 35% 16%;
-    --input: 205 35% 16%;
-    --ring: 192 40% 50%;
+    --background: 215 45% 6%;
+    --foreground: 215 12% 92%;
+    --card: 215 40% 10%;
+    --card-foreground: 215 12% 92%;
+    --popover: 215 40% 10%;
+    --popover-foreground: 215 12% 92%;
+    --primary: 196 38% 52%;
+    --primary-foreground: 215 45% 6%;
+    --secondary: 215 40% 22%;
+    --secondary-foreground: 215 12% 92%;
+    --muted: 215 35% 14%;
+    --muted-foreground: 215 10% 58%;
+    /* Accent dark: slightly brighter parchment */
+    --accent: 34 36% 52%;
+    --accent-foreground: 215 12% 92%;
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 215 12% 92%;
+    --border: 215 30% 16%;
+    --input: 215 30% 16%;
+    --ring: 196 38% 52%;
   }
 }
 
@@ -167,40 +169,14 @@
 }
 .animate-slide-up { animation: slide-up 0.5s ease-out; }
 
+/* ── Logo tokens — single source of truth ── */
 :root {
   --logo-primary: #0F172A;     /* Slate 900 */
-  --logo-secondary: #334155;   /* Slate 700 */
-  --logo-accent: #C5A880;      /* Champagne Gold Muted */
   --logo-subtitle: #64748B;    /* Slate 500 */
+  --logo-fallback-bg: #0A2E4A;
 }
 .dark {
   --logo-primary: #F8FAFC;     /* Slate 50 */
-  --logo-secondary: #E2E8F0;   /* Slate 200 */
-  --logo-accent: #E5D5C0;      /* Champagne Gold Light */
-  --logo-subtitle: #94A3B8;    /* Slate 400 */
-}
-
-:root {
-  --logo-primary: #09090B;     /* Zinc 950 */
-  --logo-secondary: #71717A;   /* Zinc 500 */
-  --logo-accent: #991B1B;      /* Deep Crimson */
-  --logo-subtitle: #52525B;    /* Zinc 600 */
-}
-.dark {
-  --logo-primary: #FAFAFA;     /* Zinc 50 */
-  --logo-secondary: #D4D4D8;   /* Zinc 300 */
-  --logo-accent: #EF4444;      /* Vivid Crimson */
-  --logo-subtitle: #A1A1AA;    /* Zinc 400 */
-}
-
-:root {
-  --logo-primary: #0F172A;     /* Slate 900: Imponente, sóbrio e altamente profissional */
-  --logo-subtitle: #64748B;    /* Slate 500: Elegância secundária com excelente leitura */
-  --logo-fallback-bg: #0A2E4A; /* Fundo do fallback caso a imagem falhe */
-}
-
-.dark {
-  --logo-primary: #F8FAFC;     /* Slate 50: Contraste perfeito no modo escuro */
   --logo-subtitle: #94A3B8;    /* Slate 400 */
   --logo-fallback-bg: #1E293B;
 }
