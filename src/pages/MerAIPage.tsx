@@ -191,7 +191,12 @@ const LogosAIPage = () => {
   const isCurrentChatLoading = loadingChatId === currentChat?.id
   const charsLeft            = MAX_CHARS - input.length
 
-  // Memoized: O(n*m) flatMap não deve recalcular a cada keystroke do input.
+  // ── Derived state ────────────────────────────────────────────────────────
+
+  const currentChat          = chats.find(c => c.id === currentChatId)!
+  const isCurrentChatLoading = loadingChatId === currentChat?.id
+  const charsLeft            = MAX_CHARS - input.length
+
   const savedMessages = useMemo(() =>
     chats.flatMap(c =>
       c.messages
@@ -201,8 +206,6 @@ const LogosAIPage = () => {
     [chats]
   )
 
-  // Índice da última mensagem da IA — usado pelo botão "Regenerar".
-  // Memoized para não iterar o array a cada render.
   const lastAiMsgIndex = useMemo(() => {
     if (!currentChat) return -1
     for (let i = currentChat.messages.length - 1; i >= 0; i--) {
@@ -211,7 +214,146 @@ const LogosAIPage = () => {
     return -1
   }, [currentChat?.messages])
 
-  // ── Effects ────────────────────────────────────────────────────────────────
+  // ── CALLBACKS PRIMEIRO — antes de qualquer useEffect que os referencie ──
+  // Regra: useCallback/useMemo que produzem valores usados em deps de
+  // useEffect devem aparecer antes desses effects no corpo do componente.
+  // JavaScript não faz hoist de `const` — referenciá-los antes da declaração
+  // lança ReferenceError em runtime e causa página branca sem mensagem visível.
+
+  const loadUsageStats = useCallback(async () => {
+    if (!user) return
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const { count } = await supabase
+      .from('logos_usage')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .gte('created_at', today.toISOString())
+    setUsageStats({ used: count || 0, limit: 50, remaining: 50 - (count || 0) })
+  }, [user])
+
+  const createNewChat = useCallback(() => {
+    const id = generateId()
+    setChats(prev => [{ id, title: 'Nova Conversa', messages: [], lastUpdated: new Date() }, ...prev])
+    setCurrentChatId(id)
+    setSidebarTab('chats')
+    if (window.innerWidth < 1024) setShowSidebar(false)
+  }, [])
+
+  const deleteChat = useCallback((chatId: string) => {
+    setChats(prev => {
+      if (prev.length === 1) return prev
+      const next = prev.filter(c => c.id !== chatId)
+      setCurrentChatId(cur => cur === chatId ? next[0].id : cur)
+      return next
+    })
+    setConfirmDeleteId(null)
+  }, [])
+
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [])
+
+  const toggleSave = useCallback((msgId: string) => {
+    setChats(prev => prev.map(c =>
+      c.id === currentChatId
+        ? { ...c, messages: c.messages.map(m => m.id === msgId ? { ...m, saved: !m.saved } : m) }
+        : c
+    ))
+  }, [currentChatId])
+
+  const copyMsg = useCallback(async (text: string, msgId: string) => {
+    await navigator.clipboard.writeText(text)
+    setCopiedId(msgId)
+    toast.success('Copiado!')
+    setTimeout(() => setCopiedId(null), 2000)
+  }, [])
+
+  const handleSend = useCallback(async (text?: string) => {
+    const msg = (text ?? input).trim()
+    if (!msg || !user) return
+    if (loadingChatId === currentChatId) return
+    if (usageStats && usageStats.remaining <= 0) {
+      toast.error('Limite diário atingido. Tente amanhã.')
+      return
+    }
+
+    const userMessage: Message = { id: generateId(), role: 'user', content: msg, timestamp: new Date() }
+    const history      = [...(currentChat?.messages ?? []), userMessage]
+    const targetChatId = currentChatId
+
+    setChats(prev => prev.map(c =>
+      c.id === targetChatId
+        ? { ...c, messages: history, title: c.messages.length === 0 ? msg.slice(0, 35) : c.title, lastUpdated: new Date() }
+        : c
+    ))
+    setInput('')
+    if (textareaRef.current) textareaRef.current.style.height = 'auto'
+    setLoadingChatId(targetChatId)
+
+    try {
+      const result = await routeAIRequest({
+        messages: history.map(m => ({ role: m.role, content: m.content })),
+        userId:   user.id,
+        topic:    msg.slice(0, 60),
+      })
+
+      if (result.error === 'quota_exceeded') {
+        setUsageStats(prev => prev ? { ...prev, remaining: 0 } : null)
+        setChats(prev => prev.map(c =>
+          c.id === targetChatId ? { ...c, messages: c.messages.slice(0, -1) } : c
+        ))
+        toast.error('Limite diário atingido.')
+        return
+      }
+
+      const aiMsg: Message = { id: generateId(), role: 'assistant', content: result.content, timestamp: new Date() }
+      setChats(prev => prev.map(c =>
+        c.id === targetChatId ? { ...c, messages: [...history, aiMsg] } : c
+      ))
+      if (result.success) loadUsageStats()
+    } finally {
+      setLoadingChatId(prev => prev === targetChatId ? null : prev)
+    }
+  }, [input, currentChat, currentChatId, loadingChatId, usageStats, user, loadUsageStats])
+
+  const handleRegenerate = useCallback(async () => {
+    if (!currentChat || isCurrentChatLoading || !user || lastAiMsgIndex === -1) return
+
+    const trimmedMessages = currentChat.messages.slice(0, lastAiMsgIndex)
+    const lastUserMsg     = [...trimmedMessages].reverse().find(m => m.role === 'user')
+    if (!lastUserMsg) return
+
+    const targetChatId = currentChatId
+    setChats(prev => prev.map(c =>
+      c.id === targetChatId ? { ...c, messages: trimmedMessages } : c
+    ))
+    setLoadingChatId(targetChatId)
+
+    try {
+      const result = await routeAIRequest({
+        messages: trimmedMessages.map(m => ({ role: m.role, content: m.content })),
+        userId:   user.id,
+        topic:    lastUserMsg.content.slice(0, 60),
+      })
+
+      if (result.error === 'quota_exceeded') {
+        setUsageStats(prev => prev ? { ...prev, remaining: 0 } : null)
+        toast.error('Limite diário atingido.')
+        return
+      }
+
+      const aiMsg: Message = { id: generateId(), role: 'assistant', content: result.content, timestamp: new Date() }
+      setChats(prev => prev.map(c =>
+        c.id === targetChatId ? { ...c, messages: [...trimmedMessages, aiMsg] } : c
+      ))
+      if (result.success) loadUsageStats()
+    } finally {
+      setLoadingChatId(prev => prev === targetChatId ? null : prev)
+    }
+  }, [currentChat, currentChatId, isCurrentChatLoading, lastAiMsgIndex, user, loadUsageStats])
+
+  // ── EFFECTS DEPOIS — agora que todos os callbacks estão declarados ────────
 
   useEffect(() => {
     const sync = () => setShowSidebar(window.innerWidth >= 1024)
@@ -224,10 +366,6 @@ const LogosAIPage = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [currentChat?.messages])
 
-  // IntersectionObserver no sentinel div: detecta quando o utilizador scrollou
-  // para cima (sentinel saiu do viewport) e mostra o botão "↓".
-  // Configurado uma única vez — o observer responde a mudanças de visibilidade
-  // continuamente sem precisar de re-setup.
   useEffect(() => {
     const sentinel = messagesEndRef.current
     if (!sentinel) return
@@ -239,13 +377,10 @@ const LogosAIPage = () => {
     return () => observer.disconnect()
   }, [])
 
-  // CORRECÇÃO: loadUsageStats estava fora do array de deps — o effect não
-  // re-corria quando user mudava (ex: logout → login com conta diferente).
-  // loadUsageStats é useCallback([user]), logo muda quando user muda.
-  // Incluí-la aqui é suficiente; `user` tornou-se redundante.
+  // loadUsageStats está agora declarado acima — sem TDZ, sem ReferenceError.
   useEffect(() => {
     if (!isGuest) loadUsageStats()
-  }, [isGuest, loadUsageStats]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isGuest, loadUsageStats])
 
   useEffect(() => {
     try {
@@ -261,7 +396,6 @@ const LogosAIPage = () => {
     const maxHeight  = lineHeight * MAX_ROWS + 16
     el.style.height  = `${Math.min(el.scrollHeight, maxHeight)}px`
   }, [input])
-
   // ── Callbacks ─────────────────────────────────────────────────────────────
 
   // Definido ANTES dos effects que dependem dele — ordem correcta de declaração.
