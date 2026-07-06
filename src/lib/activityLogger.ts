@@ -15,10 +15,19 @@ export type ActivityType =
   | 'course_started'
   | 'testimony_submitted'
   | 'group_created'
+  | 'group_joined'
+  | 'group_left'
   | 'ministry_joined'
+  | 'ministry_left'
+  | 'ministry_created'
+  | 'ministry_updated'
+  | 'ministry_deleted'
+  | 'post_created'
+  | 'post_deleted'
+  | 'comment_created'
   | 'donation_made'
-  | 'admin_action'       // Adicionado: Para o componente AdminAction
-  | 'ministry_activity'  // Adicionado: Para o campo activities de Ministry
+  | 'admin_action'
+  | 'ministry_activity'
 
 export interface LogActivityParams {
   type: ActivityType
@@ -64,10 +73,18 @@ export function getActivityLabel(type: ActivityType | string): string {
     course_started: '🎓 Curso iniciado',
     testimony_submitted: '✨ Testemunho compartilhado',
     group_created: '👥 Grupo criado',
+    group_joined: '👥 Entrou num grupo',
+    group_left: '👥 Saiu de um grupo',
     ministry_joined: '⛪ Entrou num ministério',
+    ministry_left: '⛪ Saiu de um ministério',
+    ministry_created: '⛪ Ministério criado',
+    ministry_updated: '⛪ Ministério atualizado',
+    ministry_deleted: '⛪ Ministério removido',
+    post_deleted: '💬 Publicação removida',
+    comment_created: '💬 Comentário adicionado',
     donation_made: '💰 Contribuição realizada',
-    admin_action: '🛡️ Ação administrativa', // Adicionado
-    ministry_activity: '⚡ Atividade de ministério', // Adicionado
+    admin_action: '🛡️ Ação administrativa',
+    ministry_activity: '⚡ Atividade de ministério',
   }
   return labels[type] || `📌 ${type}`
 }
@@ -85,10 +102,18 @@ export function getActivityColor(type: ActivityType | string): string {
     course_started: 'text-amber-600 dark:text-amber-400',
     testimony_submitted: 'text-teal-600 dark:text-teal-400',
     group_created: 'text-violet-600 dark:text-violet-400',
+    group_joined: 'text-violet-600 dark:text-violet-400',
+    group_left: 'text-violet-400 dark:text-violet-500',
     ministry_joined: 'text-emerald-600 dark:text-emerald-400',
+    ministry_left: 'text-emerald-400 dark:text-emerald-500',
+    ministry_created: 'text-emerald-600 dark:text-emerald-400',
+    ministry_updated: 'text-emerald-500 dark:text-emerald-400',
+    ministry_deleted: 'text-red-600 dark:text-red-400',
+    post_deleted: 'text-blue-400 dark:text-blue-500',
+    comment_created: 'text-blue-500 dark:text-blue-400',
     donation_made: 'text-yellow-600 dark:text-yellow-400',
-    admin_action: 'text-red-600 dark:text-red-400', // Adicionado (vermelho de admin)
-    ministry_activity: 'text-cyan-600 dark:text-cyan-400', // Adicionado
+    admin_action: 'text-red-600 dark:text-red-400',
+    ministry_activity: 'text-cyan-600 dark:text-cyan-400',
   }
   return colors[type] || 'text-muted-foreground'
 }

@@ -45,6 +45,8 @@ const CATEGORIES = [
   { value: 'discipleship', label: 'Discipulado' },
 ]
 
+const MAX_GROUPS = 3
+
 const GroupsPage = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -119,20 +121,31 @@ const GroupsPage = () => {
   const goBack = () => { setMobileView('list'); setSelectedGroup(null) }
 
   const joinGroup = async (groupId: string) => {
+    if (myGroupIds.length >= MAX_GROUPS) {
+      toast.error(`Limite atingido! Você já participa de ${MAX_GROUPS} grupos. Saia de um para entrar neste.`)
+      return
+    }
     const { error } = await supabase.from('group_members').insert({ group_id: groupId, user_id: user!.id })
-    if (error) { toast.error('Erro ao entrar no grupo'); return }
-    setMyGroupIds([...myGroupIds, groupId])
+    if (error) {
+      if (error.code === '23505') { toast.error('Você já é membro deste grupo'); return }
+      console.error('Join group error:', error)
+      toast.error('Erro ao entrar no grupo')
+      return
+    }
+    setMyGroupIds(prev => [...prev, groupId])
     loadGroups()
     toast.success('Bem-vindo ao grupo! 🙏')
+    logActivity({ type: 'group_joined', actorId: user!.id, actorName: user!.username, title: groups.find(g => g.id === groupId)?.name || 'Grupo', referenceId: groupId, referenceType: 'group' }).catch(() => null)
   }
 
   const leaveGroup = async (groupId: string) => {
     const { error } = await supabase.from('group_members').delete().eq('group_id', groupId).eq('user_id', user!.id)
-    if (error) { toast.error('Erro ao sair do grupo'); return }
-    setMyGroupIds(myGroupIds.filter(id => id !== groupId))
+    if (error) { console.error('Leave group error:', error); toast.error('Erro ao sair do grupo'); return }
+    setMyGroupIds(prev => prev.filter(id => id !== groupId))
     if (selectedGroup?.id === groupId) { setSelectedGroup(null); setMobileView('list') }
     loadGroups()
     toast.success('Você saiu do grupo')
+    logActivity({ type: 'group_left', actorId: user!.id, actorName: user!.username, title: groups.find(g => g.id === groupId)?.name || 'Grupo', referenceId: groupId, referenceType: 'group' }).catch(() => null)
   }
 
   const sendMessage = async () => {
@@ -183,9 +196,20 @@ const GroupsPage = () => {
           </div>
           <div className="flex gap-2">
             {!isGuest && (
-              <Button onClick={() => setCreateOpen(true)} size="sm" className="h-9 bg-[#0A2E4A] hover:bg-[#0A2E4A]/90 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 text-white font-medium rounded-xl px-4 shadow-sm">
-                <Plus className="h-4 w-4 mr-1.5" /> Criar Grupo
-              </Button>
+              <div className="flex items-center gap-2">
+                {myGroupIds.length > 0 && (
+                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                    myGroupIds.length >= MAX_GROUPS
+                      ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400'
+                      : 'bg-muted text-muted-foreground'
+                  }`}>
+                    {myGroupIds.length}/{MAX_GROUPS} grupos
+                  </span>
+                )}
+                <Button onClick={() => setCreateOpen(true)} size="sm" className="h-9 bg-[#0A2E4A] hover:bg-[#0A2E4A]/90 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 text-white font-medium rounded-xl px-4 shadow-sm">
+                  <Plus className="h-4 w-4 mr-1.5" /> Criar Grupo
+                </Button>
+              </div>
             )}
             {isGuest && (
               <Button onClick={() => navigate('/auth')} size="sm" className="h-9 bg-[#0A2E4A] hover:bg-[#0A2E4A]/90 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 text-white font-medium rounded-xl px-4 shadow-sm">
