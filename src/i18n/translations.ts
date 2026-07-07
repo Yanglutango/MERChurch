@@ -156,7 +156,7 @@ export const translations = {
       failed: 'Falhou',
       pix: 'PIX',
       mcx: 'MCX',
-      iban: 'Transferência Bancária',
+      iban: 'Transferência Bancaria',
       creditCard: 'Cartão de Crédito',
       debitCard: 'Cartão de Débito',
       confirmContribution: 'Confirmar Contribuição',
@@ -191,7 +191,7 @@ export const translations = {
       accountType: 'Tipo de Conta',
       applyTheme: 'Aplicar Tema',
       profileUpdated: 'Perfil atualizado!',
-      themeUpdated: 'Tema atualizado!',
+      themeUpdated: 'Tema updated!',
       selectLanguage: 'Selecionar Idioma',
       selectCurrency: 'Selecionar Moeda',
     },
@@ -497,7 +497,7 @@ export const translations = {
     home: {
       welcomeTitle: 'Bienvenue dans la Famille MER',
       welcomeSubtitle: 'Un lieu de foi, d’amour et de transformation',
-      liveNow: 'CULTO EN DIRECT MAINTENANT',
+      liveNow: 'CULTE EN DIRECT MAINTENANT',
       watchLive: 'Regarder en Direct',
       knowMore: 'En savoir plus sur la MER',
       quickAccess: 'Accès Rapide',
@@ -505,7 +505,7 @@ export const translations = {
       upcomingEvents: 'Événements à Venir',
       seeAllSermons: 'Voir Tous les Sermons',
       seeFullAgenda: 'Voir l’Agenda Complet',
-      activeMembers: 'Membres Actifs',
+      activeMembers: 'Membros Actifs',
       activeCells: 'Cellules Actives',
       transformedLives: 'Vies Transformées',
       coursesAvailable: 'Cours Disponibles',
@@ -644,7 +644,7 @@ export const translations = {
       ministries: 'Ministerios',
       academy: 'MER Academy',
       community: 'Comunidad',
-      treasury: 'Tesourería',
+      treasury: 'Tesorería',
       prayer: 'Oración',
       counseling: 'Consejería',
       about: 'Sobre MER',
@@ -743,7 +743,7 @@ export const translations = {
       inquiry: 'Consulta',
       support: 'Soporte',
       feedback: 'Comentarios',
-      messageSent: '¡Mismo enviado con éxito!',
+      messageSent: '¡Mensaje enviado con éxito!',
       location: 'Ubicación',
     },
     ministries: {
@@ -756,11 +756,11 @@ export const translations = {
     treasury: {
       title: 'Tesorería',
       subtitle: 'Gestiona tus contribuciones con transparencia',
-      totalContributed: 'Total Contribuído',
+      totalContributed: 'Total Contribuido',
       transactions: 'Transacciones',
       newContribution: 'Nueva Contribución',
       amount: 'Monto',
-      type: 'Type',
+      type: 'Tipo',
       paymentMethod: 'Método de Pago',
       description: 'Descripción',
       optional: 'Opcional',
@@ -800,7 +800,7 @@ export const translations = {
       askQuestions: 'Haz preguntas sobre la Biblia y temas de fe',
       placeholder: 'Escribe tu pregunta...',
       powered: 'Impulsado por IA avanzada',
-      newConversation: 'Nueva Conversación',
+      newConversation: 'Nueva Conversa',
       messages: 'mensajes',
     },
     settings: {
@@ -824,7 +824,7 @@ export const translations = {
       supportThanks: '¡Gracias por tu apoyo!',
       contactEmail: 'Contacto',
       donate: 'Donar',
-      back: 'Voltar',
+      back: 'Volver',
       complete: 'Completar',
     },
     guest: {
@@ -840,5 +840,4 @@ export type Language = keyof typeof translations
 export type AppTranslationStructure = typeof translations['pt']
 export type ValidatedTranslations = Record<Language, AppTranslationStructure>
 
-// [ZUCKERBERG] Validação final estrita mapeada de forma determinística
 export const typedTranslations: ValidatedTranslations = translations
