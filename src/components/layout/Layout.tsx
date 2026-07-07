@@ -4,7 +4,7 @@ import { useAuth } from '../../hooks/useAuth'
 import {
   Home, Radio, BookOpen, Calendar, Bell, Sparkles, Users, GraduationCap,
   MessageCircle, DollarSign, Heart, HeadphonesIcon, Info, Settings,
-  LayoutDashboard, LogOut, ScrollText, LibraryBig, Users2, MoreHorizontal, X,
+  LayoutDashboard, LogOut, ScrollText, LibraryBig, Users2, MoreHorizontal, X, Megaphone,
 } from 'lucide-react'
 import { authService } from '../../lib/authService'
 import { useAppStore } from '../../stores/appStore'
@@ -42,11 +42,12 @@ function useNavSections(role: string | undefined, t: (k: string) => string): Nav
       { icon: Sparkles,      label: 'Logos by KAIRÓS', path: '/ai' },
     ]
     const support: NavItem[] = [
-      { icon: DollarSign,     label: t('nav.treasury'),     path: '/treasury' },
-      { icon: HeadphonesIcon, label: t('nav.counseling'),   path: '/counseling' },
+      { icon: DollarSign,     label: t('nav.treasury'),      path: '/treasury' },
+      { icon: HeadphonesIcon, label: t('nav.counseling'),    path: '/counseling' },
+      { icon: Megaphone,      label: 'Anúncios',             path: '/announcements' },
       { icon: Bell,           label: t('nav.notifications'), path: '/notifications' },
-      { icon: Info,           label: t('nav.about'),        path: '/about' },
-      { icon: Settings,       label: t('nav.settings'),     path: '/settings' },
+      { icon: Info,           label: t('nav.about'),         path: '/about' },
+      { icon: Settings,       label: t('nav.settings'),      path: '/settings' },
     ]
 
     if (role === 'admin') {
@@ -64,6 +65,7 @@ function useNavSections(role: string | undefined, t: (k: string) => string): Nav
         { heading: 'Comunidade', items: [
           { icon: Heart,      label: t('nav.prayer'),   path: '/prayer' },
           { icon: ScrollText, label: 'Testemunhos',     path: '/testimonies' },
+          { icon: Megaphone,  label: 'Anúncios',        path: '/announcements' },
           { icon: Info,       label: t('nav.about'),    path: '/about' },
         ]},
         { heading: 'Conta', items: [

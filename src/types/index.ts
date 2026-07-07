@@ -238,6 +238,22 @@ export interface LiveMessage {
   }
 }
 
+export interface Announcement {
+  id: string
+  title: string
+  content: string
+  category: 'urgent' | 'spiritual' | 'event' | 'institutional'
+  priority?: string
+  imageUrl?: string
+  image_url?: string
+  published: boolean
+  is_pinned?: boolean
+  author_name?: string
+  created_by?: string
+  created_at: string
+  expires_at?: string
+}
+
 export interface Testimony {
   id: string
   userId: string

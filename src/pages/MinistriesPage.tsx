@@ -344,7 +344,7 @@ const MinistriesPage = () => {
         toast.error('Permissão negada. Verifique as configurações de acesso.')
       } else if (err.status === 401) {
         toast.error('Sua sessão expirou. Faça login novamente.')
-      } else if (err.message?.toLowerCase().includes('fetch')) {
+      } else if (err.name === 'TypeError' && err.message?.toLowerCase().includes('failed to fetch')) {
         toast.error('Erro de conexão. Verifique sua internet e tente novamente.')
       } else {
         toast.error(err.message || 'Erro ao processar sua inscrição. Tente novamente.')

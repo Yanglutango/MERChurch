@@ -24,6 +24,7 @@ import PrayerPage from './pages/PrayerPage'
 import CounselingPage from './pages/CounselingPage'
 import AboutPage from './pages/AboutPage'
 import SettingsPage from './pages/SettingsPage'
+import AnnouncementsPage from './pages/AnnouncementsPage'
 import { useAuthStore } from './stores/authStore'
 import { supabase } from './lib/supabase'
 
@@ -124,6 +125,7 @@ function App() {
         <Route path="/groups" element={user ? <GroupsPage /> : <Navigate to="/auth" />} />
         <Route path="/academy/:courseId" element={user ? <CourseDetailPage /> : <Navigate to="/auth" />} />
         <Route path="/profile/:userId" element={user ? <MemberProfilePage /> : <Navigate to="/auth" />} />
+        <Route path="/announcements" element={user ? <AnnouncementsPage /> : <Navigate to="/auth" />} />
       </Routes>
       <Toaster position="top-center" richColors closeButton />
     </BrowserRouter>
