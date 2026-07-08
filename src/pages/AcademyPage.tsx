@@ -32,13 +32,14 @@ import { EmptyState } from '../components/shared/EmptyState'
 import { LoadingState } from '../components/shared/LoadingState'
 import { CourseEditor } from '../components/admin/CourseEditor'
 
-const ACADEMY_MESSAGES = {
-  DELETE_CONFIRM: 'Tem certeza absoluta que deseja excluir este curso permanentemente?',
-  DELETE_ERROR: 'Erro ao excluir curso da base de dados.',
-  DELETE_SUCCESS: 'Curso excluído com sucesso!',
-  ENROLL_ERROR: 'Erro ao se inscrever no curso.',
-  ENROLL_SUCCESS: 'Inscrição realizada com sucesso!',
-  LOAD_COURSES_ERROR: 'Erro ao carregar cursos. Tente novamente.',
+// Helper externo adaptado para aceitar a função t dinamicamente
+const getLevelBadge = (level: string | undefined, t: (key: string) => string) => {
+  const badges: Record<string, { color: string; label: string }> = {
+    beginner: { color: 'bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400', label: t('academy.levels.beginner') },
+    intermediate: { color: 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400', label: t('academy.levels.intermediate') },
+    advanced: { color: 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400', label: t('academy.levels.advanced') },
+  }
+  return badges[level || 'beginner'] || badges.beginner
 }
 
 const AcademyPage = () => {
@@ -116,13 +117,13 @@ const AcademyPage = () => {
         setEnrollmentCount(statsRes.count || 0)
       }
     } catch (error) {
-      toast.error(ACADEMY_MESSAGES.LOAD_COURSES_ERROR)
+      toast.error(t('academy.messages.loadCoursesError'))
       console.error('Database sync error:', error)
     } finally {
-      setLoading(false)
+      loading && setLoading(false)
       setRefreshing(false)
     }
-  }, [isAdmin, user?.id]) // Dependências limpas e estáveis
+  }, [isAdmin, user?.id, t])
 
   useEffect(() => {
     loadInitialData()
@@ -148,14 +149,14 @@ const AcademyPage = () => {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm(ACADEMY_MESSAGES.DELETE_CONFIRM)) return
+    if (!confirm(t('academy.messages.deleteConfirm'))) return
     try {
       const { error } = await supabase.from('courses').delete().eq('id', id)
       if (error) throw error
-      toast.success(ACADEMY_MESSAGES.DELETE_SUCCESS)
+      toast.success(t('academy.messages.deleteSuccess'))
       loadInitialData(true)
     } catch (error) {
-      toast.error(ACADEMY_MESSAGES.DELETE_ERROR)
+      toast.error(t('academy.messages.deleteError'))
     }
   }
 
@@ -164,28 +165,19 @@ const AcademyPage = () => {
     try {
       const { error } = await supabase.from('enrollments').insert({ course_id: courseId, user_id: user.id })
       if (error) throw error
-      toast.success(ACADEMY_MESSAGES.ENROLL_SUCCESS)
+      toast.success(t('academy.messages.enrollSuccess'))
       loadInitialData(true)
     } catch (error) {
-      toast.error(ACADEMY_MESSAGES.ENROLL_ERROR)
+      toast.error(t('academy.messages.enrollError'))
     }
-  }
-
-  const getLevelBadge = (level?: string) => {
-    const badges: Record<string, { color: string; label: string }> = {
-      beginner: { color: 'bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400', label: 'Básico' },
-      intermediate: { color: 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400', label: 'Intermediário' },
-      advanced: { color: 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400', label: 'Avançado' },
-    }
-    return badges[level || 'beginner'] || badges.beginner
   }
 
   if (loading) {
-    return <LoadingState fullScreen message="Sincronizando painel do Administrador-chefe com segurança..." />
+    return <LoadingState fullScreen message={t('academy.loadingMessage')} />
   }
 
   return (
-    <Layout title="MER Academy">
+    <Layout title={t('nav.academy')}>
       <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6 animate-in fade-in duration-200">
         
         {/* BARRA EXCLUSIVA DO ADMINISTRADOR-CHEFE */}
@@ -197,10 +189,10 @@ const AcademyPage = () => {
               </div>
               <div>
                 <h2 className="text-sm font-bold text-foreground flex items-center gap-1.5">
-                  Painel de Controle do Criador da Plataforma
+                  {t('academy.admin.panelTitle')}
                 </h2>
                 <p className="text-xs text-muted-foreground">
-                  Você possui privilégios totais de leitura, modificação, rascunhos e exclusão estrutural.
+                  {t('academy.admin.panelDesc')}
                 </p>
               </div>
             </div>
@@ -209,17 +201,17 @@ const AcademyPage = () => {
               className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5"
             >
               <Plus className="h-4 w-4 stroke-[3]" />
-              Criar Novo Curso
+              {t('academy.admin.createCourse')}
             </Button>
           </Card>
         )}
 
         {/* Métricas de Performance Real */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard icon={BookOpen} label="Total no Catálogo" value={courses.length} gradient="from-blue-600 to-indigo-600" />
-          <StatCard icon={TrendingUp} label={isAdmin ? "Matrículas Ativas (Global)" : "Meus Cursos"} value={isAdmin ? enrollmentCount : enrolledCourses.length} gradient="from-purple-600 to-pink-600" />
-          <StatCard icon={CheckCircle2} label="Módulos Publicados" value={courses.filter(c => c.isPublished).length} gradient="from-emerald-600 to-teal-600" />
-          <StatCard icon={BarChart3} label="Rascunhos Ocultos" value={courses.filter(c => !c.isPublished).length} gradient="from-amber-600 to-orange-600" />
+          <StatCard icon={BookOpen} label={t('academy.stats.totalCatalog')} value={courses.length} gradient="from-blue-600 to-indigo-600" />
+          <StatCard icon={TrendingUp} label={isAdmin ? t('academy.stats.activeEnrollments') : t('academy.stats.myCourses')} value={isAdmin ? enrollmentCount : enrolledCourses.length} gradient="from-purple-600 to-pink-600" />
+          <StatCard icon={CheckCircle2} label={t('academy.stats.publishedModules')} value={courses.filter(c => c.isPublished).length} gradient="from-emerald-600 to-teal-600" />
+          <StatCard icon={BarChart3} label={t('academy.stats.hiddenDrafts')} value={courses.filter(c => !c.isPublished).length} gradient="from-amber-600 to-orange-600" />
         </div>
 
         {/* Barra de Busca Avançada */}
@@ -228,7 +220,7 @@ const AcademyPage = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Buscar trilhas ou cursos específicos..."
+              placeholder={t('academy.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-4 py-2 text-sm bg-background border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
@@ -238,12 +230,12 @@ const AcademyPage = () => {
             <select
               value={filterLevel || ''}
               onChange={(e) => setFilterLevel(e.target.value || null)}
-              className="px-3 py-2 text-sm bg-background border rounded-xl focus:outline-none"
+              className="px-3 py-2 text-sm bg-background border rounded-xl focus:outline-none focus:text-foreground"
             >
-              <option value="">Todos os Níveis</option>
-              <option value="beginner">Básico</option>
-              <option value="intermediate">Intermediário</option>
-              <option value="advanced">Avançado</option>
+              <option value="">{t('academy.allLevels')}</option>
+              <option value="beginner">{t('academy.levels.beginner')}</option>
+              <option value="intermediate">{t('academy.levels.intermediate')}</option>
+              <option value="advanced">{t('academy.levels.advanced')}</option>
             </select>
             <Button variant="outline" size="icon" onClick={() => loadInitialData(true)} className="rounded-xl shrink-0">
               <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
@@ -255,20 +247,20 @@ const AcademyPage = () => {
         <div className="space-y-4">
           <h3 className="font-bold text-lg text-foreground flex items-center gap-2">
             <SlidersHorizontal className="h-4 w-4 text-indigo-500" />
-            Catálogo Geral de Módulos
+            {t('academy.catalogTitle')}
           </h3>
 
           {filteredAndSortedCourses.length === 0 ? (
             <EmptyState
               icon={GraduationCap}
-              title="Nenhum curso mapeado ou localizado"
-              description="Clique no painel superior para adicionar o primeiro curso ou limpe seus filtros de busca."
+              title={t('academy.empty.title')}
+              description={t('academy.empty.description')}
             />
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredAndSortedCourses.map((course) => {
                 const isEnrolled = enrolledCourses.includes(course.id)
-                const badge = getLevelBadge(course.level)
+                const badge = getLevelBadge(course.level, t)
 
                 return (
                   <Card key={course.id} className="border bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
@@ -284,7 +276,7 @@ const AcademyPage = () => {
                         </span>
                         {!course.isPublished && (
                           <span className="flex items-center gap-1 px-2 py-0.5 bg-orange-500 text-white text-[10px] font-black uppercase rounded-md shadow">
-                            <EyeOff className="h-2.5 w-2.5" /> Oculto / Rascunho
+                            <EyeOff className="h-2.5 w-2.5" /> {t('academy.card.draft')}
                           </span>
                         )}
                       </div>
@@ -294,12 +286,12 @@ const AcademyPage = () => {
                       <div className="space-y-1">
                         <h4 className="font-bold text-base text-foreground line-clamp-1">{course.title}</h4>
                         <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                          {course.description || 'Sem descrição cadastrada.'}
+                          {course.description || t('academy.card.noDescription')}
                         </p>
                       </div>
 
                       <div className="text-[11px] text-muted-foreground flex items-center gap-1">
-                        <Clock className="h-3 w-3" /> Carga Horária: {course.durationHours || 0}h
+                        <Clock className="h-3 w-3" /> {t('academy.card.durationHours')}: {course.durationHours || 0}h
                       </div>
 
                       <div className="space-y-2 pt-2 border-t">
@@ -312,7 +304,7 @@ const AcademyPage = () => {
                               className="text-xs border-indigo-200 text-indigo-600 hover:bg-indigo-50 dark:border-indigo-900 dark:text-indigo-400 rounded-xl flex items-center justify-center gap-1"
                             >
                               <Edit2 className="h-3 w-3" />
-                              Editar Curso
+                              {t('common.edit')}
                             </Button>
                             <Button
                               size="sm"
@@ -321,16 +313,16 @@ const AcademyPage = () => {
                               className="text-xs rounded-xl flex items-center justify-center gap-1"
                             >
                               <Trash2 className="h-3 w-3" />
-                              Apagar
+                              {t('academy.card.delete')}
                             </Button>
                           </div>
                         ) : isEnrolled ? (
                           <Button onClick={() => navigate(`/academy/${course.id}`)} className="w-full text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white">
-                            Acessar Aulas
+                            {t('academy.card.accessLessons')}
                           </Button>
                         ) : (
                           <Button onClick={() => enrollCourse(course.id)} className="w-full text-xs font-bold rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-black">
-                            Matricular-se
+                            {t('academy.card.enroll')}
                           </Button>
                         )}
                       </div>
