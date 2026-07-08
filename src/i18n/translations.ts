@@ -23,6 +23,7 @@ export const translations = {
       treasury: 'Tesouraria',
       prayer: 'Oração',
       counseling: 'Aconselhamento',
+      announcements: 'Anúncios',
       about: 'Sobre a MER',
       settings: 'Configurações',
       dashboard: 'Dashboard',
@@ -155,17 +156,17 @@ export const translations = {
       toastFillFields: 'Preencha todos os campos',
       toastContactSuccess: 'Mensagem enviada! Entraremos em contato em breve.',
       values: {
-      loveTitle: 'Amor', loveDesc: 'Demonstramos o amor de Cristo em tudo que fazemos',
-      communityTitle: 'Comunidade', communityDesc: 'Somos uma família unida pela fé e companheirismo',
-      missionTitle: 'Missão', missionDesc: 'Levamos esperança e transformação ao mundo',
-      wordTitle: 'Palavra', wordDesc: 'A Bíblia é nossa fonte de verdade e direção',
-        },
+        loveTitle: 'Amor', loveDesc: 'Demonstramos o amor de Cristo em tudo que fazemos',
+        communityTitle: 'Comunidade', communityDesc: 'Somos uma família unida pela fé e companheirismo',
+        missionTitle: 'Missão', missionDesc: 'Levamos esperança e transformação ao mundo',
+        wordTitle: 'Palavra', wordDesc: 'A Bíblia é nossa fonte de verdade e direção',
+      },
       stats: {
         years: 'Anos de história',
         features: 'Funcionalidades',
         languages: 'Idiomas suportados',
         availability: 'Disponibilidade',
-        },
+      },
       features: {
         liveDesc: 'Cultos transmitidos em tempo real com chat interativo da comunidade',
         sermonsDesc: 'Biblioteca completa de mensagens com áudio, vídeo e transcrições',
@@ -174,7 +175,7 @@ export const translations = {
         communityDesc: 'Feed de partilha, testemunhos, grupos de célula e pedidos de oração',
         ministriesDesc: 'Inscrição em áreas de atuação e gestão de equipes ministeriais',
         badgeLive: 'Live', badgeNew: 'Novo', badgeAI: 'IA',
-        },
+      },
     },
     ministries: {
       title: 'Ministérios',
@@ -264,7 +265,7 @@ export const translations = {
       exploreMore: 'Explore nosso conteúdo e descubra como podemos caminhar juntos na fé',
     },
   },
-  
+
   en: {
     brand: {
       name: 'KAIRÓS',
@@ -286,8 +287,7 @@ export const translations = {
       treasury: 'Treasury',
       prayer: 'Prayer',
       counseling: 'Counseling',
-      testimonies: 'Testimonies',
-      announcements: 'Annoucements',
+      announcements: 'Announcements',
       about: 'About MER',
       settings: 'Settings',
       dashboard: 'Dashboard',
@@ -386,87 +386,61 @@ export const translations = {
       feedback: 'Feedback',
       messageSent: 'Message sent successfully!',
       location: 'Location',
-      digitalPlatform: 'MER Digital Platform',
-      heroTitlePart1: 'Evangelical Mission',
-      heroTitlePart2: 'of Reconciliation',
+      platformDigital: 'MER Digital Platform',
+      heroTitleStart: 'Evangelical Mission',
+      heroTitleEnd: 'of Reconciliation',
       heroTaglineFallback: 'A community of faith, reconciliation, and divine purpose — now with a complete digital platform to connect, grow, and impact.',
-      talkToUs: 'Talk to Us',
-      addressValue: 'Tchioco Neighborhood — opposite Huila stop, Lubango, Angola',
-      verseText: 'All this is from God, who reconciled us to himself through Christ...',
-      platformTitle: 'KAIRÓS Platform',
-      platformSubtitle: 'Complete digital ecosystem of MER',
-      platformDesc: 'KAIRÓS is the official digital platform of the Evangelical Mission of Reconciliation. Designed to serve members, leaders, and guests with modern tools for spiritual growth, fellowship, and church administration.',
+      speakWithUs: 'Talk to Us',
+      adminMode: 'Edit Mode Active',
+      adminDescription: 'Click "Edit" on any section to update content dynamically.',
       historyFallback: 'The **Evangelical Mission of Reconciliation (MER)** was born in Angola with the purpose of bringing God\'s love to all people.\n\nToday we are a vibrant and welcoming community, committed to making a difference in our city, country, and beyond borders.\n\nOur digital platform *KAIRÓS* reflects this mission in the digital world — a complete ecosystem for spiritual growth, fellowship, and service.',
+      verseText: 'All this is from God, who reconciled us to himself through Christ...',
+      ourVision: 'Our Vision',
       missionFallback: 'Reconcile people with God and one another through the gospel of Jesus Christ, transforming lives, families, and communities for the glory of the Lord.',
       visionFallback: 'To be a church that transforms Angola and the world through the power of the gospel, creating a community where everyone grows spiritually and discovers their divine purpose.',
-      admin: {
-        editModeActive: 'Edit Mode Active',
-        editModeDesc: 'Click "Edit" on any section to update content dynamically.'
-      },
-      errors: {
-        save: 'Error saving'
-      },
-      success: {
-        updated: 'Content updated!'
+      platformTitle: 'KAIRÓS Platform',
+      platformSubtitle: 'Complete digital ecosystem of MER',
+      platformDescription: 'KAIRÓS is the official digital platform of the Evangelical Mission of Reconciliation. Designed to serve members, leaders, and guests with modern tools for spiritual growth, fellowship, and church administration.',
+      addressContent: 'Tchioco Neighborhood — opposite Huila stop, Lubango, Angola',
+      titleOptional: 'Title (optional)',
+      contentRequired: 'Content *',
+      titlePlaceholder: 'Section title...',
+      contentPlaceholder: 'Type text here...',
+      formattingHint: 'Use **text** for bold and *text* for italic.',
+      saving: 'Saving...',
+      sending: 'Sending...',
+      yourNamePlaceholder: 'Your name',
+      emailPlaceholder: 'your@email.com',
+      subjectPlaceholder: 'Message subject',
+      messagePlaceholder: 'Type your message...',
+      messageTypeLabel: 'Contact Type',
+      prayerRequest: 'Prayer Request',
+      toastSaveError: 'Error saving',
+      toastSaveSuccess: 'Content updated!',
+      toastFillFields: 'Fill all fields',
+      toastContactSuccess: 'Message sent! We will contact you soon.',
+      values: {
+        loveTitle: 'Love', loveDesc: 'We demonstrate Christ\'s love in everything we do',
+        communityTitle: 'Community', communityDesc: 'We are a family united by faith and fellowship',
+        missionTitle: 'Mission', missionDesc: 'We bring hope and transformation to the world',
+        wordTitle: 'Word', wordDesc: 'The Bible is our source of truth and direction',
       },
       stats: {
         years: 'Years of history',
         features: 'Features',
         languages: 'Supported languages',
-        availability: 'Availability'
+        availability: 'Availability',
       },
       features: {
         liveDesc: 'Services streamed in real-time with interactive community chat',
         sermonsDesc: 'Complete library of messages with audio, video, and transcripts',
         academyDesc: 'Theological courses with certification, quizzes, and individual progress',
-        logosDesc: 'Intelligent biblical assistant trained exclusively on the Scriptures',
+        aiDesc: 'Intelligent biblical assistant trained exclusively on the Scriptures',
         communityDesc: 'Sharing feed, testimonies, cell groups, and prayer requests',
         ministriesDesc: 'Registration in areas of activity and ministerial team management',
-        badges: {
-          live: 'Live',
-          new: 'New',
-          ai: 'AI'
-        }
+        badgeLive: 'Live', badgeNew: 'New', badgeAI: 'AI',
       },
-      valuesTitles: {
-        love: 'Love',
-        community: 'Community',
-        mission: 'Mission',
-        word: 'Word'
-      },
-      valuesFallback: {
-        love: 'We demonstrate Christ\'s love in everything we do',
-        community: 'We are a family united by faith and fellowship',
-        mission: 'We bring hope and transformation to the world',
-        word: 'The Bible is our source of truth and direction'
-      },
-      schedulesFallback: {
-        sunday: 'Celebration Service: 09:00 and 18:00',
-        tuesday: 'Worship Service: 17:00',
-        wednesday: 'Word Service: 16:30',
-        thursday: 'Prayer Service: 16:30',
-        friday: 'Word Service: 16:30',
-        saturday: 'Youth Service: 15:00'
-      },
-      editModal: {
-        titleLabel: 'Title (optional)',
-        titlePlaceholder: 'Section title...',
-        contentLabel: 'Content',
-        contentPlaceholder: 'Type text here...',
-        markdownHint: 'Use **text** for bold and *text* for italic.',
-        saving: 'Saving...'
-      },
-      contactModal: {
-        namePlaceholder: 'Your name',
-        emailPlaceholder: 'your@email.com',
-        subjectPlaceholder: 'Message subject',
-        typeLabel: 'Contact Type',
-        typeInquiry: 'Inquiry / Question',
-        messagePlaceholder: 'Type your message...',
-        sending: 'Sending...'
-      }
-    }
-  },
+    },
     ministries: {
       title: 'Ministries',
       subtitle: 'Find your place in the MER family',
@@ -554,7 +528,8 @@ export const translations = {
       joinFull: 'Join the MER family for full access',
       exploreMore: 'Explore our content and discover how we can walk together in faith',
     },
-  
+  },
+
   fr: {
     brand: {
       name: 'KAIRÓS',
@@ -576,8 +551,8 @@ export const translations = {
       treasury: 'Trésorerie',
       prayer: 'Prière',
       counseling: 'Conseil',
+      announcements: 'Annonces',
       about: 'À Propos',
-      annoucements: 'Annonces',
       settings: 'Paramètres',
       dashboard: 'Tableau de Bord',
       logout: 'Déconnexion',
@@ -634,7 +609,7 @@ export const translations = {
     },
     home: {
       welcomeTitle: 'Bienvenue dans la Famille MER',
-      welcomeSubtitle: 'Un lieu de foi, d’amour et de transformation',
+      welcomeSubtitle: "Un lieu de foi, d'amour et de transformation",
       liveNow: 'CULTE EN DIRECT MAINTENANT',
       watchLive: 'Regarder en Direct',
       knowMore: 'En savoir plus sur la MER',
@@ -642,8 +617,8 @@ export const translations = {
       latestSermons: 'Derniers Sermons',
       upcomingEvents: 'Événements à Venir',
       seeAllSermons: 'Voir Tous les Sermons',
-      seeFullAgenda: 'Voir l’Agenda Complet',
-      activeMembers: 'Membros Actifs',
+      seeFullAgenda: "Voir l'Agenda Complet",
+      activeMembers: 'Membres Actifs',
       activeCells: 'Cellules Actives',
       transformedLives: 'Vies Transformées',
       coursesAvailable: 'Cours Disponibles',
@@ -675,87 +650,61 @@ export const translations = {
       feedback: 'Commentaire',
       messageSent: 'Message envoyé avec succès !',
       location: 'Emplacement',
-      digitalPlatform: 'Plateforme Numérique de la MER',
-      heroTitlePart1: 'Mission Évangélique',
-      heroTitlePart2: 'de la Réconciliation',
-      heroTaglineFallback: 'Une communauté de foi, de réconciliation et de but divin — maintenant avec une plateforme numérique complète pour se connecter, grandir et impacter.',
-      talkToUs: 'Nous Parler',
-      addressValue: 'Quartier Tchioco — en face de l\'arrêt Huila, Lubango, Angola',
+      platformDigital: 'Plateforme Numérique de la MER',
+      heroTitleStart: 'Mission Évangélique',
+      heroTitleEnd: 'de la Réconciliation',
+      heroTaglineFallback: "Une communauté de foi, de réconciliation et de but divin — maintenant avec une plateforme numérique complète pour se connecter, grandir et impacter.",
+      speakWithUs: 'Nous Parler',
+      adminMode: 'Mode Édition Actif',
+      adminDescription: 'Cliquez sur "Modifier" dans n\'importe quelle section pour mettre à jour le contenu dynamiquement.',
+      historyFallback: "La **Mission Évangélique de la Réconciliation (MER)** est née en Angola dans le but d'apporter l'amour de Dieu à tous.\n\nAujourd'hui, nous sommes une communauté vivante et accueillante, engagée à faire la différence dans notre ville, notre pays et au-delà des frontières.\n\nNotre plateforme numérique *KAIRÓS* est le reflet de cette mission dans le monde numérique — un écosystème complet pour la croissance spirituelle, la communion et le service.",
       verseText: 'Tout cela vient de Dieu, qui nous a réconciliés avec lui par le Christ...',
+      ourVision: 'Notre Vision',
+      missionFallback: "Réconcilier les personnes avec Dieu et les unes avec les autres grâce à l'Évangile de Jésus-Christ, en transformant les vies, les familles et les communautés pour la gloire du Seigneur.",
+      visionFallback: "Être une église qui transforme l'Angola et le monde par la puissance de l'Évangile, en créant une communauté où chacun grandit spirituellement et découvre son but divin.",
       platformTitle: 'Plateforme KAIRÓS',
       platformSubtitle: 'Écosystème numérique complet de la MER',
-      platformDesc: 'KAIRÓS est la plateforme numérique officielle de la Mission Évangélique de la Réconciliation. Conçue pour servir les membres, les dirigeants et les invités avec des outils modernes de croissance spirituelle, de communion et d\'administration ecclésiastique.',
-      historyFallback: 'La **Mission Évangélique de la Réconciliation (MER)** est née en Angola dans le but d\'apporter l\'amour de Dieu à tous.\n\nAujourd\'hui, nous sommes une communauté vivante et accueillante, engagée à faire la différence dans notre ville, notre pays et au-delà des frontières.\n\nNotre plateforme numérique *KAIRÓS* est le reflet de cette mission dans le monde numérique — un écosystème complet pour la croissance spirituelle, la communion et le service.',
-      missionFallback: 'Réconcilier les personnes avec Dieu et les unes avec les autres grâce à l\'Évangile de Jésus-Christ, en transformant les vies, les familles et les communautés pour la gloire du Seigneur.',
-      visionFallback: 'Être une église qui transforme l\'Angola et le monde par la puissance de l\'Évangile, en créant une communauté où chacun grandit spirituellement et découvre son but divin.',
-      admin: {
-        editModeActive: 'Mode Édition Actif',
-        editModeDesc: 'Cliquez sur "Modifier" dans n\'importe quelle section pour mettre à jour le contenu dynamiquement.'
-      },
-      errors: {
-        save: 'Erreur d\'enregistrement'
-      },
-      success: {
-        updated: 'Contenu mis à jour !'
+      platformDescription: "KAIRÓS est la plateforme numérique officielle de la Mission Évangélique de la Réconciliation. Conçue pour servir les membres, les dirigeants et les invités avec des outils modernes de croissance spirituelle, de communion et d'administration ecclésiastique.",
+      addressContent: "Quartier Tchioco — en face de l'arrêt Huila, Lubango, Angola",
+      titleOptional: 'Titre (optionnel)',
+      contentRequired: 'Contenu *',
+      titlePlaceholder: 'Titre de la section...',
+      contentPlaceholder: 'Tapez le texte...',
+      formattingHint: "Utilisez **texte** pour le gras et *texte* pour l'italique.",
+      saving: 'Enregistrement...',
+      sending: 'Envoi en cours...',
+      yourNamePlaceholder: 'Votre nom',
+      emailPlaceholder: 'votre@email.com',
+      subjectPlaceholder: 'Sujet du message',
+      messagePlaceholder: 'Tapez votre message...',
+      messageTypeLabel: 'Type de Contact',
+      prayerRequest: 'Demande de Prière',
+      toastSaveError: "Erreur d'enregistrement",
+      toastSaveSuccess: 'Contenu mis à jour !',
+      toastFillFields: 'Veuillez remplir tous les champs',
+      toastContactSuccess: 'Message envoyé ! Nous vous contacterons bientôt.',
+      values: {
+        loveTitle: 'Amour', loveDesc: "Nous démontrons l'amour du Christ dans tout ce que nous faisons",
+        communityTitle: 'Communauté', communityDesc: 'Nous sommes une famille unie par la foi et la camaraderie',
+        missionTitle: 'Mission', missionDesc: "Nous apportons l'espoir et la transformation au monde",
+        wordTitle: 'Parole', wordDesc: 'La Bible est notre source de vérité et de direction',
       },
       stats: {
-        years: 'Années d\'histoire',
+        years: "Années d'histoire",
         features: 'Fonctionnalités',
         languages: 'Langues supportées',
-        availability: 'Disponibilité'
+        availability: 'Disponibilité',
       },
       features: {
         liveDesc: 'Cultes diffusés en temps réel avec chat communautaire interactif',
         sermonsDesc: 'Bibliothèque complète de messages avec audio, vidéo et transcriptions',
         academyDesc: 'Cours théologiques avec certification, quiz et progression individuelle',
-        logosDesc: 'Assistant biblique intelligent formé exclusivement sur les Écritures',
+        aiDesc: 'Assistant biblique intelligent formé exclusivement sur les Écritures',
         communityDesc: 'Fil de partage, témoignages, groupes de cellule et demandes de prière',
-        ministriesDesc: 'Inscription dans les domaines d\'activité et gestion des équipes ministérielles',
-        badges: {
-          live: 'Live',
-          new: 'Nouveau',
-          ai: 'IA'
-        }
+        ministriesDesc: "Inscription dans les domaines d'activité et gestion des équipes ministérielles",
+        badgeLive: 'Live', badgeNew: 'Nouveau', badgeAI: 'IA',
       },
-      valuesTitles: {
-        love: 'Amour',
-        community: 'Communauté',
-        mission: 'Mission',
-        word: 'Parole'
-      },
-      valuesFallback: {
-        love: 'Nous démontrons l\'amour du Christ dans tout ce que nous faisons',
-        community: 'Nous sommes une famille unie par la foi et la camaraderie',
-        mission: 'Nous apportons l\'espoir et la transformation au monde',
-        word: 'La Bible est notre source de vérité et de direction'
-      },
-      schedulesFallback: {
-        sunday: 'Culte de Célébration: 09h00 et 18h00',
-        tuesday: 'Culte d\'Adoration: 17h00',
-        wednesday: 'Culte de Parole: 16h30',
-        thursday: 'Culte de Prière: 16h30',
-        friday: 'Culte de Parole: 16h30',
-        saturday: 'Culte des Jeunes: 15h00'
-      },
-      editModal: {
-        titleLabel: 'Titre (optionnel)',
-        titlePlaceholder: 'Titre de la section...',
-        contentLabel: 'Contenu',
-        contentPlaceholder: 'Tapez le texte...',
-        markdownHint: 'Utilisez **texte** pour le gras et *texte* pour l\'italique.',
-        saving: 'Enregistrement...'
-      },
-      contactModal: {
-        namePlaceholder: 'Votre nom',
-        emailPlaceholder: 'votre@email.com',
-        subjectPlaceholder: 'Sujet du message',
-        typeLabel: 'Type de Contact',
-        typeInquiry: 'Demande / Consultation',
-        messagePlaceholder: 'Tapez votre message...',
-        sending: 'Envoi en cours...'
-      }
-    }
-  },
+    },
     ministries: {
       title: 'Ministères',
       subtitle: 'Trouvez votre place dans la famille MER',
@@ -806,7 +755,7 @@ export const translations = {
     logosAI: {
       title: 'IA Logos',
       subtitle: 'Assistant Spirituel Intelligent',
-      howCanHelp: 'Comment puis-je vous aider aujourd’hui ?',
+      howCanHelp: "Comment puis-je vous aider aujourd'hui ?",
       askQuestions: 'Posez des questions sur la Bible et les thèmes de foi',
       placeholder: 'Tapez votre question...',
       powered: 'Propulsé par une IA avancée',
@@ -819,7 +768,7 @@ export const translations = {
       appearance: 'Apparence',
       languageCurrency: 'Langue & Devise',
       themeMode: 'Mode',
-      accentColor: 'Couleur d’Accentuation',
+      accentColor: "Couleur d'Accentuation",
       customColor: 'Couleur Personnalisée',
       preview: 'Aperçu',
       accountType: 'Type de Compte',
@@ -839,11 +788,12 @@ export const translations = {
     },
     guest: {
       becomeMember: 'Devenir Membre',
-      limitedAccess: 'Accès limité en tant qu’invité',
+      limitedAccess: "Accès limité en tant qu'invité",
       joinFull: 'Rejoignez la famille MER pour un accès complet',
       exploreMore: 'Explorez notre contenu et découvrez comment nous pouvons marcher ensemble dans la foi',
     },
-  
+  },
+
   es: {
     brand: {
       name: 'KAIRÓS',
@@ -864,8 +814,8 @@ export const translations = {
       community: 'Comunidad',
       treasury: 'Tesorería',
       prayer: 'Oración',
-      announcements: 'Anuncios',
       counseling: 'Consejería',
+      announcements: 'Anuncios',
       about: 'Sobre MER',
       settings: 'Configuración',
       dashboard: 'Panel',
@@ -964,87 +914,61 @@ export const translations = {
       feedback: 'Comentarios',
       messageSent: '¡Mensaje enviado con éxito!',
       location: 'Ubicación',
-      digitalPlatform: 'Plataforma Digital de la MER',
-      heroTitlePart1: 'Misión Evangélica',
-      heroTitlePart2: 'de la Reconciliación',
+      platformDigital: 'Plataforma Digital de la MER',
+      heroTitleStart: 'Misión Evangélica',
+      heroTitleEnd: 'de la Reconciliación',
       heroTaglineFallback: 'Una comunidad de fe, reconciliación y propósito divino — ahora con una plataforma digital completa para conectar, crecer e impactar.',
-      talkToUs: 'Hablar con Nosotros',
-      addressValue: 'Barrio Tchioco — frente a la parada de Huila, Lubango, Angola',
-      verseText: 'Todo esto proviene de Dios, quien nos reconcilió consigo mismo por medio de Cristo...',
-      platformTitle: 'Plataforma KAIRÓS',
-      platformSubtitle: 'Ecosistema digital completo de la MER',
-      platformDesc: 'KAIRÓS es la plataforma digital oficial de la Misión Evangélica de la Reconciliación. Diseñada para servir a miembros, líderes e invitados con herramientas modernas de crecimiento espiritual, comunión y administración eclesiástica.',
+      speakWithUs: 'Hablar con Nosotros',
+      adminMode: 'Modo de Edición Activo',
+      adminDescription: 'Haga clic en "Editar" en cualquier sección para actualizar el contenido dinamicamente.',
       historyFallback: 'La **Misión Evangélica de la Reconciliación (MER)** nació en Angola con el propósito de llevar el amor de Dios a todas las personas.\n\nHoy somos una comunidad vibrante y acogedora, comprometida en hacer la diferencia en nuestra ciudad, en el país y más allá de las fronteras.\n\nNuestra plataforma digital *KAIRÓS* es el reflejo de esta misión en el mundo digital — un ecosistema completo para el crecimiento espiritual, la comunión y el servicio.',
+      verseText: 'Todo esto proviene de Dios, quien nos reconcilió consigo mismo por medio de Cristo...',
+      ourVision: 'Nuestra Visión',
       missionFallback: 'Reconciliar a las personas con Dios y entre sí a través del evangelio de Jesucristo, transformando vidas, familias y comunidades para la gloria del Señor.',
       visionFallback: 'Ser una iglesia que transforma a Angola y al mundo a través del poder del evangelio, creando una comunidad donde todos crecen espiritualmente y descubren su propósito divino.',
-      admin: {
-        editModeActive: 'Modo de Edición Activo',
-        editModeDesc: 'Haga clic en "Editar" en cualquier sección para actualizar el contenido dinamicamente.'
-      },
-      errors: {
-        save: 'Error al guardar'
-      },
-      success: {
-        updated: '¡Contenido actualizado!'
+      platformTitle: 'Plataforma KAIRÓS',
+      platformSubtitle: 'Ecosistema digital completo de la MER',
+      platformDescription: 'KAIRÓS es la plataforma digital oficial de la Misión Evangélica de la Reconciliación. Diseñada para servir a miembros, líderes e invitados con herramientas modernas de crecimiento espiritual, comunión y administración eclesiástica.',
+      addressContent: 'Barrio Tchioco — frente a la parada de Huila, Lubango, Angola',
+      titleOptional: 'Título (opcional)',
+      contentRequired: 'Contenido *',
+      titlePlaceholder: 'Título de la sección...',
+      contentPlaceholder: 'Escribe el texto...',
+      formattingHint: 'Usa **texto** para negrita y *texto* para cursiva.',
+      saving: 'Guardando...',
+      sending: 'Enviando...',
+      yourNamePlaceholder: 'Su nombre',
+      emailPlaceholder: 'su@email.com',
+      subjectPlaceholder: 'Asunto del mensaje',
+      messagePlaceholder: 'Escribe tu mensaje...',
+      messageTypeLabel: 'Tipo de Contacto',
+      prayerRequest: 'Petición de Oración',
+      toastSaveError: 'Error al guardar',
+      toastSaveSuccess: '¡Contenido actualizado!',
+      toastFillFields: 'Complete todos los campos',
+      toastContactSuccess: '¡Mensaje enviado! Nos pondremos en contacto pronto.',
+      values: {
+        loveTitle: 'Amor', loveDesc: 'Demostramos el amor de Cristo en todo lo que hacemos',
+        communityTitle: 'Comunidad', communityDesc: 'Somos una familia unida por la fe y el compañerismo',
+        missionTitle: 'Misión', missionDesc: 'Llevamos esperanza y transformación al mundo',
+        wordTitle: 'Palabra', wordDesc: 'La Biblia es nuestra fuente de verdad y dirección',
       },
       stats: {
         years: 'Años de historia',
         features: 'Funcionalidades',
         languages: 'Idiomas soportados',
-        availability: 'Disponibilidad'
+        availability: 'Disponibilidad',
       },
       features: {
         liveDesc: 'Cultos transmitidos en tiempo real con chat interactivo de la comunidad',
         sermonsDesc: 'Biblioteca completa de mensajes con audio, video y transcripciones',
         academyDesc: 'Cursos teológicos con certificación, cuestionarios y progreso individual',
-        logosDesc: 'Asistente bíblico inteligente entrenado exclusivamente en las Escrituras',
+        aiDesc: 'Asistente bíblico inteligente entrenado exclusivamente en las Escrituras',
         communityDesc: 'Feed para compartir, testimonios, grupos de células y peticiones de oración',
         ministriesDesc: 'Inscripción en áreas de actividad y gestión de equipos ministeriales',
-        badges: {
-          live: 'Live',
-          new: 'Nuevo',
-          ai: 'IA'
-        }
+        badgeLive: 'Live', badgeNew: 'Nuevo', badgeAI: 'IA',
       },
-      valuesTitles: {
-        love: 'Amor',
-        community: 'Comunidad',
-        mission: 'Misión',
-        word: 'Palabra'
-      },
-      valuesFallback: {
-        love: 'Demostramos el amor de Cristo en todo lo que hacemos',
-        community: 'Somos una familia unida por la fe y el compañerismo',
-        mission: 'Llevamos esperanza y transformación al mundo',
-        word: 'La Biblia es nuestra fuente de verdad y dirección'
-      },
-      schedulesFallback: {
-        sunday: 'Culto de Celebración: 09:00 y 18:00',
-        tuesday: 'Culto de Adoración: 17:00',
-        wednesday: 'Culto de Palabra: 16:30',
-        thursday: 'Culto de Oración: 16:30',
-        friday: 'Culto de Palabra: 16:30',
-        saturday: 'Culto de Jóvenes: 15:00'
-      },
-      editModal: {
-        titleLabel: 'Título (opcional)',
-        titlePlaceholder: 'Título de la sección...',
-        contentLabel: 'Contenido',
-        contentPlaceholder: 'Escribe el texto...',
-        markdownHint: 'Usa **texto** para negrita y *texto* para cursiva.',
-        saving: 'Guardando...'
-      },
-      contactModal: {
-        namePlaceholder: 'Su nombre',
-        emailPlaceholder: 'su@email.com',
-        subjectPlaceholder: 'Asunto del mensaje',
-        typeLabel: 'Tipo de Contacto',
-        typeInquiry: 'Duda / Consulta',
-        messagePlaceholder: 'Escribe tu mensaje...',
-        sending: 'Enviando...'
-      }
-    }
-  },
+    },
     ministries: {
       title: 'Ministerios',
       subtitle: 'Encuentra tu lugar en la familia MER',
