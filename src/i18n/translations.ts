@@ -154,19 +154,18 @@ export const translations = {
       toastSaveSuccess: 'Conteúdo atualizado!',
       toastFillFields: 'Preencha todos os campos',
       toastContactSuccess: 'Mensagem enviada! Entraremos em contato em breve.',
-    },
-    values: {
+      values: {
       loveTitle: 'Amor', loveDesc: 'Demonstramos o amor de Cristo em tudo que fazemos',
       communityTitle: 'Comunidade', communityDesc: 'Somos uma família unida pela fé e companheirismo',
       missionTitle: 'Missão', missionDesc: 'Levamos esperança e transformação ao mundo',
       wordTitle: 'Palavra', wordDesc: 'A Bíblia é nossa fonte de verdade e direção',
-    },
+      },
     stats: {
       years: 'Anos de história',
       features: 'Funcionalidades',
       languages: 'Idiomas suportados',
       availability: 'Disponibilidade',
-    },
+      },
     features: {
       liveDesc: 'Cultos transmitidos em tempo real com chat interativo da comunidade',
       sermonsDesc: 'Biblioteca completa de mensagens com áudio, vídeo e transcrições',
@@ -175,6 +174,7 @@ export const translations = {
       communityDesc: 'Feed de partilha, testemunhos, grupos de célula e pedidos de oração',
       ministriesDesc: 'Inscrição em áreas de atuação e gestão de equipes ministeriais',
       badgeLive: 'Live', badgeNew: 'Novo', badgeAI: 'IA',
+      },
     },
     ministries: {
       title: 'Ministérios',
