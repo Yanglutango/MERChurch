@@ -95,6 +95,49 @@ export const translations = {
       transformedLives: 'Vidas Transformadas',
       coursesAvailable: 'Cursos Disponíveis',
     },
+    academy: {
+  loadingMessage: 'Sincronizando painel do Administrador-chefe com segurança...',
+  catalogTitle: 'Catálogo Geral de Módulos',
+  searchPlaceholder: 'Buscar trilhas ou cursos específicos...',
+  allLevels: 'Todos os Níveis',
+  admin: {
+    panelTitle: 'Painel de Controle do Criador da Plataforma',
+    panelDesc: 'Você possui privilégios totais de leitura, modificação, rascunhos e exclusão estrutural.',
+    createCourse: 'Criar Novo Curso',
+  },
+  levels: {
+    beginner: 'Básico',
+    intermediate: 'Intermediário',
+    advanced: 'Avançado',
+  },
+  stats: {
+    totalCatalog: 'Total no Catálogo',
+    activeEnrollments: 'Matrículas Ativas (Global)',
+    myCourses: 'Meus Cursos',
+    publishedModules: 'Módulos Publicados',
+    hiddenDrafts: 'Rascunhos Ocultos',
+  },
+  empty: {
+    title: 'Nenhum curso mapeado ou localizado',
+    description: 'Clique no painel superior para adicionar o primeiro curso ou limpe seus filtros de busca.',
+  },
+  card: {
+    draft: 'Oculto / Rascunho',
+    noDescription: 'Sem descrição cadastrada.',
+    durationHours: 'Carga Horária',
+    delete: 'Apagar',
+    accessLessons: 'Acessar Aulas',
+    enroll: 'Matricular-se',
+  },
+  messages: {
+    loadCoursesError: 'Erro ao carregar cursos. Tente novamente.',
+    deleteConfirm: 'Tem certeza absoluta que deseja excluir este curso permanentemente?',
+    deleteSuccess: 'Curso excluído com sucesso!',
+    deleteError: 'Erro ao excluir curso da base de dados.',
+    enrollSuccess: 'Inscrição realizada com sucesso!',
+    enrollError: 'Erro ao se inscrever no curso.',
+  }
+},
     about: {
       title: 'Sobre a MER',
       ourHistory: 'Nossa História',
