@@ -72,13 +72,12 @@ const AcademyPage = () => {
         ? supabase.from('courses').select('*')
         : supabase.from('courses').select('*').eq('is_published', true)
 
-      const [coursesRes, enrollmentsRes, progressRes, statsRes] = await Promise.all([
+      // Uses `enrollments` for both enrolled list and progress (progress + completed fields)
+      // Note: `course_progress` table does not exist; progress lives in enrollments.progress
+      const [coursesRes, enrollmentsRes, statsRes] = await Promise.all([
         coursesQuery.order('created_at', { ascending: false }),
         user?.id 
-          ? supabase.from('enrollments').select('course_id').eq('user_id', user.id)
-          : Promise.resolve({ data: null, error: null }),
-        user?.id
-          ? supabase.from('course_progress').select('*').eq('user_id', user.id)
+          ? supabase.from('enrollments').select('course_id, progress, completed').eq('user_id', user.id)
           : Promise.resolve({ data: null, error: null }),
         isAdmin
           ? supabase.from('enrollments').select('id', { count: 'exact', head: true })
@@ -101,14 +100,17 @@ const AcademyPage = () => {
       setCourses(coursesData)
       setEnrolledCourses((enrollmentsRes.data || []).map((e: any) => e.course_id))
       
+      // Build progress map from enrollment data (progress = 0-100 integer, completed = boolean)
       const progressMap: Record<string, CourseProgress> = {}
-      ;(progressRes.data || []).forEach((p: any) => {
-        const courseIdKey = p.course_id || p.courseId
-        progressMap[courseIdKey] = {
-          courseId: courseIdKey,
-          progressPercentage: p.progress_percentage || p.progressPercentage || 0,
-          completedLessonsCount: p.completed_lessons_count || p.completedLessonsCount || 0,
-          totalLessonsCount: p.total_lessons_count || p.totalLessonsCount || 0
+      ;(enrollmentsRes.data || []).forEach((e: any) => {
+        progressMap[e.course_id] = {
+          id: e.course_id,
+          userId: user?.id || '',
+          courseId: e.course_id,
+          progressPercentage: e.progress || 0,
+          completedLessonsCount: e.completed ? 1 : 0,
+          totalLessonsCount: 1,
+          lastAccessedAt: new Date().toISOString(),
         }
       })
       setCourseProgress(progressMap)
