@@ -1,6 +1,6 @@
-# 🎯 Transformação Profissional - KAIRÓS
+# Transformação Profissional - KAIRÓS
 
-## 📊 Resumo Executivo
+## Resumo Executivo
 
 O repositório **Yanglutango/MERChurch** foi transformado de um projeto "vibe-coded" (gerado por IA com design genérico) para uma **plataforma profissional de verdadeiro desenvolvedor**. 
 
@@ -10,7 +10,7 @@ O repositório **Yanglutango/MERChurch** foi transformado de um projeto "vibe-co
 
 ---
 
-## ✨ Mudanças Realizadas
+## Mudanças Realizadas
 
 ### **Fase 1: Documentação Profissional** ✅
 Transformou README genérico em documentação de nível enterprise.
@@ -68,7 +68,7 @@ Criação de guia visual e padrões de desenvolvimento.
 ### **Fase 4: Primeiros Componentes Customizados** ✅
 Criação de componentes únicos da marca (não mais shadcn genéricos).
 
-#### 🎨 **BrandCard.tsx**
+#### **BrandCard.tsx**
 Componente de card customizado com:
 - Tipagem completa (interface Props)
 - 5 variações (default, highlight, success, warning, error)
@@ -87,7 +87,7 @@ Componente de card customizado com:
 />
 ```
 
-#### 📝 **FormField.tsx**
+#### **FormField.tsx**
 Wrapper de formulário profissional com:
 - Label customizado
 - Suporte a hint e erro
@@ -101,7 +101,7 @@ Wrapper de formulário profissional com:
 </FormField>
 ```
 
-#### 🏷️ **MinistryBadge.tsx**
+#### **MinistryBadge.tsx**
 Badge customizado para ministérios com:
 - Cores dinâmicas por ministério
 - 3 tamanhos (sm, md, lg)
@@ -119,12 +119,12 @@ Badge customizado para ministérios com:
 />
 ```
 
-#### 📦 **index.ts (Brand Components)**
+#### **index.ts (Brand Components)**
 Barrel export centralizando todos os componentes custom.
 
 ---
 
-## 📈 Métricas de Transformação
+## Métricas de Transformação
 
 | Aspecto | Antes | Depois | Mudança |
 |---------|-------|--------|---------|
@@ -138,7 +138,7 @@ Barrel export centralizando todos os componentes custom.
 
 ---
 
-## 🚀 Próximos Passos (Recomendados)
+## Próximos Passos (Recomendados)
 
 ### **Curto Prazo (Próximas 2 semanas)**
 - [ ] Refatorar `Hero.tsx` — remover gradiente roxo, usar apenas navy/teal
@@ -160,13 +160,13 @@ Barrel export centralizando todos os componentes custom.
 
 ---
 
-## 📂 Estrutura Atual do Projeto
+## Estrutura Atual do Projeto
 
 ```
 MERChurch/
-├── 📖 README.md                    ✅ Profissional
-├── 📋 CONTRIBUTING.md              ✅ Guia completo
-├── 🎨 DESIGN_SYSTEM.md             ✅ Sistema documentado
+├── README.md                    ✅ Profissional
+├── CONTRIBUTING.md              ✅ Guia completo
+├── DESIGN_SYSTEM.md             ✅ Sistema documentado
 ├── .env.example                    ✅ Template seguro
 ├── .prettierrc.json                ✅ Formatação
 ├── .github/
@@ -207,7 +207,7 @@ MERChurch/
 
 ---
 
-## 🎓 Padrões Implementados
+## Padrões Implementados
 
 ### TypeScript
 ```typescript
@@ -251,21 +251,21 @@ Component.displayName = 'Component'
 
 ---
 
-## 💡 Conclusão
+## Conclusão
 
 O projeto **MERChurch** foi elevado de um "protótipo rápido feito com IA" para uma **plataforma profissional, bem documentada e escalável**. 
 
 **Diferenciais agora:**
-- 📚 Documentação clara e profissional
-- 🎨 Sistema de design explícito
-- 🧩 Componentes customizados (não genéricos)
-- 📝 Padrões de código definidos
-- 🚀 Pronto para crescimento
-- 🤝 Fácil para novos contribuidores
+- Documentação clara e profissional
+- Sistema de design explícito
+- Componentes customizados (não genéricos)
+- Padrões de código definidos
+- Pronto para crescimento
+- Fácil para novos contribuidores
 
 ---
 
-## 📞 Próximas Ações
+## Próximas Ações
 
 1. **Revisar DESIGN_SYSTEM.md** para entender a estratégia
 2. **Usar BrandCard em lugar de Card** nos novos componentes
