@@ -2,7 +2,7 @@
 
 Obrigado por considerar contribuir para o KAIRÓS! Este documento fornece diretrizes e instruções para contribuidores.
 
-## 📋 Índice
+## Índice
 
 - [Código de Conduta](#código-de-conduta)
 - [Como Começar](#como-começar)
@@ -15,7 +15,7 @@ Obrigado por considerar contribuir para o KAIRÓS! Este documento fornece diretr
 
 ---
 
-## 🤝 Código de Conduta
+## Código de Conduta
 
 Este projeto segue um Código de Conduta baseado em respeito, inclusão e profissionalismo:
 
@@ -28,7 +28,7 @@ Violações podem resultar em remoção de contribuições ou bloqueio de conta.
 
 ---
 
-## 🚀 Como Começar
+## Como Começar
 
 ### 1. Fork o Repositório
 
@@ -71,7 +71,7 @@ git checkout -b fix/bug-description
 
 ---
 
-## 📝 Processo de Contribuição
+## Processo de Contribuição
 
 ### Passo 1: Faça suas Mudanças
 
@@ -118,7 +118,7 @@ git push origin feat/minha-feature
 
 ---
 
-## 🎨 Padrões de Código
+## Padrões de Código
 
 ### TypeScript
 
@@ -197,7 +197,7 @@ export const CustomButton: React.FC<ButtonProps> = React.memo(({ label, onClick,
 
 ---
 
-## 💬 Mensagens de Commit
+## Mensagens de Commit
 
 Use o padrão **Conventional Commits**:
 
@@ -230,7 +230,7 @@ git commit -m "refactor(ministries): extract member list to component"
 
 ---
 
-## 🔀 Pull Requests
+## Pull Requests
 
 Ao abrir um PR, descreva claramente:
 - O que foi alterado
@@ -239,7 +239,7 @@ Ao abrir um PR, descreva claramente:
 
 ---
 
-## 🐛 Reportar Bugs
+## Reportar Bugs
 
 Antes de reportar:
 - Verifique se o bug já foi reportado
@@ -248,7 +248,7 @@ Antes de reportar:
 
 ---
 
-## 💡 Sugerir Features
+## Sugerir Features
 
 Ant de sugerir:
 - Verifique se não existe discussão similar
@@ -256,4 +256,4 @@ Ant de sugerir:
 
 ---
 
-**Obrigado por contribuir para KAIRÓS! 🙏**
+**Obrigado por contribuir para KAIRÓS!**
