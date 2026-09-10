@@ -389,15 +389,15 @@ const DashboardPage = () => {
             </h2>
             <div className="grid grid-cols-2 gap-2">
               {quickActions.map((action, idx) => (
-                
+                <button
                   key={idx}
-                  href={action.href}
+                  onClick={() => navigate(action.href)}
                   className="group flex items-center gap-2.5 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
                 >
                   <action.icon className="h-4 w-4 text-foreground flex-shrink-0" strokeWidth={1.75} />
                   <span className="font-medium text-foreground text-xs flex-1">{action.label}</span>
                   <ChevronRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-                </a>
+                </button>
               ))}
             </div>
           </Card>
