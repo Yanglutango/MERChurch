@@ -10,21 +10,21 @@
 
 ---
 
-## 📋 Visão Geral
+## Visão Geral
 
 **KAIRÓS** é uma plataforma digital abrangente que une a comunidade evangélica em torno de:
 
-- 🙏 **Vida Espiritual** — Orações, testemunhos, aconselhamento pastoral
-- 📚 **Educação Cristã** — Academia com cursos, trilhas de aprendizado, gamificação
-- 🎵 **Ministérios** — Louvor, intercessão, discipulado, departamentos
-- 📖 **Conteúdo** — Sermões, devocionais, recursos bíblicos
-- 🤖 **IA Integrada** — Logos by KAIRÓS (assistente teológico baseado em Escrituras)
-- 💰 **Gestão Administrativa** — Tesouraria, doações, eventos
-- 🔴 **Transmissão ao Vivo** — Serviços e eventos em tempo real
+- **Vida Espiritual** — Orações, testemunhos, aconselhamento pastoral
+- **Educação Cristã** — Academia com cursos, trilhas de aprendizado, gamificação
+- **Ministérios** — Louvor, intercessão, discipulado, departamentos
+- **Conteúdo** — Sermões, devocionais, recursos bíblicos
+- **IA Integrada** — Logos by KAIRÓS (assistente teológico baseado em Escrituras)
+- **Gestão Administrativa** — Tesouraria, doações, eventos
+- **Transmissão ao Vivo** — Serviços e eventos em tempo real
 
 ---
 
-## 🏗️ Arquitetura
+## Arquitetura
 
 ### Stack Tecnológico
 
@@ -85,7 +85,7 @@ MERChurch/
 
 ---
 
-## 🚀 Começar Rapidamente
+## Começar Rapidamente
 
 ### Pré-requisitos
 
@@ -116,7 +116,7 @@ A aplicação estará disponível em: **http://localhost:8080**
 
 ---
 
-## 📖 Documentação
+## Documentação
 
 - **[LOCAL_SETUP.md](./LOCAL_SETUP.md)** — Guia completo de desenvolvimento local com extensões VS Code e troubleshooting
 - **[LMS_IMPLEMENTATION_GUIDE.md](./LMS_IMPLEMENTATION_GUIDE.md)** — Documentação da Academia e gamificação
@@ -124,7 +124,7 @@ A aplicação estará disponível em: **http://localhost:8080**
 
 ---
 
-## 🔑 Variáveis de Ambiente
+## Variáveis de Ambiente
 
 Crie um arquivo `.env.local` na raiz do projeto:
 
@@ -144,11 +144,11 @@ VITE_MULTICAIXA_API_KEY=...
 VITE_APP_ENV=development
 ```
 
-> ⚠️ **Nunca commite `.env.local`** — está em `.gitignore`
+> **Nunca commite `.env.local`** — está em `.gitignore`
 
 ---
 
-## 📝 Scripts NPM
+## Scripts NPM
 
 ```bash
 npm run dev          # Inicia servidor de desenvolvimento (hot reload)
@@ -160,7 +160,7 @@ npm run preview      # Visualiza build localmente
 
 ---
 
-## 🧪 Autenticação
+## Autenticação
 
 ### Fluxos Suportados
 
@@ -179,7 +179,7 @@ Senha: password123 (qualquer senha funciona em dev)
 
 ---
 
-## 🎨 Design & UI
+## Design & UI
 
 ### Princípios
 
@@ -195,39 +195,39 @@ Usamos **Shadcn UI** primitivos customizados com **Tailwind CSS** para máxima f
 
 ---
 
-## 📊 Recursos Principais
+## Recursos Principais
 
-### 🙏 Centro Espiritual
+### Centro Espiritual
 - Oração em tempo real com notificações
 - Testemunhos com moderação
 - Aconselhamento pastoral agendado
 - Devocionais diários
 
-### 📚 Academia (LMS)
+### Academia (LMS)
 - Cursos estruturados em trilhas
 - Gamificação com pontos e badges
 - Progresso visual com rastreamento
 - Certificados digitais
 
-### 🎵 Ministérios
+### Ministérios
 - Criação e gerenciamento de ministérios
 - Limite inteligente de participações (max 3)
 - Feed de atividades em tempo real
 - Membros com roles (coordenador, membro)
 
-### 🤖 Logos by KAIRÓS
+### Logos by KAIRÓS
 - IA teológica treinada em Escrituras Sagradas
 - 25+ categorias temáticas
 - Histórico de conversas persistente
 - Limite de uso justo (50 requisições/mês)
 
-### 📖 Conteúdo Bíblico
+### Conteúdo Bíblico
 - Sermões com transcrições
 - Recursos e PDFs
 - Série de eventos e agenda
 - Índice de anúncios
 
-### 💰 Gestão Administrativa
+### Gestão Administrativa
 - Dashboard com métricas
 - Tesouraria com relatórios
 - Doações (única/recorrente/projetos)
@@ -235,7 +235,7 @@ Usamos **Shadcn UI** primitivos customizados com **Tailwind CSS** para máxima f
 
 ---
 
-## 🔐 Segurança
+## Segurança
 
 - **CORS Configurado** — Apenas origins autorizados
 - **Rate Limiting** — Via Supabase e Edge Functions
@@ -246,7 +246,7 @@ Usamos **Shadcn UI** primitivos customizados com **Tailwind CSS** para máxima f
 
 ---
 
-## 🚢 Deployment
+## Deployment
 
 ### Opção 1: Vercel (Recomendado)
 
@@ -268,7 +268,7 @@ Veja [supabase.com/hosting](https://supabase.com/docs/guides/hosting)
 
 ---
 
-## 🤝 Contribuir
+## Contribuir
 
 Contribuições são bem-vindas! Por favor, leia [CONTRIBUTING.md](./CONTRIBUTING.md) antes de submeter PRs.
 
@@ -284,21 +284,21 @@ git push origin feature/minha-feature
 
 ---
 
-## 📞 Suporte
+## Suporte
 
-- 📧 **Email:** dev@missionariosautodenominados.com
-- 🐛 **Issues:** [GitHub Issues](https://github.com/Yanglutango/MERChurch/issues)
-- 💬 **Discussões:** [GitHub Discussions](https://github.com/Yanglutango/MERChurch/discussions)
+- **Email:** lutangoyanivo1234@gmail.com
+- **Issues:** [GitHub Issues](https://github.com/Yanglutango/MERChurch/issues)
+- **Discussões:** [GitHub Discussions](https://github.com/Yanglutango/MERChurch/discussions)
 
 ---
 
-## 📄 Licença
+## Licença
 
 ISC — Veja [LICENSE](./LICENSE) para detalhes completos.
 
 ---
 
-## 🙏 Agradecimentos
+## Agradecimentos
 
 Desenvolvido com ❤️ para a comunidade evangélica.
 
