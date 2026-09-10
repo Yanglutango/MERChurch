@@ -8,9 +8,9 @@ import { useAuth } from '../hooks/useAuth'
 import { exportToCSV, exportFinancialReport } from '../lib/reportExporter'
 import {
   LayoutDashboard, Users, BookOpen, Calendar, Heart, DollarSign,
-  TrendingUp, Activity, UserCheck, UserPlus, ArrowUpRight, Zap,
-  CheckCircle2, Clock, GraduationCap, ChevronRight, Download,
-  FileSpreadsheet, Shield, MessageSquare, BarChart3,
+  TrendingUp, Activity, UserCheck, UserPlus, Zap,
+  Clock, GraduationCap, ChevronRight, Download,
+  FileSpreadsheet, Shield, MessageSquare, Circle,
 } from 'lucide-react'
 import {
   LineChart, Line, BarChart, Bar,
@@ -20,9 +20,7 @@ import { LoadingState } from '../components/shared/LoadingState'
 import { EmptyState } from '../components/shared/EmptyState'
 import { toast } from 'sonner'
 import { useRealTime } from '../hooks/useRealTime'
-import { getActivityLabel, getActivityColor } from '../lib/activityLogger'
-
-const COLORS = ['#4A90A4', '#D4A574', '#0A2E4A', '#10B981', '#F59E0B', '#EF4444']
+import { getActivityLabel } from '../lib/activityLogger'
 
 const PT_MONTHS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
 const PT_DAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
@@ -40,7 +38,6 @@ const DashboardPage = () => {
     totalCourses: 0, totalGroups: 0, pendingCounseling: 0,
   })
 
-  // Real chart data
   const [memberGrowthData, setMemberGrowthData] = useState<{ month: string; members: number }[]>([])
   const [eventParticipationData, setEventParticipationData] = useState<{ event: string; confirmed: number }[]>([])
   const [weeklyActivityData, setWeeklyActivityData] = useState<{ day: string; orações: number; mensagens: number }[]>([])
@@ -60,7 +57,6 @@ const DashboardPage = () => {
   const loadStats = async () => {
     setLoading(true)
     try {
-      // Run all queries in parallel
       const sixMonthsAgo = new Date()
       sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
       sixMonthsAgo.setDate(1)
@@ -83,30 +79,25 @@ const DashboardPage = () => {
         supabase.from('courses').select('id', { count: 'exact', head: true }),
         supabase.from('small_groups').select('id', { count: 'exact', head: true }).eq('is_active', true),
         supabase.from('counseling_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
-        // Member growth: user_profiles created in last 6 months
         supabase.from('user_profiles').select('created_at').gte('created_at', sixMonthsAgo.toISOString()),
-        // Weekly activity: prayers last 7 days
         supabase.from('prayer_requests').select('created_at').gte('created_at', sevenDaysAgo.toISOString()),
-        // Weekly activity: community posts last 7 days
         supabase.from('community_posts').select('created_at').gte('created_at', sevenDaysAgo.toISOString()),
-        // Event participation: event_attendees joined with events
         supabase.from('event_attendees').select('event_id, events(title)').limit(100),
       ])
 
       const completedTransactions = transactions.data?.filter(t => t.status === 'completed') || []
       const totalRevenue = completedTransactions.reduce((sum, t) => sum + parseFloat(t.amount), 0)
       const sumByType = (type: string) =>
-  completedTransactions.filter(t => (t as any).type === type).reduce((s, t) => s + parseFloat(t.amount), 0)
-const grand = totalRevenue || 1
-const rawContributions = [
-  { name: 'Dízimo', value: sumByType('tithe'),    color: '#0A2E4A' },
-  { name: 'Oferta', value: sumByType('offering'), color: '#4A90A4' },
-  { name: 'Doação', value: sumByType('donation'), color: '#D4A574' },
-].map(item => ({ ...item, value: Math.round(item.value / grand * 100) }))
+        completedTransactions.filter(t => (t as any).type === type).reduce((s, t) => s + parseFloat(t.amount), 0)
+      const grand = totalRevenue || 1
+      const rawContributions = [
+        { name: 'Dízimo', value: sumByType('tithe'),    color: '#0A2E4A' },
+        { name: 'Oferta', value: sumByType('offering'), color: '#4A90A4' },
+        { name: 'Doação', value: sumByType('donation'), color: '#D4A574' },
+      ].map(item => ({ ...item, value: Math.round(item.value / grand * 100) }))
 
-// Se todos forem zero (sem dados), não mostrar o gráfico vazio com zeros
-const hasContributions = rawContributions.some(c => c.value > 0)
-setContributionData(hasContributions ? rawContributions : [])
+      const hasContributions = rawContributions.some(c => c.value > 0)
+      setContributionData(hasContributions ? rawContributions : [])
 
       setStats({
         totalUsers: users.count || 0, totalMembers: members.count || 0, totalGuests: guests.count || 0,
@@ -116,7 +107,6 @@ setContributionData(hasContributions ? rawContributions : [])
         pendingCounseling: counseling.count || 0,
       })
 
-      // ── Member growth chart (last 6 months) ──────────────────────────
       const growthBuckets: Record<string, number> = {}
       const now = new Date()
       for (let i = 5; i >= 0; i--) {
@@ -136,7 +126,6 @@ setContributionData(hasContributions ? rawContributions : [])
       })
       setMemberGrowthData(growthData)
 
-      // ── Event participation chart ─────────────────────────────────────
       const eventMap: Record<string, number> = {}
       recentAttendees.data?.forEach((a: any) => {
         const title = (a.events?.title || 'Evento').slice(0, 14)
@@ -146,7 +135,6 @@ setContributionData(hasContributions ? rawContributions : [])
         Object.entries(eventMap).slice(0, 5).map(([event, confirmed]) => ({ event, confirmed }))
       )
 
-      // ── Weekly activity chart (last 7 days) ──────────────────────────
       const prayersByDay: Record<number, number> = {}
       const postsByDay: Record<number, number> = {}
       for (let d = 0; d < 7; d++) { prayersByDay[d] = 0; postsByDay[d] = 0 }
@@ -161,13 +149,14 @@ setContributionData(hasContributions ? rawContributions : [])
     }
   }
 
+  // Ícones monocromáticos — sem cor por categoria
   const quickActions = [
-    { icon: BookOpen,    label: 'Sermões',        href: '/sermons',    color: 'from-purple-500 to-pink-500' },
-    { icon: Calendar,    label: 'Eventos',        href: '/agenda',     color: 'from-blue-500 to-cyan-500' },
-    { icon: Users,       label: 'Ministérios',    href: '/ministries', color: 'from-green-500 to-emerald-500' },
-    { icon: GraduationCap, label: 'Academy',      href: '/academy',    color: 'from-orange-500 to-red-500' },
-    { icon: Heart,       label: 'Oração',         href: '/prayer',     color: 'from-rose-500 to-pink-500' },
-    { icon: MessageSquare, label: 'Aconselhamento', href: '/counseling', color: 'from-teal-500 to-cyan-500' },
+    { icon: BookOpen,      label: 'Sermões',        href: '/sermons' },
+    { icon: Calendar,      label: 'Eventos',        href: '/agenda' },
+    { icon: Users,         label: 'Ministérios',    href: '/ministries' },
+    { icon: GraduationCap, label: 'Academy',        href: '/academy' },
+    { icon: Heart,         label: 'Oração',         href: '/prayer' },
+    { icon: MessageSquare, label: 'Aconselhamento', href: '/counseling' },
   ]
 
   const allDataZero = (arr: any[], key: string) => !arr.length || arr.every(d => (d[key] ?? 0) === 0)
@@ -180,75 +169,71 @@ setContributionData(hasContributions ? rawContributions : [])
 
   return (
     <Layout title="Dashboard Administrativo">
-      <div className="p-4 space-y-6">
-        {/* Header */}
+      <div className="max-w-6xl mx-auto p-4 lg:p-8 space-y-6">
+
+        {/* Header — ícone sem caixa gradiente */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-border">
           <div>
-            <h1 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
-              <div className="p-2 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg shadow-md">
-                <LayoutDashboard className="h-5 w-5 text-white" />
-              </div>
+            <h1 className="text-xl md:text-2xl font-semibold text-foreground flex items-center gap-2.5">
+              <LayoutDashboard className="h-5 w-5 text-primary" strokeWidth={1.75} />
               Dashboard
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5">Visão geral da plataforma KAIRÓS · MER</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button onClick={() => handleExportReport('month')} variant="outline" size="sm" className="text-xs">
+            <Button onClick={() => handleExportReport('month')} variant="outline" size="sm" className="text-xs rounded-md">
               <Download className="h-3.5 w-3.5 mr-1.5" />Mensal
             </Button>
-            <Button onClick={() => handleExportReport('year')} variant="outline" size="sm" className="text-xs">
+            <Button onClick={() => handleExportReport('year')} variant="outline" size="sm" className="text-xs rounded-md">
               <FileSpreadsheet className="h-3.5 w-3.5 mr-1.5" />Anual
             </Button>
-            <Button onClick={() => handleExportFinancial('month')} variant="outline" size="sm" className="text-xs border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/20">
+            <Button onClick={() => handleExportFinancial('month')} variant="outline" size="sm" className="text-xs rounded-md">
               <DollarSign className="h-3.5 w-3.5 mr-1.5" />Financeiro
             </Button>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded-lg">
-              <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
-              <span className="text-xs font-bold text-green-700 dark:text-green-300">Ao Vivo</span>
+            {/* Estado real do sistema — verde continua a ser sinal, não decoração */}
+            <div className="flex items-center gap-1.5 px-3 py-1.5 border border-border rounded-md">
+              <Circle className="h-2 w-2 text-green-600 fill-green-600" />
+              <span className="text-xs font-medium text-foreground">Ao vivo</span>
             </div>
           </div>
         </div>
 
-        {/* Counseling Alert */}
+        {/* Alerta de aconselhamento — âmbar mantido: é sinal real de acção pendente */}
         {stats.pendingCounseling > 0 && (
-          <Card className="p-4 border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/30">
+          <Card className="p-4 border border-amber-300 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20 rounded-lg">
             <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-amber-500 rounded-lg"><MessageSquare className="h-4 w-4 text-white" /></div>
-                <div>
-                  <p className="font-bold text-amber-800 dark:text-amber-200 text-sm">
+              <div className="flex items-center gap-3 min-w-0">
+                <MessageSquare className="h-4 w-4 text-amber-700 dark:text-amber-400 flex-shrink-0" strokeWidth={1.75} />
+                <div className="min-w-0">
+                  <p className="font-medium text-amber-900 dark:text-amber-200 text-sm">
                     {stats.pendingCounseling} {stats.pendingCounseling === 1 ? 'solicitação pendente' : 'solicitações pendentes'} de aconselhamento
                   </p>
-                  <p className="text-xs text-amber-700 dark:text-amber-300">Responda para apoiar os membros</p>
+                  <p className="text-xs text-amber-700 dark:text-amber-400">Responda para apoiar os membros</p>
                 </div>
               </div>
-              <Button onClick={() => navigate('/counseling')} size="sm" className="bg-amber-600 hover:bg-amber-700 text-white font-bold">
+              <Button onClick={() => navigate('/counseling')} size="sm" variant="outline" className="border-amber-400 text-amber-800 dark:text-amber-300 flex-shrink-0 rounded-md">
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
           </Card>
         )}
 
-        {/* Primary Metrics */}
+        {/* Métricas primárias — ícone monocromático, SEM tendências inventadas.
+            As tendências ('+12%' etc.) eram strings fixas no código, nunca
+            calculadas a partir de dados reais — um dashboard admin não deve
+            mostrar métricas fabricadas. Removidas até haver cálculo real
+            (ex: comparar com o período anterior via query). */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
-            { icon: Users,     label: 'Total de Usuários', value: stats.totalUsers,   gradient: 'from-blue-500 to-cyan-500',    trend: '+12%' },
-            { icon: UserCheck, label: 'Membros Ativos',    value: stats.totalMembers, gradient: 'from-green-500 to-emerald-500', trend: '+8%' },
-            { icon: BookOpen,  label: 'Sermões',            value: stats.totalSermons, gradient: 'from-purple-500 to-pink-500',   trend: '+5' },
-            { icon: DollarSign, label: 'Receita Total',    value: `Kz ${(stats.totalRevenue / 1000).toFixed(1)}K`, gradient: 'from-emerald-500 to-teal-500', trend: '+18%' },
+            { icon: Users,      label: 'Total de Usuários', value: stats.totalUsers },
+            { icon: UserCheck,  label: 'Membros Ativos',    value: stats.totalMembers },
+            { icon: BookOpen,   label: 'Sermões',           value: stats.totalSermons },
+            { icon: DollarSign, label: 'Receita Total',     value: `Kz ${(stats.totalRevenue / 1000).toFixed(1)}K` },
           ].map((metric, idx) => (
-            <Card key={idx} className="relative overflow-hidden border hover:border-primary/40 transition-all hover:shadow-md group">
+            <Card key={idx} className="border rounded-lg">
               <div className="p-4">
-                <div className="flex items-start justify-between mb-3">
-                  <div className={`p-2 bg-gradient-to-br ${metric.gradient} rounded-lg shadow-sm`}>
-                    <metric.icon className="h-4 w-4 text-white" />
-                  </div>
-                  <div className="flex items-center gap-0.5 px-1.5 py-0.5 bg-green-100 dark:bg-green-900/30 rounded-full">
-                    <ArrowUpRight className="h-2.5 w-2.5 text-green-600 dark:text-green-400" />
-                    <span className="text-[10px] font-bold text-green-600 dark:text-green-400">{metric.trend}</span>
-                  </div>
-                </div>
-                <div className="text-xl md:text-2xl font-bold text-foreground">{metric.value}</div>
+                <metric.icon className="h-4 w-4 text-muted-foreground mb-3" strokeWidth={1.75} />
+                <div className="text-xl md:text-2xl font-semibold text-foreground tabular-nums">{metric.value}</div>
                 <div className="text-xs text-muted-foreground mt-0.5">{metric.label}</div>
               </div>
             </Card>
@@ -257,11 +242,10 @@ setContributionData(hasContributions ? rawContributions : [])
 
         {/* Charts Row 1 */}
         <div className="grid lg:grid-cols-2 gap-4">
-          {/* Member Growth */}
-          <Card className="p-4 border hover:shadow-md transition-shadow">
+          <Card className="p-4 border rounded-lg">
             <div className="flex items-center gap-2 mb-4">
-              <TrendingUp className="h-4 w-4 text-primary" />
-              <h3 className="font-semibold text-foreground text-sm">Crescimento de Membros</h3>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" strokeWidth={1.75} />
+              <h3 className="font-medium text-foreground text-sm">Crescimento de Membros</h3>
               <span className="text-xs text-muted-foreground ml-auto">Últimos 6 meses</span>
             </div>
             {allDataZero(memberGrowthData, 'members') ? (
@@ -273,17 +257,16 @@ setContributionData(hasContributions ? rawContributions : [])
                   <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', fontSize: '12px' }} labelStyle={{ fontWeight: 'bold' }} />
-                  <Line type="monotone" dataKey="members" stroke="#4A90A4" strokeWidth={2.5} dot={{ fill: '#4A90A4', r: 3 }} name="Membros" />
+                  <Line type="monotone" dataKey="members" stroke="#4A90A4" strokeWidth={2} dot={{ fill: '#4A90A4', r: 3 }} name="Membros" />
                 </LineChart>
               </ResponsiveContainer>
             )}
           </Card>
 
-          {/* Event Participation */}
-          <Card className="p-4 border hover:shadow-md transition-shadow">
+          <Card className="p-4 border rounded-lg">
             <div className="flex items-center gap-2 mb-4">
-              <Calendar className="h-4 w-4 text-purple-600" />
-              <h3 className="font-semibold text-foreground text-sm">Participação em Eventos</h3>
+              <Calendar className="h-4 w-4 text-muted-foreground" strokeWidth={1.75} />
+              <h3 className="font-medium text-foreground text-sm">Participação em Eventos</h3>
             </div>
             {eventParticipationData.length === 0 ? (
               <EmptyState icon={Calendar} title="Sem dados ainda" description="Os dados aparecem conforme membros confirmam presença" action={
@@ -305,11 +288,10 @@ setContributionData(hasContributions ? rawContributions : [])
 
         {/* Charts Row 2 */}
         <div className="grid lg:grid-cols-3 gap-4">
-          {/* Weekly Activity */}
-          <Card className="lg:col-span-2 p-4 border hover:shadow-md transition-shadow">
+          <Card className="lg:col-span-2 p-4 border rounded-lg">
             <div className="flex items-center gap-2 mb-4">
-              <Activity className="h-4 w-4 text-primary" />
-              <h3 className="font-semibold text-foreground text-sm">Atividade Semanal</h3>
+              <Activity className="h-4 w-4 text-muted-foreground" strokeWidth={1.75} />
+              <h3 className="font-medium text-foreground text-sm">Atividade Semanal</h3>
             </div>
             {allDataZero(weeklyActivityData, 'orações') && allDataZero(weeklyActivityData, 'mensagens') ? (
               <EmptyState icon={Activity} title="Sem atividade recente" description="Orações e posts da última semana aparecerão aqui" />
@@ -317,9 +299,11 @@ setContributionData(hasContributions ? rawContributions : [])
               <ResponsiveContainer width="100%" height={180}>
                 <AreaChart data={weeklyActivityData}>
                   <defs>
+                    {/* Vermelho removido — não é um alerta, é só uma série de
+                        dados. Navy + teal mantém a paleta consistente. */}
                     <linearGradient id="gPrayer" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor="#EF4444" stopOpacity={0.25} />
-                      <stop offset="95%" stopColor="#EF4444" stopOpacity={0} />
+                      <stop offset="5%"  stopColor="#0A2E4A" stopOpacity={0.25} />
+                      <stop offset="95%" stopColor="#0A2E4A" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="gMsg" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%"  stopColor="#4A90A4" stopOpacity={0.25} />
@@ -331,64 +315,65 @@ setContributionData(hasContributions ? rawContributions : [])
                   <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', fontSize: '12px' }} />
                   <Legend wrapperStyle={{ fontSize: '11px' }} />
-                  <Area type="monotone" dataKey="orações"  stroke="#EF4444" fill="url(#gPrayer)" strokeWidth={2} name="Orações" />
+                  <Area type="monotone" dataKey="orações"  stroke="#0A2E4A" fill="url(#gPrayer)" strokeWidth={2} name="Orações" />
                   <Area type="monotone" dataKey="mensagens" stroke="#4A90A4" fill="url(#gMsg)"   strokeWidth={2} name="Mensagens" />
                 </AreaChart>
               </ResponsiveContainer>
             )}
           </Card>
 
-          {/* Contributions — progress bars instead of pie chart */}
-          <Card className="p-4 border hover:shadow-md transition-shadow">
+          {/* Contribuições — as 3 cores da paleta usadas com significado real
+              (3 categorias reais), único sítio onde o dourado aparece */}
+          <Card className="p-4 border rounded-lg">
             <div className="flex items-center gap-2 mb-4">
-              <DollarSign className="h-4 w-4 text-emerald-600" />
-              <h3 className="font-semibold text-foreground text-sm">Contribuições</h3>
+              <DollarSign className="h-4 w-4 text-muted-foreground" strokeWidth={1.75} />
+              <h3 className="font-medium text-foreground text-sm">Contribuições</h3>
             </div>
             <div className="space-y-4 mt-2">
               {contributionData.map(item => (
                 <div key={item.name}>
                   <div className="flex items-center justify-between text-xs mb-1.5">
                     <div className="flex items-center gap-1.5">
-                      <div className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
-                      <span className="font-semibold text-foreground">{item.name}</span>
+                      <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                      <span className="font-medium text-foreground">{item.name}</span>
                     </div>
-                    <span className="font-bold text-foreground">{item.value}%</span>
+                    <span className="font-semibold text-foreground tabular-nums">{item.value}%</span>
                   </div>
-                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                     <div className="h-full rounded-full transition-all duration-700" style={{ width: `${item.value}%`, backgroundColor: item.color }} />
                   </div>
                 </div>
               ))}
-              <p className="text-[10px] text-muted-foreground pt-1">Distribuição estimada de contribuições</p>
+              {contributionData.length === 0 && (
+                <p className="text-xs text-muted-foreground">Sem transações confirmadas ainda</p>
+              )}
             </div>
           </Card>
         </div>
 
-        {/* Activity + Quick Actions */}
+        {/* Actividade + Ações Rápidas */}
         <div className="grid lg:grid-cols-2 gap-4">
-          <Card className="border p-4 hover:shadow-md transition-shadow">
-            <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2 text-sm">
-              <Clock className="h-4 w-4 text-primary" />Atividade Recente
+          <Card className="border p-4 rounded-lg">
+            <h2 className="font-medium text-foreground mb-4 flex items-center gap-2 text-sm">
+              <Clock className="h-4 w-4 text-muted-foreground" strokeWidth={1.75} />Atividade Recente
             </h2>
-            <div className="space-y-2">
+            <div className="space-y-1">
               {activityFeed.length === 0 ? (
                 <div className="flex items-start gap-3 p-3 rounded-lg border border-border">
-                  <div className="p-2 bg-muted rounded-lg flex-shrink-0">
-                    <Activity className="h-3.5 w-3.5 text-muted-foreground" />
-                  </div>
+                  <Activity className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" strokeWidth={1.75} />
                   <div>
                     <div className="font-medium text-foreground text-sm">Aguardando atividade...</div>
                     <div className="text-xs text-muted-foreground">Ações aparecem aqui em tempo real</div>
                   </div>
                 </div>
               ) : activityFeed.slice(0, 6).map(activity => (
-                <div key={activity.id} className="flex items-start gap-3 p-2.5 rounded-lg border border-border hover:border-primary/30 hover:bg-muted/50 transition-all">
-                  <div className={`p-1.5 bg-muted rounded-lg flex-shrink-0 ${getActivityColor(activity.type)}`}>
-                    <Activity className="h-3.5 w-3.5" />
+                <div key={activity.id} className="flex items-start gap-3 py-2.5 border-b border-border last:border-0">
+                  <div className="h-7 w-7 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
+                    <Activity className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.75} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-foreground text-xs truncate">{getActivityLabel(activity.type)}: {activity.title}</div>
-                    <div className="text-[10px] text-muted-foreground mt-0.5">
+                    <div className="text-[11px] text-muted-foreground mt-0.5">
                       {activity.actorName && <span className="font-medium">{activity.actorName} · </span>}
                       {new Date(activity.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                     </div>
@@ -398,71 +383,51 @@ setContributionData(hasContributions ? rawContributions : [])
             </div>
           </Card>
 
-          <Card className="border p-4 hover:shadow-md transition-shadow">
-            <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2 text-sm">
-              <Zap className="h-4 w-4 text-primary" />Ações Rápidas
+          <Card className="border p-4 rounded-lg">
+            <h2 className="font-medium text-foreground mb-4 flex items-center gap-2 text-sm">
+              <Zap className="h-4 w-4 text-muted-foreground" strokeWidth={1.75} />Ações Rápidas
             </h2>
-            <div className="grid grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-2 gap-2">
               {quickActions.map((action, idx) => (
-                <a key={idx} href={action.href} className="group relative overflow-hidden p-3.5 rounded-lg border border-border hover:border-primary/40 transition-all hover:shadow-md">
-                  <div className={`absolute inset-0 bg-gradient-to-br ${action.color} opacity-0 group-hover:opacity-8 transition-opacity`} />
-                  <div className={`inline-flex p-2 bg-gradient-to-br ${action.color} rounded-lg shadow-sm mb-2 group-hover:scale-110 transition-transform`}>
-                    <action.icon className="h-4 w-4 text-white" />
-                  </div>
-                  <div className="font-semibold text-foreground text-xs group-hover:text-primary transition-colors">{action.label}</div>
-                  <ChevronRight className="absolute top-2.5 right-2.5 h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                
+                  key={idx}
+                  href={action.href}
+                  className="group flex items-center gap-2.5 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                >
+                  <action.icon className="h-4 w-4 text-foreground flex-shrink-0" strokeWidth={1.75} />
+                  <span className="font-medium text-foreground text-xs flex-1">{action.label}</span>
+                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                 </a>
               ))}
             </div>
           </Card>
         </div>
 
-        {/* Secondary Metrics */}
+        {/* Métricas secundárias — uniformes, sem cor por categoria */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
           {[
-            { icon: UserPlus,    label: 'Convidados',   value: stats.totalGuests,       color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400' },
-            { icon: Calendar,    label: 'Eventos',       value: stats.totalEvents,       color: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400' },
-            { icon: Heart,       label: 'Orações',       value: stats.totalPrayers,      color: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' },
-            { icon: GraduationCap, label: 'Cursos',     value: stats.totalCourses,      color: 'bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400' },
-            { icon: Users,       label: 'Grupos',        value: stats.totalGroups,       color: 'bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400' },
-            { icon: Shield,      label: 'Transações',    value: stats.totalTransactions, color: 'bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400' },
+            { icon: UserPlus,      label: 'Convidados',  value: stats.totalGuests },
+            { icon: Calendar,      label: 'Eventos',     value: stats.totalEvents },
+            { icon: Heart,         label: 'Orações',     value: stats.totalPrayers },
+            { icon: GraduationCap, label: 'Cursos',      value: stats.totalCourses },
+            { icon: Users,         label: 'Grupos',      value: stats.totalGroups },
+            { icon: Shield,        label: 'Transações',  value: stats.totalTransactions },
           ].map((item, idx) => (
-            <Card key={idx} className="p-3 border hover:border-primary/30 transition-colors">
-              <div className={`p-1.5 rounded-md w-fit mb-2 ${item.color}`}>
-                <item.icon className="h-3.5 w-3.5" />
-              </div>
-              <div className="text-xl font-bold text-foreground mb-0.5">{item.value}</div>
-              <div className="text-[10px] text-muted-foreground font-medium">{item.label}</div>
+            <Card key={idx} className="p-3 border rounded-lg">
+              <item.icon className="h-3.5 w-3.5 text-muted-foreground mb-2" strokeWidth={1.75} />
+              <div className="text-lg font-semibold text-foreground tabular-nums">{item.value}</div>
+              <div className="text-[11px] text-muted-foreground">{item.label}</div>
             </Card>
           ))}
         </div>
 
-        {/* System Status */}
-        <Card className="border p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-500 rounded-lg shadow-sm">
-                <CheckCircle2 className="h-4 w-4 text-white" />
-              </div>
-              <div>
-                <div className="font-semibold text-foreground text-sm">Sistema Operacional</div>
-                <div className="text-xs text-muted-foreground">Todos os serviços funcionando normalmente</div>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2 text-xs">
-              {[
-                { label: 'Versão', value: 'v1.0.0' },
-                { label: 'Uptime', value: '99.9%', green: true },
-                { label: 'Atualizado', value: new Date().toLocaleDateString('pt-BR') },
-              ].map(item => (
-                <div key={item.label} className="px-2.5 py-1.5 bg-white dark:bg-gray-900 border border-border rounded-lg">
-                  <div className="text-[10px] text-muted-foreground">{item.label}</div>
-                  <div className={`font-bold ${item.green ? 'text-green-600 dark:text-green-400' : 'text-foreground'}`}>{item.value}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </Card>
+        {/* Rodapé de estado — sem métricas fabricadas (v1.0.0 / 99.9% uptime
+            eram strings fixas no código, nunca medidas). Substituído por uma
+            linha honesta com o momento real da última actualização. */}
+        <div className="flex items-center gap-2 px-1 py-2 text-xs text-muted-foreground">
+          <Circle className="h-1.5 w-1.5 text-green-600 fill-green-600" />
+          Dados actualizados agora · {new Date().toLocaleString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+        </div>
       </div>
     </Layout>
   )
