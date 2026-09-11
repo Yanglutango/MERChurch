@@ -10,6 +10,8 @@ export type ActivityType =
   | 'sermon_published'
   | 'prayer_created'
   | 'post_created'
+  | 'post_deleted'        // ← novo
+  | 'comment_created'      // ← novo
   | 'event_created'
   | 'member_joined'
   | 'course_started'
@@ -65,28 +67,30 @@ export async function logActivity(params: LogActivityParams): Promise<void> {
  */
 export function getActivityLabel(type: ActivityType | string): string {
   const labels: Record<string, string> = {
-    sermon_published: '📖 Sermão publicado',
-    prayer_created: '🙏 Pedido de oração',
-    post_created: '💬 Publicação na comunidade',
-    event_created: '📅 Evento criado',
-    member_joined: '👤 Novo membro',
-    course_started: '🎓 Curso iniciado',
-    testimony_submitted: '✨ Testemunho compartilhado',
-    group_created: '👥 Grupo criado',
-    group_joined: '👥 Entrou num grupo',
-    group_left: '👥 Saiu de um grupo',
-    ministry_joined: '⛪ Entrou num ministério',
-    ministry_left: '⛪ Saiu de um ministério',
-    ministry_created: '⛪ Ministério criado',
-    ministry_updated: '⛪ Ministério atualizado',
-    ministry_deleted: '⛪ Ministério removido',
-    post_deleted: '💬 Publicação removida',
-    comment_created: '💬 Comentário adicionado',
-    donation_made: '💰 Contribuição realizada',
-    admin_action: '🛡️ Ação administrativa',
-    ministry_activity: '⚡ Atividade de ministério',
+    sermon_published: 'Sermão publicado',
+    prayer_created: 'Pedido de oração',
+    post_created: 'Publicação na comunidade',
+    post_deleted: 'Post removido',      // trocar por texto sem emoji se preferires consistência total
+    comment_created: 'Novo comentário',
+    event_created: 'Evento criado',
+    member_joined: 'Novo membro',
+    course_started: 'Curso iniciado',
+    testimony_submitted: 'Testemunho compartilhado',
+    group_created: 'Grupo criado',
+    group_joined: 'Entrou num grupo',
+    group_left: 'Saiu de um grupo',
+    ministry_joined: 'Entrou num ministério',
+    ministry_left: 'Saiu de um ministério',
+    ministry_created: 'Ministério criado',
+    ministry_updated: 'Ministério atualizado',
+    ministry_deleted: 'Ministério removido',
+    post_deleted: 'Publicação removida',
+    comment_created: 'Comentário adicionado',
+    donation_made: 'Contribuição realizada',
+    admin_action: 'Ação administrativa',
+    ministry_activity: 'Atividade de ministério',
   }
-  return labels[type] || `📌 ${type}`
+  return labels[type] || ` ${type}`
 }
 
 /**
@@ -97,6 +101,8 @@ export function getActivityColor(type: ActivityType | string): string {
     sermon_published: 'text-purple-600 dark:text-purple-400',
     prayer_created: 'text-rose-600 dark:text-rose-400',
     post_created: 'text-blue-600 dark:text-blue-400',
+    post_deleted: 'text-blue-600 dark:text-blue-400',
+    comment_created: 'text-blue-600 dark:text-blue-400',
     event_created: 'text-indigo-600 dark:text-indigo-400',
     member_joined: 'text-green-600 dark:text-green-400',
     course_started: 'text-amber-600 dark:text-amber-400',
