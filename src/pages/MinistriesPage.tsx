@@ -16,8 +16,8 @@ import { useAuth } from '../hooks/useAuth'
 import { logActivity } from '../lib/activityLogger'
 import {
   Users, Plus, UserPlus, Save, Users2, Search, Loader2, Image as ImageIcon,
-  ShieldAlert, Calendar, Info, Tag, Crown, HandHeart, Activity, Shield,
-  Clock, ChevronRight, Star, BookOpen, Music, Mic, Heart, Palette, Globe,
+  ShieldAlert, Info, Tag, Crown, HandHeart, Shield,
+  Star, BookOpen, Music, Mic, Heart, Palette, Globe,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Ministry } from '../types'
@@ -29,32 +29,23 @@ import { MinistryCard } from '../components/ministries/MinistryCard'
 const NAME_MAX = 60
 const DESCRIPTION_MAX = 300
 const HEX_REGEX = /^#([0-9A-Fa-f]{6})$/
-const MAX_MINISTRIES = 3
+const MAX_DEPARTMENTS = 3
 
 const COLOR_PRESETS = [
   '#0A2E4A', '#4A90A4', '#D4A574', '#16A34A',
   '#DC2626', '#9333EA', '#EA580C', '#0EA5E9',
 ]
 
-const MINISTRY_ICONS: Record<string, any> = {
-  'louvor': Music,
-  'música': Music,
-  'comunicação': Globe,
-  'mídia': Globe,
-  'jovens': Star,
-  'crianças': Heart,
-  'oração': HandHeart,
-  'discipulado': BookOpen,
-  'louvor e adoração': Music,
-  'evangelismo': Globe,
-  'cuidado': Heart,
-  'artes': Palette,
-  'pregação': Mic,
+const DEPARTMENT_ICONS: Record<string, any> = {
+  'louvor': Music, 'música': Music, 'comunicação': Globe, 'mídia': Globe,
+  'jovens': Star, 'crianças': Heart, 'oração': HandHeart, 'discipulado': BookOpen,
+  'louvor e adoração': Music, 'evangelismo': Globe, 'cuidado': Heart,
+  'artes': Palette, 'pregação': Mic,
 }
 
-const getMinistryIcon = (name: string) => {
+const getDepartmentIcon = (name: string) => {
   const lower = name.toLowerCase()
-  for (const [key, Icon] of Object.entries(MINISTRY_ICONS)) {
+  for (const [key, Icon] of Object.entries(DEPARTMENT_ICONS)) {
     if (lower.includes(key)) return Icon
   }
   return Users
@@ -65,13 +56,13 @@ const EMPTY_FORM = { name: '', description: '', color: '#4A90A4', activities: ''
 const MinistriesPage = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [ministries, setMinistries] = useState<any[]>([])
-  const [joinedMinistries, setJoinedMinistries] = useState<string[]>([])
+  const [departments, setDepartments] = useState<any[]>([])
+  const [joinedDepartments, setJoinedDepartments] = useState<string[]>([])
   const [profiles, setProfiles] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [editorOpen, setEditorOpen] = useState(false)
-  const [editingMinistry, setEditingMinistry] = useState<Ministry | null>(null)
-  const [newMinistry, setNewMinistry] = useState(EMPTY_FORM)
+  const [editingDepartment, setEditingDepartment] = useState<Ministry | null>(null)
+  const [newDepartment, setNewDepartment] = useState(EMPTY_FORM)
   const [colorError, setColorError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [pendingJoinIds, setPendingJoinIds] = useState<string[]>([])
@@ -79,7 +70,7 @@ const MinistriesPage = () => {
   const [deleting, setDeleting] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterMine, setFilterMine] = useState(false)
-  const [selectedMinistryForDetails, setSelectedMinistryForDetails] = useState<any | null>(null)
+  const [selectedForDetails, setSelectedForDetails] = useState<any | null>(null)
 
   const isGuest = user?.role === 'guest'
   const isAdmin = user?.role === 'admin'
@@ -87,8 +78,7 @@ const MinistriesPage = () => {
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
-      // Load ministries
-      const { data: ministriesData, error: ministriesError } = await supabase
+      const { data, error } = await supabase
         .from('ministries')
         .select(`
           *,
@@ -97,37 +87,35 @@ const MinistriesPage = () => {
         `)
         .order('created_at', { ascending: false })
 
-      if (ministriesError) {
-        console.error('Error loading ministries:', ministriesError)
-        toast.error('Erro ao carregar ministérios')
+      if (error) {
+        console.error('Error loading departments:', error)
+        toast.error('Erro ao carregar departamentos')
         setLoading(false)
         return
       }
 
-      const formatted = (ministriesData || []).map((m: any) => ({
+      const formatted = (data || []).map((m: any) => ({
         ...m,
         memberCount: m.ministry_members ? m.ministry_members.length : 0,
         membersList: m.ministry_members || [],
         imageUrl: m.image_url,
         leaderId: m.leader_id,
       }))
-      setMinistries(formatted)
+      setDepartments(formatted)
 
-      // Update detail modal if open
-      setSelectedMinistryForDetails((prev: any) => {
+      setSelectedForDetails((prev: any) => {
         if (!prev) return null
-        const updated = formatted.find((m: any) => m.id === prev.id)
-        return updated || prev
+        return formatted.find((m: any) => m.id === prev.id) || prev
       })
     } catch (err) {
-      console.error('Unexpected error loading ministries:', err)
-      toast.error('Erro inesperado ao carregar ministérios')
+      console.error('Unexpected error loading departments:', err)
+      toast.error('Erro inesperado ao carregar departamentos')
     } finally {
       setLoading(false)
     }
   }, [])
 
-  const loadJoinedMinistries = useCallback(async () => {
+  const loadJoinedDepartments = useCallback(async () => {
     if (!user?.id) return
     try {
       const { data, error } = await supabase
@@ -135,13 +123,10 @@ const MinistriesPage = () => {
         .select('ministry_id')
         .eq('user_id', user.id)
 
-      if (error) {
-        console.error('Error loading joined ministries:', error)
-        return
-      }
-      setJoinedMinistries(data?.map((m: any) => m.ministry_id) || [])
+      if (error) { console.error('Error loading joined departments:', error); return }
+      setJoinedDepartments(data?.map((m: any) => m.ministry_id) || [])
     } catch (err) {
-      console.error('Unexpected error loading joined ministries:', err)
+      console.error('Unexpected error:', err)
     }
   }, [user?.id])
 
@@ -156,79 +141,91 @@ const MinistriesPage = () => {
       if (error) { console.error('Error loading profiles:', error); return }
       setProfiles(data || [])
     } catch (err) {
-      console.error('Unexpected error loading profiles:', err)
+      console.error('Unexpected error:', err)
     }
   }, [isAdmin])
 
   useEffect(() => {
     loadData()
-    if (!isGuest && user?.id) loadJoinedMinistries()
+    if (!isGuest && user?.id) loadJoinedDepartments()
     if (isAdmin) loadProfiles()
   }, [user?.id, isGuest, isAdmin])
 
   const closeEditor = useCallback(() => {
     setEditorOpen(false)
-    setEditingMinistry(null)
-    setNewMinistry(EMPTY_FORM)
+    setEditingDepartment(null)
+    setNewDepartment(EMPTY_FORM)
     setColorError(null)
   }, [])
 
   const openCreate = useCallback(() => {
-    setEditingMinistry(null)
-    setNewMinistry(EMPTY_FORM)
+    setEditingDepartment(null)
+    setNewDepartment(EMPTY_FORM)
     setColorError(null)
     setEditorOpen(true)
   }, [])
 
   const openEdit = useCallback((m: Ministry) => {
-    setEditingMinistry(m)
-    setNewMinistry({
+    setEditingDepartment(m)
+    setNewDepartment({
       name: m.name,
       description: m.description || '',
       color: m.color || '#4A90A4',
       activities: (m as any).activities || '',
-      imageUrl: (m as any).imageUrl || m.image_url || '',
-      leaderId: (m as any).leaderId || m.leader_id || '',
+      imageUrl: (m as any).imageUrl || (m as any).image_url || '',
+      leaderId: (m as any).leaderId || (m as any).leader_id || '',
     })
     setColorError(null)
     setEditorOpen(true)
   }, [])
 
-  const canManage = useCallback((m: any) => isAdmin || (m.leaderId || m.leader_id) === user?.id, [isAdmin, user?.id])
+  const canManage = useCallback(
+    (m: any) => isAdmin || (m.leaderId || m.leader_id) === user?.id,
+    [isAdmin, user?.id]
+  )
 
   const createOrUpdate = async () => {
-    if (!newMinistry.name.trim()) { toast.error('Nome é obrigatório'); return }
-    if (!newMinistry.leaderId) { toast.error('É obrigatório definir um líder para o ministério'); return }
-    if (!HEX_REGEX.test(newMinistry.color)) { setColorError('Use um código hexadecimal válido, ex: #4A90A4'); return }
+    if (!newDepartment.name.trim()) { toast.error('Nome é obrigatório'); return }
+    if (!newDepartment.leaderId) { toast.error('É obrigatório definir um líder para o departamento'); return }
+    if (!HEX_REGEX.test(newDepartment.color)) { setColorError('Use um código hexadecimal válido, ex: #4A90A4'); return }
 
     setSaving(true)
     try {
       const payload = {
-        name: newMinistry.name.trim(),
-        description: newMinistry.description.trim() || null,
-        color: newMinistry.color,
-        activities: newMinistry.activities.trim() || null,
-        image_url: newMinistry.imageUrl.trim() || null,
-        leader_id: newMinistry.leaderId,
+        name: newDepartment.name.trim(),
+        description: newDepartment.description.trim() || null,
+        color: newDepartment.color,
+        activities: newDepartment.activities.trim() || null,
+        image_url: newDepartment.imageUrl.trim() || null,
+        leader_id: newDepartment.leaderId,
       }
 
-      if (editingMinistry) {
-        if (!isAdmin) { toast.error('Apenas o Administrador pode redefinir lideranças'); setSaving(false); return }
-        const { error } = await supabase.from('ministries').update(payload).eq('id', editingMinistry.id)
+      if (editingDepartment) {
+        if (!isAdmin) { toast.error('Apenas o administrador pode redefinir lideranças'); setSaving(false); return }
+        const { error } = await supabase.from('ministries').update(payload).eq('id', editingDepartment.id)
         if (error) throw error
-        toast.success('Ministério atualizado com sucesso!')
-        logActivity({ type: 'ministry_joined', actorId: user!.id, actorName: user!.username, title: newMinistry.name, referenceId: editingMinistry.id, referenceType: 'ministry' }).catch(() => null)
+        toast.success('Departamento atualizado')
+        // Corrigido: antes registava 'ministry_joined' também na edição —
+        // tipo semanticamente errado, agora usa 'ministry_updated'.
+        logActivity({
+          type: 'ministry_updated', actorId: user!.id, actorName: user!.username,
+          title: newDepartment.name, referenceId: editingDepartment.id, referenceType: 'ministry',
+        }).catch(() => null)
       } else {
         const { error } = await supabase.from('ministries').insert(payload)
         if (error) throw error
-        toast.success('Ministério criado com sucesso!')
-        logActivity({ type: 'ministry_joined', actorId: user!.id, actorName: user!.username, title: newMinistry.name, referenceType: 'ministry' }).catch(() => null)
+        toast.success('Departamento criado')
+        // Corrigido: antes registava 'ministry_joined' na criação também.
+        logActivity({
+          type: 'ministry_created', actorId: user!.id, actorName: user!.username,
+          title: newDepartment.name, referenceType: 'ministry',
+        }).catch(() => null)
       }
 
       closeEditor()
       await loadData()
     } catch (err: any) {
-      console.error('Error creating/updating ministry:', err)
+      console.error('Error creating/updating department:', err)
       toast.error(err.message || 'Erro ao processar alteração')
     } finally {
       setSaving(false)
@@ -237,15 +234,22 @@ const MinistriesPage = () => {
 
   const confirmDelete = async () => {
     if (!deleteTargetId) return
+    const targetName = departments.find(d => d.id === deleteTargetId)?.name || 'Departamento'
     setDeleting(true)
     try {
       const { data, error } = await supabase.from('ministries').delete().eq('id', deleteTargetId).select('id')
       if (error) throw error
       if (!data || data.length === 0) throw new Error('Operação negada pela RLS')
-      toast.success('Ministério removido!')
+      toast.success('Departamento removido')
+      // Em falta na versão anterior — a exclusão não deixava rasto nenhum
+      // no feed de actividade.
+      logActivity({
+        type: 'ministry_deleted', actorId: user!.id, actorName: user!.username,
+        title: targetName, referenceId: deleteTargetId, referenceType: 'ministry',
+      }).catch(() => null)
       await loadData()
     } catch (err: any) {
-      console.error('Error deleting ministry:', err)
+      console.error('Error deleting department:', err)
       toast.error(err.message || 'Falha ao remover item')
     } finally {
       setDeleting(false)
@@ -253,110 +257,67 @@ const MinistriesPage = () => {
     }
   }
 
-  const toggleJoin = useCallback(async (ministryId: string) => {
-    // Guards
+  const toggleJoin = useCallback(async (departmentId: string) => {
     if (!user?.id || !user?.username) {
       toast.error('Sessão inválida. Faça login novamente.')
       return
     }
-    if (pendingJoinIds.includes(ministryId)) return
+    if (pendingJoinIds.includes(departmentId)) return
 
-    const isJoined = joinedMinistries.includes(ministryId)
+    const isJoined = joinedDepartments.includes(departmentId)
 
-    // Enforce 3-ministry limit
-    if (!isJoined && joinedMinistries.length >= MAX_MINISTRIES) {
-      toast.error(`Limite atingido! Você já participa de ${MAX_MINISTRIES} ministérios. Saia de um para entrar neste.`)
+    if (!isJoined && joinedDepartments.length >= MAX_DEPARTMENTS) {
+      toast.error(`Limite atingido! Você já participa de ${MAX_DEPARTMENTS} departamentos. Saia de um para entrar neste.`)
       return
     }
 
-    // Optimistic update
-    setPendingJoinIds(prev => [...prev, ministryId])
-    setJoinedMinistries(prev =>
-      isJoined ? prev.filter(id => id !== ministryId) : [...prev, ministryId]
-    )
-    // Also update modal member count optimistically
-    setSelectedMinistryForDetails((prev: any) => {
-      if (!prev || prev.id !== ministryId) return prev
-      return {
-        ...prev,
-        memberCount: isJoined ? Math.max(0, prev.memberCount - 1) : prev.memberCount + 1,
-      }
+    setPendingJoinIds(prev => [...prev, departmentId])
+    setJoinedDepartments(prev => isJoined ? prev.filter(id => id !== departmentId) : [...prev, departmentId])
+    setSelectedForDetails((prev: any) => {
+      if (!prev || prev.id !== departmentId) return prev
+      return { ...prev, memberCount: isJoined ? Math.max(0, prev.memberCount - 1) : prev.memberCount + 1 }
     })
 
     try {
       if (isJoined) {
-        // LEAVE ministry
         const { error } = await supabase
-          .from('ministry_members')
-          .delete()
-          .eq('ministry_id', ministryId)
-          .eq('user_id', user.id)
-
-        if (error) {
-          console.error('Leave ministry error:', { message: error.message, code: error.code, details: error.details })
-          throw error
-        }
-        toast.success('Você saiu do ministério')
+          .from('ministry_members').delete()
+          .eq('ministry_id', departmentId).eq('user_id', user.id)
+        if (error) throw error
+        toast.success('Você saiu do departamento')
       } else {
-        // JOIN ministry
         const { error } = await supabase
-          .from('ministry_members')
-          .insert({ ministry_id: ministryId, user_id: user.id })
-
-        if (error) {
-          console.error('Join ministry error:', { message: error.message, code: error.code, details: error.details, hint: error.hint })
-          throw error
-        }
-        toast.success('Bem-vindo ao ministério! 🙏')
-        // Log activity (fire-and-forget, never block join flow)
-        const ministryName = ministries.find(m => m.id === ministryId)?.name || 'Ministério'
+          .from('ministry_members').insert({ ministry_id: departmentId, user_id: user.id })
+        if (error) throw error
+        toast.success('Bem-vindo ao departamento')
+        const name = departments.find(m => m.id === departmentId)?.name || 'Departamento'
         logActivity({
-          type: 'ministry_joined',
-          actorId: user.id,
-          actorName: user.username,
-          title: ministryName,
-          referenceId: ministryId,
-          referenceType: 'ministry',
+          type: 'ministry_joined', actorId: user.id, actorName: user.username,
+          title: name, referenceId: departmentId, referenceType: 'ministry',
         }).catch(() => null)
       }
-
-      // Reload data quietly in background to sync member count
       loadData().catch(() => null)
     } catch (err: any) {
       console.error('toggleJoin error:', err)
-
-      // Revert optimistic update
-      setJoinedMinistries(prev =>
-        isJoined ? [...prev, ministryId] : prev.filter(id => id !== ministryId)
-      )
-      setSelectedMinistryForDetails((prev: any) => {
-        if (!prev || prev.id !== ministryId) return prev
-        return {
-          ...prev,
-          memberCount: isJoined ? prev.memberCount + 1 : Math.max(0, prev.memberCount - 1),
-        }
+      setJoinedDepartments(prev => isJoined ? [...prev, departmentId] : prev.filter(id => id !== departmentId))
+      setSelectedForDetails((prev: any) => {
+        if (!prev || prev.id !== departmentId) return prev
+        return { ...prev, memberCount: isJoined ? prev.memberCount + 1 : Math.max(0, prev.memberCount - 1) }
       })
 
-      // User-friendly error messages
-      if (err.code === '23505') {
-        toast.error('Você já é membro deste ministério')
-      } else if (err.code === '42501' || err.status === 403) {
-        toast.error('Permissão negada. Verifique as configurações de acesso.')
-      } else if (err.status === 401) {
-        toast.error('Sua sessão expirou. Faça login novamente.')
-      } else if (err.name === 'TypeError' && err.message?.toLowerCase().includes('failed to fetch')) {
-        toast.error('Erro de conexão. Verifique sua internet e tente novamente.')
-      } else {
-        toast.error(err.message || 'Erro ao processar sua inscrição. Tente novamente.')
-      }
+      if (err.code === '23505') toast.error('Você já é membro deste departamento')
+      else if (err.code === '42501' || err.status === 403) toast.error('Permissão negada.')
+      else if (err.status === 401) toast.error('Sua sessão expirou. Faça login novamente.')
+      else if (err.name === 'TypeError' && err.message?.toLowerCase().includes('failed to fetch')) toast.error('Erro de conexão. Verifique sua internet.')
+      else toast.error(err.message || 'Erro ao processar sua inscrição.')
     } finally {
-      setPendingJoinIds(prev => prev.filter(id => id !== ministryId))
+      setPendingJoinIds(prev => prev.filter(id => id !== departmentId))
     }
-  }, [joinedMinistries, pendingJoinIds, user, ministries, loadData])
+  }, [joinedDepartments, pendingJoinIds, user, departments, loadData])
 
-  const filteredMinistries = useMemo(() => {
-    let list = ministries
-    if (filterMine) list = list.filter(m => joinedMinistries.includes(m.id))
+  const filteredDepartments = useMemo(() => {
+    let list = departments
+    if (filterMine) list = list.filter(m => joinedDepartments.includes(m.id))
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
       list = list.filter(m =>
@@ -366,252 +327,232 @@ const MinistriesPage = () => {
       )
     }
     return list
-  }, [ministries, filterMine, joinedMinistries, searchQuery])
+  }, [departments, filterMine, joinedDepartments, searchQuery])
 
   if (loading) {
     return (
-      <Layout title="Ministérios">
-        <LoadingState fullScreen message="Sincronizando ministérios..." />
+      <Layout title="Departamentos">
+        <LoadingState fullScreen message="Carregando departamentos..." />
       </Layout>
     )
   }
 
   return (
-    <Layout title="Ministérios">
-      <div className="p-4 space-y-6 max-w-7xl mx-auto animate-fade-in">
+    <Layout title="Departamentos">
+      <div className="max-w-6xl mx-auto px-4 lg:px-8 py-6 space-y-6">
 
-        {/* ─── Cabeçalho ─── */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b">
+        {/* Cabeçalho */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
           <div>
-            <h1 className="text-2xl font-black text-foreground tracking-tight">Ministérios</h1>
-            <p className="text-xs text-muted-foreground font-medium">
-              {ministries.length} núcleos · Pode participar de até {MAX_MINISTRIES}
-              {!isGuest && joinedMinistries.length > 0 && (
-                <span className="ml-1 font-semibold text-foreground">
-                  ({joinedMinistries.length}/{MAX_MINISTRIES} usados)
+            <h1 className="text-xl font-semibold text-foreground">Departamentos</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {departments.length} departamentos · até {MAX_DEPARTMENTS} por pessoa
+              {!isGuest && joinedDepartments.length > 0 && (
+                <span className="ml-1 text-foreground font-medium">
+                  ({joinedDepartments.length}/{MAX_DEPARTMENTS} usados)
                 </span>
               )}
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" onClick={() => navigate('/groups')} className="text-xs font-bold shadow-sm">
-              <Users2 className="h-3.5 w-3.5 mr-2" />Grupos de Crescimento
+            <Button size="sm" variant="outline" onClick={() => navigate('/groups')} className="text-xs rounded-md">
+              <Users2 className="h-3.5 w-3.5 mr-1.5" strokeWidth={1.75} />Grupos
             </Button>
             {isAdmin && (
-              <Button size="sm" onClick={openCreate} className="bg-[#0A2E4A] hover:bg-[#0A2E4A]/90 text-white font-bold shadow-sm">
-                <Plus className="h-4 w-4 mr-1.5" />Novo Ministério
+              <Button size="sm" onClick={openCreate} className="rounded-md">
+                <Plus className="h-4 w-4 mr-1.5" />Novo Departamento
               </Button>
             )}
             {isGuest && (
-              <Button size="sm" onClick={() => navigate('/auth')} className="bg-[#0A2E4A] hover:bg-[#0A2E4A]/90 text-white font-bold shadow-sm">
+              <Button size="sm" onClick={() => navigate('/auth')} className="rounded-md">
                 <UserPlus className="h-4 w-4 mr-1.5" />Criar Conta
               </Button>
             )}
           </div>
         </div>
 
-        {/* ─── Limite visual ─── */}
-        {!isGuest && !isAdmin && joinedMinistries.length > 0 && (
-          <Card className={`p-3.5 border flex items-center gap-3 ${
-            joinedMinistries.length >= MAX_MINISTRIES
-              ? 'bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800'
-              : 'bg-muted/30'
+        {/* Indicador de limite — âmbar mantido: é um estado real de aviso,
+            não decoração (mesmo tratamento do alerta de aconselhamento no
+            Dashboard) */}
+        {!isGuest && !isAdmin && joinedDepartments.length > 0 && (
+          <Card className={`p-3.5 border rounded-lg flex items-center gap-3 ${
+            joinedDepartments.length >= MAX_DEPARTMENTS
+              ? 'border-amber-300 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20'
+              : ''
           }`}>
-            <div className={`p-2 rounded-xl flex-shrink-0 ${
-              joinedMinistries.length >= MAX_MINISTRIES ? 'bg-amber-500' : 'bg-[#0A2E4A]'
-            }`}>
-              <Shield className="h-4 w-4 text-white" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-bold text-foreground">
-                {joinedMinistries.length >= MAX_MINISTRIES
-                  ? `Limite de ${MAX_MINISTRIES} ministérios atingido`
-                  : `${joinedMinistries.length} de ${MAX_MINISTRIES} ministérios`}
+            <Shield className={`h-4 w-4 flex-shrink-0 ${
+              joinedDepartments.length >= MAX_DEPARTMENTS ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground'
+            }`} strokeWidth={1.75} />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground">
+                {joinedDepartments.length >= MAX_DEPARTMENTS
+                  ? `Limite de ${MAX_DEPARTMENTS} departamentos atingido`
+                  : `${joinedDepartments.length} de ${MAX_DEPARTMENTS} departamentos`}
               </p>
               <p className="text-xs text-muted-foreground">
-                {joinedMinistries.length >= MAX_MINISTRIES
-                  ? 'Saia de um ministério para poder entrar em outro'
-                  : `Ainda pode entrar em mais ${MAX_MINISTRIES - joinedMinistries.length}`}
+                {joinedDepartments.length >= MAX_DEPARTMENTS
+                  ? 'Saia de um departamento para entrar em outro'
+                  : `Ainda pode entrar em mais ${MAX_DEPARTMENTS - joinedDepartments.length}`}
               </p>
             </div>
-            {/* Progress bar */}
-            <div className="w-24 bg-muted rounded-full h-2 flex-shrink-0 overflow-hidden">
+            <div className="w-20 bg-muted rounded-full h-1.5 flex-shrink-0 overflow-hidden">
               <div
-                className={`h-2 rounded-full transition-all ${
-                  joinedMinistries.length >= MAX_MINISTRIES ? 'bg-amber-500' : 'bg-[#0A2E4A]'
+                className={`h-full rounded-full transition-all ${
+                  joinedDepartments.length >= MAX_DEPARTMENTS ? 'bg-amber-500' : 'bg-primary'
                 }`}
-                style={{ width: `${(joinedMinistries.length / MAX_MINISTRIES) * 100}%` }}
+                style={{ width: `${(joinedDepartments.length / MAX_DEPARTMENTS) * 100}%` }}
               />
             </div>
           </Card>
         )}
 
-        {/* ─── Filtros ─── */}
-        {ministries.length > 0 && (
-          <div className="flex flex-col sm:flex-row gap-3">
+        {/* Filtros */}
+        {departments.length > 0 && (
+          <div className="flex flex-col sm:flex-row gap-2.5">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Filtrar por nome, propósito ou atividade..."
-                className="pl-9 h-10"
+                placeholder="Buscar por nome, propósito ou atividade..."
+                className="pl-9 h-9 rounded-md"
               />
             </div>
             {!isGuest && (
-              <Button
-                variant={filterMine ? 'default' : 'outline'}
+              <button
                 onClick={() => setFilterMine(v => !v)}
-                className={`h-10 text-xs font-bold ${filterMine ? 'bg-[#0A2E4A] text-white' : ''}`}
+                className={`flex-shrink-0 px-3 h-9 rounded-md text-xs font-medium border transition-colors ${
+                  filterMine ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground'
+                }`}
               >
-                Minhas Atividades ({joinedMinistries.length})
-              </Button>
+                Meus Departamentos ({joinedDepartments.length})
+              </button>
             )}
           </div>
         )}
 
-        {/* ─── Grid principal ─── */}
-        {ministries.length === 0 ? (
+        {/* Grid */}
+        {departments.length === 0 ? (
           <EmptyState
             icon={Users}
-            title={isAdmin ? 'Nenhum ministério configurado' : 'Nenhum núcleo operacional ativo'}
-            description={isAdmin ? 'Inicie a estrutura inserindo o primeiro ministério do sistema.' : 'Novas frentes de atuação serão listadas em breve.'}
+            title={isAdmin ? 'Nenhum departamento criado' : 'Nenhum departamento disponível'}
+            description={isAdmin ? 'Crie o primeiro departamento da casa' : 'Novos departamentos em breve'}
             action={isAdmin ? (
-              <Button onClick={openCreate} className="bg-[#0A2E4A] text-white font-bold">
-                <Plus className="mr-2 h-4 w-4" />Criar Ministério
+              <Button onClick={openCreate} className="rounded-md">
+                <Plus className="mr-2 h-4 w-4" />Criar Departamento
               </Button>
             ) : undefined}
           />
-        ) : filteredMinistries.length === 0 ? (
-          <EmptyState
-            icon={Search}
-            title="Nenhum resultado encontrado"
-            description="Modifique os parâmetros ou termos da pesquisa."
-          />
+        ) : filteredDepartments.length === 0 ? (
+          <EmptyState icon={Search} title="Nenhum resultado encontrado" description="Tente ajustar a busca ou os filtros" />
         ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredMinistries.map(ministry => (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredDepartments.map(department => (
               <MinistryCard
-                key={ministry.id}
-                ministry={ministry}
-                isJoined={joinedMinistries.includes(ministry.id)}
-                isPending={pendingJoinIds.includes(ministry.id)}
+                key={department.id}
+                ministry={department}
+                isJoined={joinedDepartments.includes(department.id)}
+                isPending={pendingJoinIds.includes(department.id)}
                 isGuest={isGuest}
-                canManage={canManage(ministry)}
+                canManage={canManage(department)}
                 isAdmin={isAdmin}
-                atLimit={!joinedMinistries.includes(ministry.id) && joinedMinistries.length >= MAX_MINISTRIES}
+                atLimit={!joinedDepartments.includes(department.id) && joinedDepartments.length >= MAX_DEPARTMENTS}
                 onToggleJoin={toggleJoin}
                 onEdit={openEdit}
                 onDelete={setDeleteTargetId}
                 onAuthNavigate={() => navigate('/auth')}
-                onViewDetails={setSelectedMinistryForDetails}
+                onViewDetails={setSelectedForDetails}
               />
             ))}
           </div>
         )}
 
-        {isGuest && ministries.length > 0 && (
+        {isGuest && departments.length > 0 && (
           <GuestPrompt
             title="Faça parte da nossa comunidade"
-            description="Membros podem se inscrever em até 3 ministérios e acompanhar funções de liderança."
-            actionLabel="Cadastrar-se Agora"
+            description={`Membros podem se inscrever em até ${MAX_DEPARTMENTS} departamentos e acompanhar funções de liderança.`}
+            actionLabel="Criar Conta"
             onAction={() => navigate('/auth')}
           />
         )}
       </div>
 
-      {/* ─── MODAL DE DETALHES DO MINISTÉRIO ─── */}
-      <Dialog open={!!selectedMinistryForDetails} onOpenChange={open => { if (!open) setSelectedMinistryForDetails(null) }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl p-0 border-2 shadow-2xl">
-          {selectedMinistryForDetails && (() => {
-            const m = selectedMinistryForDetails
-            const MinIcon = getMinistryIcon(m.name)
-            const isJoined = joinedMinistries.includes(m.id)
+      {/* Modal de detalhes */}
+      <Dialog open={!!selectedForDetails} onOpenChange={open => { if (!open) setSelectedForDetails(null) }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-lg p-0">
+          {selectedForDetails && (() => {
+            const m = selectedForDetails
+            const DeptIcon = getDepartmentIcon(m.name)
+            const isJoined = joinedDepartments.includes(m.id)
             const isPending = pendingJoinIds.includes(m.id)
-            const atLimit = !isJoined && joinedMinistries.length >= MAX_MINISTRIES
+            const atLimit = !isJoined && joinedDepartments.length >= MAX_DEPARTMENTS
             const activities = m.activities ? m.activities.split(',').map((a: string) => a.trim()).filter(Boolean) : []
 
             return (
               <div>
-                {/* Hero Banner */}
+                {/* Banner — acento fino da cor do departamento, sem preencher tudo */}
                 <div
-                  className="h-52 md:h-64 relative flex items-end overflow-hidden"
-                  style={!m.imageUrl ? { backgroundColor: `${m.color}18` } : undefined}
+                  className="h-40 md:h-48 relative flex items-end overflow-hidden border-b-4"
+                  style={{ borderBottomColor: m.color, backgroundColor: !m.imageUrl ? `${m.color}10` : undefined }}
                 >
                   {m.imageUrl ? (
                     <img src={m.imageUrl} alt={m.name} className="absolute inset-0 w-full h-full object-cover" />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="p-8 rounded-full" style={{ backgroundColor: `${m.color}20` }}>
-                        <MinIcon className="h-20 w-20" style={{ color: m.color }} />
-                      </div>
+                      <DeptIcon className="h-14 w-14" style={{ color: m.color }} strokeWidth={1.5} />
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
 
-                  {/* Overlay info */}
-                  <div className="relative z-10 p-6 w-full">
-                    <div className="flex items-end justify-between gap-3">
-                      <div>
-                        <div
-                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold mb-2 text-white"
-                          style={{ backgroundColor: m.color }}
-                        >
-                          <MinIcon className="h-3 w-3" />
-                          Ministério
-                        </div>
-                        <h2 className="text-2xl md:text-3xl font-black text-foreground tracking-tight leading-tight">{m.name}</h2>
-                      </div>
-                      {isJoined && (
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-full text-xs font-bold flex-shrink-0">
-                          <Activity className="h-3.5 w-3.5 animate-pulse" />
-                          Membro Ativo
-                        </div>
-                      )}
-                    </div>
+                  <div className="relative z-10 p-5 w-full flex items-end justify-between gap-3">
+                    <h2 className="text-xl md:text-2xl font-semibold text-foreground leading-tight">{m.name}</h2>
+                    {isJoined && (
+                      <span className="px-2.5 py-1 bg-primary text-primary-foreground rounded-md text-xs font-medium flex-shrink-0">
+                        Você participa
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                {/* Content */}
-                <div className="p-6 space-y-6">
-                  {/* Stats row */}
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { icon: HandHeart, label: 'Voluntários', value: m.memberCount },
-                      { icon: Crown, label: 'Líder', value: m.leader?.username || 'Não definido' },
-                      { icon: Activity, label: 'Status', value: 'Ativo' },
-                    ].map(stat => (
-                      <div key={stat.label} className="text-center p-3 bg-muted/40 rounded-xl border border-border/50">
-                        <div className="flex justify-center mb-1">
-                          <stat.icon className="h-4 w-4 text-muted-foreground" style={{ color: m.color }} />
-                        </div>
-                        <div className="font-bold text-foreground text-sm truncate">{stat.value}</div>
-                        <div className="text-[10px] text-muted-foreground">{stat.label}</div>
-                      </div>
-                    ))}
+                <div className="p-5 space-y-5">
+                  {/* Estatísticas reais — removido "Status: Ativo" (era string
+                      fixa, não calculada) */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 bg-muted/40 rounded-lg border border-border text-center">
+                      <HandHeart className="h-4 w-4 text-muted-foreground mx-auto mb-1" strokeWidth={1.75} />
+                      <div className="font-semibold text-foreground text-sm">{m.memberCount}</div>
+                      <div className="text-[11px] text-muted-foreground">Voluntários</div>
+                    </div>
+                    <div className="p-3 bg-muted/40 rounded-lg border border-border text-center">
+                      <Crown className="h-4 w-4 mx-auto mb-1" style={{ color: '#D4A574' }} strokeWidth={1.75} />
+                      <div className="font-semibold text-foreground text-sm truncate">{m.leader?.username || 'Não definido'}</div>
+                      <div className="text-[11px] text-muted-foreground">Líder</div>
+                    </div>
                   </div>
 
-                  {/* Propósito */}
                   {m.description && (
-                    <div className="space-y-2">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                        <Info className="h-3.5 w-3.5" /> Propósito & Missão
+                    <div className="space-y-1.5">
+                      <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                        <Info className="h-3.5 w-3.5" strokeWidth={1.75} />Propósito
                       </h4>
-                      <p className="text-sm leading-relaxed text-foreground bg-muted/30 p-4 rounded-xl border border-border/40">
-                        {m.description}
-                      </p>
+                      <p className="text-sm leading-relaxed text-foreground">{m.description}</p>
                     </div>
                   )}
 
-                  {/* Atividades */}
+                  {/* Tags de actividade — sem preenchimento total na cor do
+                      departamento; borda fina + texto na cor, fundo neutro */}
                   {activities.length > 0 && (
-                    <div className="space-y-2">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                        <Tag className="h-3.5 w-3.5" /> Áreas de Atuação
+                    <div className="space-y-1.5">
+                      <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                        <Tag className="h-3.5 w-3.5" strokeWidth={1.75} />Áreas de atuação
                       </h4>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-1.5">
                         {activities.map((act: string, i: number) => (
-                          <span key={i} className="px-3 py-1.5 rounded-full text-xs font-semibold border text-white" style={{ backgroundColor: m.color }}>
+                          <span
+                            key={i}
+                            className="px-2.5 py-1 rounded-md text-xs font-medium border"
+                            style={{ color: m.color, borderColor: `${m.color}40` }}
+                          >
                             {act}
                           </span>
                         ))}
@@ -619,37 +560,32 @@ const MinistriesPage = () => {
                     </div>
                   )}
 
-                  {/* Membros */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                        <Users className="h-3.5 w-3.5" /> Equipe ({m.memberCount})
-                      </h4>
-                    </div>
+                  <div className="space-y-1.5">
+                    <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                      <Users className="h-3.5 w-3.5" strokeWidth={1.75} />Equipe ({m.memberCount})
+                    </h4>
 
                     {m.membersList.length === 0 ? (
-                      <div className="text-center py-6 bg-muted/20 rounded-xl border border-dashed border-border/60">
-                        <Users className="h-8 w-8 mx-auto text-muted-foreground/30 mb-2" />
-                        <p className="text-xs text-muted-foreground">Nenhum voluntário ainda. Seja o primeiro!</p>
-                      </div>
+                      <p className="text-xs text-muted-foreground text-center py-4">Nenhum voluntário ainda.</p>
                     ) : (
-                      <div className="grid sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                      <div className="grid sm:grid-cols-2 gap-2 max-h-44 overflow-y-auto pr-1">
                         {m.membersList.map((member: any, idx: number) => {
                           const profile = member.user_profiles
                           if (!profile) return null
+                          // Corrigido: comparação era por username (frágil);
+                          // agora compara por user_id contra leaderId real.
+                          const isLeader = member.user_id === (m.leaderId || m.leader_id)
                           return (
-                            <div key={idx} className="flex items-center gap-2.5 p-2.5 bg-card rounded-xl border border-border/50 hover:border-primary/20 transition-colors">
+                            <div key={idx} className="flex items-center gap-2.5 p-2 rounded-md border border-border">
                               {profile.avatar_url ? (
-                                <img src={profile.avatar_url} alt={profile.username} className="h-8 w-8 rounded-full object-cover ring-2 ring-border" />
+                                <img src={profile.avatar_url} alt={profile.username} className="h-7 w-7 rounded-full object-cover flex-shrink-0" />
                               ) : (
-                                <div className="h-8 w-8 rounded-full text-white text-xs font-bold flex items-center justify-center uppercase ring-2 ring-border" style={{ backgroundColor: m.color }}>
-                                  {profile.username?.slice(0, 2) || 'MB'}
+                                <div className="h-7 w-7 rounded-full bg-primary text-primary-foreground text-xs font-medium flex items-center justify-center flex-shrink-0">
+                                  {profile.username?.slice(0, 2).toUpperCase() || 'MB'}
                                 </div>
                               )}
-                              <span className="text-sm font-semibold text-foreground truncate">{profile.username}</span>
-                              {profile.username === m.leader?.username && (
-                                <Crown className="h-3.5 w-3.5 text-amber-500 flex-shrink-0 ml-auto" />
-                              )}
+                              <span className="text-sm text-foreground truncate flex-1">{profile.username}</span>
+                              {isLeader && <Crown className="h-3.5 w-3.5 flex-shrink-0" style={{ color: '#D4A574' }} strokeWidth={2} />}
                             </div>
                           )
                         })}
@@ -657,43 +593,29 @@ const MinistriesPage = () => {
                     )}
                   </div>
 
-                  {/* Limit warning */}
                   {atLimit && (
-                    <div className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-xl">
-                      <Shield className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                      <p className="text-xs text-amber-800 dark:text-amber-300 font-medium">
-                        Limite de {MAX_MINISTRIES} ministérios atingido. Saia de um para poder entrar neste.
-                      </p>
-                    </div>
+                    <p className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-md p-2.5">
+                      Limite de {MAX_DEPARTMENTS} departamentos atingido. Saia de um para entrar neste.
+                    </p>
                   )}
 
-                  {/* Action buttons */}
-                  <div className="flex gap-3 pt-2 border-t">
-                    <Button
-                      variant="outline"
-                      onClick={() => setSelectedMinistryForDetails(null)}
-                      className="flex-1 h-11 font-bold rounded-xl"
-                    >
+                  <div className="flex gap-2 pt-2 border-t border-border">
+                    <Button variant="outline" onClick={() => setSelectedForDetails(null)} className="flex-1 rounded-md">
                       Fechar
                     </Button>
-                    {!isGuest && (
+                    {!isGuest ? (
                       <Button
                         onClick={() => toggleJoin(m.id)}
                         disabled={isPending || atLimit}
-                        className="flex-1 h-11 font-bold text-white rounded-xl shadow-sm disabled:opacity-50"
-                        style={{ backgroundColor: isJoined ? '#dc2626' : m.color }}
+                        variant={isJoined ? 'outline' : 'default'}
+                        className={`flex-1 rounded-md ${isJoined ? 'text-destructive border-destructive/40 hover:bg-destructive/10' : ''}`}
                       >
                         {isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                        {isJoined ? 'Deixar Ministério' : atLimit ? 'Limite Atingido' : 'Participar desta Frente'}
+                        {isJoined ? 'Sair do departamento' : atLimit ? 'Limite atingido' : 'Participar'}
                       </Button>
-                    )}
-                    {isGuest && (
-                      <Button
-                        onClick={() => { setSelectedMinistryForDetails(null); navigate('/auth') }}
-                        className="flex-1 h-11 font-bold text-white rounded-xl"
-                        style={{ backgroundColor: m.color }}
-                      >
-                        <UserPlus className="h-4 w-4 mr-2" />Criar Conta
+                    ) : (
+                      <Button onClick={() => { setSelectedForDetails(null); navigate('/auth') }} className="flex-1 rounded-md">
+                        <UserPlus className="h-4 w-4 mr-2" />Criar conta
                       </Button>
                     )}
                   </div>
@@ -704,99 +626,132 @@ const MinistriesPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* ─── Editor de Ministério ─── */}
+      {/* Editor */}
       <Dialog open={editorOpen} onOpenChange={open => { if (!open) closeEditor() }}>
-        <DialogContent className="max-w-lg max-h-[92vh] overflow-y-auto rounded-xl shadow-2xl border">
+        <DialogContent className="max-w-lg max-h-[92vh] overflow-y-auto rounded-lg">
           <DialogHeader>
-            <DialogTitle className="text-xl font-black tracking-tight">
-              {editingMinistry ? 'Atualizar Ministério' : 'Criar Novo Ministério'}
+            <DialogTitle className="text-lg font-semibold">
+              {editingDepartment ? 'Editar Departamento' : 'Criar Departamento'}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 pt-2" onClick={(e) => e.stopPropagation()}>
+          <div className="space-y-4 pt-1">
             {isAdmin && (
-              <div className="p-3 bg-blue-50/50 dark:bg-slate-900/40 rounded-xl border border-blue-100 dark:border-slate-800 space-y-1.5">
-                <Label className="font-bold flex items-center gap-1.5 text-sm text-blue-900 dark:text-blue-400">
-                  <ShieldAlert className="h-4 w-4" /> Líder do Ministério *
+              <div className="space-y-1.5">
+                <Label className="font-medium text-sm flex items-center gap-1.5">
+                  <ShieldAlert className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.75} />Líder do Departamento *
                 </Label>
                 <select
-                  value={newMinistry.leaderId}
-                  onChange={e => setNewMinistry({ ...newMinistry, leaderId: e.target.value })}
-                  className="w-full h-10 px-3 bg-background rounded-md border border-input text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                  value={newDepartment.leaderId}
+                  onChange={e => setNewDepartment({ ...newDepartment, leaderId: e.target.value })}
+                  className="w-full h-10 px-3 bg-background rounded-md border border-input text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 >
-                  <option value="">-- Escolha um Líder --</option>
+                  <option value="">Selecione um líder</option>
                   {profiles.map(p => (
-                    <option key={p.id} value={p.id}>
-                      {p.username} {p.id === user?.id ? '(Você)' : ''}
-                    </option>
+                    <option key={p.id} value={p.id}>{p.username}{p.id === user?.id ? ' (Você)' : ''}</option>
                   ))}
                 </select>
               </div>
             )}
 
             <div>
-              <Label className="font-bold mb-1.5 block text-sm">Nome Oficial *</Label>
-              <Input value={newMinistry.name} onChange={e => setNewMinistry({ ...newMinistry, name: e.target.value.slice(0, NAME_MAX) })} placeholder="Ex: Ministério de Comunicação & Mídia" className="h-10" />
-              <p className="text-[10px] font-mono text-muted-foreground mt-1 text-right">{newMinistry.name.length}/{NAME_MAX}</p>
+              <Label className="font-medium text-sm mb-1 block">Nome *</Label>
+              <Input
+                value={newDepartment.name}
+                onChange={e => setNewDepartment({ ...newDepartment, name: e.target.value.slice(0, NAME_MAX) })}
+                placeholder="Ex: Comunicação e Mídia"
+                className="h-10 rounded-md"
+              />
+              <p className="text-[11px] text-muted-foreground mt-1 text-right">{newDepartment.name.length}/{NAME_MAX}</p>
             </div>
 
             <div>
-              <Label className="font-bold mb-1.5 block text-sm">Imagem (URL)</Label>
+              <Label className="font-medium text-sm mb-1 block">Imagem (URL opcional)</Label>
               <div className="relative">
-                <ImageIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input value={newMinistry.imageUrl} onChange={e => setNewMinistry({ ...newMinistry, imageUrl: e.target.value })} placeholder="https://..." className="h-10 pl-9" />
+                <ImageIcon className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={newDepartment.imageUrl}
+                  onChange={e => setNewDepartment({ ...newDepartment, imageUrl: e.target.value })}
+                  placeholder="https://..."
+                  className="h-10 pl-9 rounded-md"
+                />
               </div>
             </div>
 
             <div>
-              <Label className="font-bold mb-1.5 block text-sm">Descrição / Propósito</Label>
-              <Textarea value={newMinistry.description} onChange={e => setNewMinistry({ ...newMinistry, description: e.target.value.slice(0, DESCRIPTION_MAX) })} placeholder="Metas e atribuições deste ministério..." rows={3} className="resize-none" />
-              <p className="text-[10px] font-mono text-muted-foreground mt-1 text-right">{newMinistry.description.length}/{DESCRIPTION_MAX}</p>
+              <Label className="font-medium text-sm mb-1 block">Descrição</Label>
+              <Textarea
+                value={newDepartment.description}
+                onChange={e => setNewDepartment({ ...newDepartment, description: e.target.value.slice(0, DESCRIPTION_MAX) })}
+                placeholder="Propósito deste departamento..."
+                rows={3}
+                className="resize-none rounded-md"
+              />
+              <p className="text-[11px] text-muted-foreground mt-1 text-right">{newDepartment.description.length}/{DESCRIPTION_MAX}</p>
             </div>
 
             <div>
-              <Label className="font-bold mb-1.5 block text-sm">Atividades (separadas por vírgula)</Label>
-              <Input value={newMinistry.activities} onChange={e => setNewMinistry({ ...newMinistry, activities: e.target.value })} placeholder="Ex: Design, Filmagem, Transmissão ao vivo" className="h-10" />
+              <Label className="font-medium text-sm mb-1 block">Atividades (separadas por vírgula)</Label>
+              <Input
+                value={newDepartment.activities}
+                onChange={e => setNewDepartment({ ...newDepartment, activities: e.target.value })}
+                placeholder="Ex: Design, Filmagem, Transmissão"
+                className="h-10 rounded-md"
+              />
             </div>
 
             <div>
-              <Label className="font-bold mb-1.5 block text-sm">Cor Temática</Label>
-              <div className="flex flex-wrap gap-2 mb-3">
+              <Label className="font-medium text-sm mb-1 block">Cor</Label>
+              <div className="flex flex-wrap gap-2 mb-2">
                 {COLOR_PRESETS.map(preset => (
-                  <button key={preset} type="button" onClick={() => { setNewMinistry({ ...newMinistry, color: preset }); setColorError(null) }}
-                    className={`h-7 w-7 rounded-full border-2 transition-transform hover:scale-110 ${newMinistry.color === preset ? 'scale-110 border-foreground shadow-sm' : 'border-transparent'}`}
-                    style={{ backgroundColor: preset }} />
+                  <button
+                    key={preset} type="button"
+                    onClick={() => { setNewDepartment({ ...newDepartment, color: preset }); setColorError(null) }}
+                    className={`h-7 w-7 rounded-full border-2 transition-transform ${newDepartment.color === preset ? 'scale-110 border-foreground' : 'border-transparent'}`}
+                    style={{ backgroundColor: preset }}
+                  />
                 ))}
               </div>
               <div className="flex gap-2 items-center">
-                <div className="w-10 h-10 rounded-lg border flex-shrink-0" style={{ backgroundColor: HEX_REGEX.test(newMinistry.color) ? newMinistry.color : 'transparent' }} />
-                <Input value={newMinistry.color} onChange={e => { setNewMinistry({ ...newMinistry, color: e.target.value }); setColorError(null) }} className="flex-1 h-10 font-mono" placeholder="#4A90A4" maxLength={7} />
+                <div className="w-10 h-10 rounded-md border flex-shrink-0" style={{ backgroundColor: HEX_REGEX.test(newDepartment.color) ? newDepartment.color : 'transparent' }} />
+                <Input
+                  value={newDepartment.color}
+                  onChange={e => { setNewDepartment({ ...newDepartment, color: e.target.value }); setColorError(null) }}
+                  className="flex-1 h-10 font-mono rounded-md"
+                  placeholder="#4A90A4"
+                  maxLength={7}
+                />
               </div>
-              {colorError && <p className="text-xs text-red-500 font-medium mt-1">{colorError}</p>}
+              {colorError && <p className="text-xs text-destructive mt-1">{colorError}</p>}
             </div>
 
-            <div className="flex gap-3 pt-2">
-              <Button onClick={closeEditor} variant="outline" className="flex-1 h-10 font-bold" disabled={saving}>Cancelar</Button>
-              <Button onClick={createOrUpdate} disabled={saving || !newMinistry.name.trim() || !newMinistry.leaderId} className="flex-1 h-10 font-bold text-white shadow-md" style={{ backgroundColor: HEX_REGEX.test(newMinistry.color) ? newMinistry.color : '#0A2E4A' }}>
+            <div className="flex gap-2 pt-1">
+              <Button onClick={closeEditor} variant="outline" className="flex-1 rounded-md" disabled={saving}>Cancelar</Button>
+              <Button
+                onClick={createOrUpdate}
+                disabled={saving || !newDepartment.name.trim() || !newDepartment.leaderId}
+                className="flex-1 rounded-md"
+              >
                 {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                {saving ? 'Gravando...' : editingMinistry ? 'Atualizar' : 'Criar'}
+                {saving ? 'Salvando...' : editingDepartment ? 'Atualizar' : 'Criar'}
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* ─── Confirmação de Exclusão ─── */}
+      {/* Confirmação de exclusão */}
       <AlertDialog open={!!deleteTargetId} onOpenChange={open => { if (!open) setDeleteTargetId(null) }}>
-        <AlertDialogContent className="rounded-xl border shadow-xl">
+        <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-black tracking-tight">Remover ministério definitivamente?</AlertDialogTitle>
-            <AlertDialogDescription className="text-sm">Esta ação removerá o registro imediatamente. Todos os vínculos de membros serão perdidos.</AlertDialogDescription>
+            <AlertDialogTitle>Remover departamento?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. Todos os vínculos de membros serão perdidos.
+            </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="gap-2">
-            <AlertDialogCancel disabled={deleting} className="font-bold">Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} disabled={deleting} className="bg-red-600 hover:bg-red-700 text-white font-bold">
-              {deleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Confirmar Exclusão
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} disabled={deleting} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
+              {deleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}Remover
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
