@@ -10,8 +10,8 @@ export type ActivityType =
   | 'sermon_published'
   | 'prayer_created'
   | 'post_created'
-  | 'post_deleted'        // ← novo
-  | 'comment_created'      // ← novo
+  | 'post_deleted'
+  | 'comment_created'
   | 'event_created'
   | 'member_joined'
   | 'course_started'
@@ -24,9 +24,6 @@ export type ActivityType =
   | 'ministry_created'
   | 'ministry_updated'
   | 'ministry_deleted'
-  | 'post_created'
-  | 'post_deleted'
-  | 'comment_created'
   | 'donation_made'
   | 'admin_action'
   | 'ministry_activity'
@@ -70,8 +67,8 @@ export function getActivityLabel(type: ActivityType | string): string {
     sermon_published: 'Sermão publicado',
     prayer_created: 'Pedido de oração',
     post_created: 'Publicação na comunidade',
-    post_deleted: 'Post removido',      // trocar por texto sem emoji se preferires consistência total
-    comment_created: 'Novo comentário',
+    post_deleted: 'Publicação removida',
+    comment_created: 'Comentário adicionado',
     event_created: 'Evento criado',
     member_joined: 'Novo membro',
     course_started: 'Curso iniciado',
@@ -84,13 +81,11 @@ export function getActivityLabel(type: ActivityType | string): string {
     ministry_created: 'Ministério criado',
     ministry_updated: 'Ministério atualizado',
     ministry_deleted: 'Ministério removido',
-    post_deleted: 'Publicação removida',
-    comment_created: 'Comentário adicionado',
     donation_made: 'Contribuição realizada',
     admin_action: 'Ação administrativa',
     ministry_activity: 'Atividade de ministério',
   }
-  return labels[type] || ` ${type}`
+  return labels[type] || type
 }
 
 /**
@@ -101,8 +96,8 @@ export function getActivityColor(type: ActivityType | string): string {
     sermon_published: 'text-purple-600 dark:text-purple-400',
     prayer_created: 'text-rose-600 dark:text-rose-400',
     post_created: 'text-blue-600 dark:text-blue-400',
-    post_deleted: 'text-blue-600 dark:text-blue-400',
-    comment_created: 'text-blue-600 dark:text-blue-400',
+    post_deleted: 'text-blue-400 dark:text-blue-500',
+    comment_created: 'text-blue-500 dark:text-blue-400',
     event_created: 'text-indigo-600 dark:text-indigo-400',
     member_joined: 'text-green-600 dark:text-green-400',
     course_started: 'text-amber-600 dark:text-amber-400',
@@ -115,8 +110,6 @@ export function getActivityColor(type: ActivityType | string): string {
     ministry_created: 'text-emerald-600 dark:text-emerald-400',
     ministry_updated: 'text-emerald-500 dark:text-emerald-400',
     ministry_deleted: 'text-red-600 dark:text-red-400',
-    post_deleted: 'text-blue-400 dark:text-blue-500',
-    comment_created: 'text-blue-500 dark:text-blue-400',
     donation_made: 'text-yellow-600 dark:text-yellow-400',
     admin_action: 'text-red-600 dark:text-red-400',
     ministry_activity: 'text-cyan-600 dark:text-cyan-400',
