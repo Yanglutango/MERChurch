@@ -27,6 +27,7 @@ import SettingsPage from './pages/SettingsPage'
 import AnnouncementsPage from './pages/AnnouncementsPage'
 import { useAuthStore } from './stores/authStore'
 import { supabase } from './lib/supabase'
+import ErrorBoundary from './components/ErrorBoundary'
 
 // ─── Real-Time Provider wrapper ───────────────────────────────────────────────
 function RealTimeProvider({ children }: { children: React.ReactNode }) {
@@ -51,9 +52,9 @@ function App() {
           .eq('id', session.user.id)
           .single()
         
-        if (profile?.theme_mode) {
-          themeMode = profile.theme_mode as 'light' | 'dark' | 'system'
-        }
+          if (profile?.theme_mode) {
+            themeMode = profile.theme_mode as 'light' | 'dark' | 'system'
+          }
       } else {
         // Sem usuário, usa localStorage ou padrão
         const stored = localStorage.getItem('theme')
@@ -64,15 +65,16 @@ function App() {
 
       // Aplica o tema no DOM
       const root = document.documentElement
-      root.classList.remove('light', 'dark')
-      
+      // default: remove only dark class if present
       if (themeMode === 'system') {
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-        root.classList.add(prefersDark ? 'dark' : 'light')
+        if (prefersDark) root.classList.add('dark')
+        else root.classList.remove('dark')
+      } else if (themeMode === 'dark') {
+        root.classList.add('dark')
       } else {
-        root.classList.add(themeMode)
+        root.classList.remove('dark')
       }
-      
       localStorage.setItem('theme', themeMode)
     }
 
@@ -100,6 +102,7 @@ function App() {
   }
 
   return (
+    <ErrorBoundary>
     <RealTimeProvider>
     <BrowserRouter>
       <Routes>
@@ -130,6 +133,7 @@ function App() {
       <Toaster position="top-center" richColors closeButton />
     </BrowserRouter>
     </RealTimeProvider>
+    </ErrorBoundary>
   )
 }
 
