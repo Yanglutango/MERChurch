@@ -62,19 +62,24 @@ const values = [
 
 const journey = [
   {
-    year: '2012',
+    year: '2000',
     title: 'Nasce uma família de fé',
-    text: 'A MER Church começou com a visão de criar um lugar onde as pessoas pudessem encontrar Jesus, pertencer a uma comunidade e crescer na fé.',
+    text: 'A MER começou com a visão de criar um lugar onde as pessoas pudessem encontrar Jesus, pertencer a uma comunidade e crescer na fé. E no ano de 2000, o Pastor Garcia Lutango foi comissionado a implantar essa visão na cidade do Lubango.',
   },
   {
-    year: '2016',
+    year: '2018',
     title: 'Crescimento no discipulado',
-    text: 'Expandimos os nossos ministérios para crianças, jovens, oração, cuidado e formação espiritual em cada fase da vida.',
+    text: 'Expandimos os nossos ministérios para crianças, jovens, oração, cuidado e formação espiritual em cada fase da vida. Esses pequenos ministérios contribuem de maneira significativa para a congregação.',
   },
   {
     year: '2020',
     title: 'Servindo além dos muros',
-    text: 'A nossa missão foi além do culto dominical para abranger apoio, cuidado prático e impacto na comunidade local.',
+    text: 'A nossa missão foi além dos cultos para abranger apoio, cuidado prático e impacto na comunidade local. Nesse mesmo ano, começamos o projeto "Sopa Solidária", uma campanha para alimentar pessoas desabrigadas e necessitadas.',
+  },
+  {
+    year: '2025-2026',
+    title: 'Rumo ao crescimento digital',
+    text: 'Com a evolução tecnológica acelerando a cada dia, nossos jovens tiveram a ideia da criação e implementação da KAIROS - uma plataforma digital para a congregação, visando o benefício da mesma e o maior alcance de pessoas.'
   },
 ]
 
@@ -191,7 +196,7 @@ export default function AboutPage() {
 
             <div className="space-y-5 text-lg leading-8 text-muted-foreground">
               <p>
-                Na MER Church, acreditamos que o evangelho é transformador. A nossa missão é ajudar as pessoas a encontrar Jesus,
+                Na MER, acreditamos que o Evangelho genuíno é transformador e restaurador. A nossa missão é ajudar as pessoas a encontrar Jesus,
                 descobrir o seu chamado e viver com coragem, compaixão e propósito.
               </p>
               <p>
@@ -314,7 +319,10 @@ export default function AboutPage() {
                   <Clock3 className="mt-1 h-5 w-5 text-primary" />
                   <div>
                     <p className="font-semibold text-foreground">Horários</p>
-                    <p className="text-muted-foreground">Domingo: 09:00 e 18:00 • Terça a Sexta: 16:30–17:00</p>
+                    <p className="text-muted-foreground">Domingo: 09:00 • 
+                      Terça-Feira: 17:00 • 
+                      Quarta a Sexta: 16:30 •
+                      Sábado: 15:00</p>
                   </div>
                 </div>
               </div>
@@ -360,7 +368,7 @@ export default function AboutPage() {
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">Citação</p>
                 <p className="mt-4 text-xl font-medium leading-8 text-foreground md:text-2xl">
-                  “Tudo isso vem de Deus, que nos reconciliou consigo mesmo por meio de Cristo…”
+                  “Tudo isso vem de Deus, que nos reconciliou consigo mesmo por meio de Cristo, e nos deu o ministério da reconciliação.”
                 </p>
                 <p className="mt-3 text-sm font-medium text-muted-foreground">— 2 Coríntios 5:18</p>
               </div>
