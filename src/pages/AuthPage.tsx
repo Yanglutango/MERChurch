@@ -96,8 +96,7 @@ const AuthPage = () => {
   const [otp, setOtp] = useState('')
 
   const passwordStrength = useMemo(() => getPasswordStrength(password), [password])
-  const roleBadgeLabel =
-    showAdminAccess ? 'Admin' : role === 'guest' ? 'Convidado' : 'Membro'
+  const roleBadgeLabel = showAdminAccess ? 'Admin' : role === 'guest' ? 'Convidado' : 'Membro'
 
   const resetFlow = () => {
     setStep('credentials')
@@ -249,7 +248,7 @@ const AuthPage = () => {
     return handleRegister(e)
   }
 
-  const handleRoleChange = (selectedRole: Exclude<Role, 'admin'>) => {
+  const handleRoleChange = (selectedRole: 'member' | 'guest') => {
     setRole(selectedRole)
     setShowAdminAccess(false)
     setAdminKey('')
