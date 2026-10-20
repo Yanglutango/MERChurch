@@ -1,149 +1,150 @@
-import { ArrowRight, CalendarClock, CheckCircle2, Church, Compass, HeartHandshake, MapPin, Sparkles, Users } from 'lucide-react'
+import { ArrowRight, CalendarCheck2, CheckCircle2, Church, Compass, HeartHandshake, MapPin, Sparkles, Users } from 'lucide-react'
 import Layout from '../components/layout/Layout'
-import { Button } from '../components/ui/button'
-import { Card } from '../components/ui/card'
-import { useAuth } from '../hooks/useAuth'
 
-const missionPillars = [
+const stats = [
+  { label: 'Active members', value: '1.2k+' },
+  { label: 'Weekly gatherings', value: '6+' },
+  { label: 'Community groups', value: '18' },
+  { label: 'Serving ministries', value: '12' },
+]
+
+const ministries = [
   {
-    icon: Compass,
-    title: 'Missão',
-    description:
-      'Compartilhar o evangelho com autenticidade, esperança e impacto real na vida das pessoas e das comunidades.',
-  },
-  {
-    icon: HeartHandshake,
-    title: 'Serviço',
-    description:
-      'Servir com humildade, compaixão e compromisso com o cuidado espiritual, social e pastoral.',
-  },
-  {
+    title: 'Children & Youth',
+    description: 'Safe, joyful spaces where young people are nurtured in faith, identity, and purpose.',
     icon: Users,
-    title: 'Comunidade',
-    description:
-      'Construir uma igreja acolhedora, unida e ativa, onde cada pessoa encontra pertencimento e propósito.',
+  },
+  {
+    title: 'Prayer & Care',
+    description: 'A compassionate prayer network supporting members through difficult seasons and celebrations.',
+    icon: HeartHandshake,
+  },
+  {
+    title: 'Discipleship',
+    description: 'Biblical teaching and life-on-life mentoring that helps people grow in spiritual maturity.',
+    icon: Compass,
+  },
+  {
+    title: 'Community Outreach',
+    description: 'Encouraging service, generosity, and local mission as a visible expression of Christ’s love.',
+    icon: Sparkles,
   },
 ]
 
 const values = [
-  'Fé viva e prática',
-  'Hospitalidade e acolhimento',
-  'Disciplina espiritual',
-  'Serviço sem fronteiras',
-  'Comunhão e unidade',
-  'Transformação pessoal e comunitária',
+  'Christ-centered worship and teaching',
+  'Warm hospitality and genuine belonging',
+  'Prayerful dependence on God',
+  'Service rooted in compassion and truth',
+  'A family culture that welcomes all generations',
+  'Mission-minded outreach in the city and beyond',
 ]
 
-const leadership = [
+const journey = [
   {
-    name: 'Pastor João Manuel',
-    title: 'Pastor Presidente',
-    summary: 'Liderança espiritual, visão pastoral e cuidado da comunidade local.',
+    year: '2012',
+    title: 'A church family begins',
+    text: 'MER Church started with a vision to create a place where people could experience Jesus, belong in community, and grow through faith.',
   },
-  {
-    name: 'Maria Silva',
-    title: 'Coordenadora de Discipulado',
-    summary: 'Acompanhamento pastoral, formação cristã e vida em comunidade.',
-  },
-  {
-    name: 'Daniel Fernandes',
-    title: 'Coordenador de Missões',
-    summary: 'Expansão da ação social, evangelística e de impacto comunitário.',
-  },
-]
-
-const moments = [
   {
     year: '2016',
-    title: 'Início da caminhada',
-    text: 'A igreja começou com uma visão clara de servir, discipular e edificar pessoas em Cristo.',
+    title: 'Growth in discipleship',
+    text: 'We expanded our ministries to include young people, prayer care, and spiritual formation for every stage of life.',
   },
   {
-    year: '2019',
-    title: 'Expansão comunitária',
-    text: 'Ampliação de grupos, encontros e ações de apoio social e espiritual na comunidade.',
-  },
-  {
-    year: '2024',
-    title: 'Visão em crescimento',
-    text: 'Fortalecimento de programas, ministérios e presença com impacto sustentável em diversas frentes.',
+    year: '2020',
+    title: 'Serving beyond the walls',
+    text: 'Our mission extended beyond Sunday worship into outreach, support, and practical care for families and communities around us.',
   },
 ]
 
-const AboutPage = () => {
-  const { user } = useAuth()
-
+export default function AboutPage() {
   return (
     <Layout>
-      <div className="min-h-screen bg-background text-foreground">
-        <section className="relative overflow-hidden border-b border-border/80 bg-gradient-to-br from-primary/8 via-background to-background">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.18),_transparent_55%)]" aria-hidden="true" />
+      <div className="min-h-screen bg-[#f8f5f1] text-slate-800">
+        <section className="relative overflow-hidden bg-gradient-to-br from-[#f6efe6] via-white to-[#f4efe9]">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(167,139,250,0.08),transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(251,191,36,0.12),transparent_30%)]" />
 
-          <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
-            <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="relative mx-auto max-w-7xl px-4 py-16 md:px-6 md:py-20 lg:px-8">
+            <div className="grid items-center gap-10 lg:grid-cols-[1.2fr_0.8fr]">
               <div>
-                <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
-                  <Church className="h-3.5 w-3.5" />
-                  Quem somos
+                <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#d9c5a1] bg-white/80 px-4 py-2 text-sm font-medium text-[#6d4c2f] shadow-sm backdrop-blur">
+                  <Church size={16} />
+                  About MER Church
                 </div>
 
-                <h1 className="max-w-xl text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-                  Uma igreja comprometida com a fé, a comunidade e a transformação.
+                <h1 className="max-w-xl text-4xl font-black tracking-tight text-slate-900 md:text-5xl lg:text-6xl">
+                  A church where faith, family, and purpose grow together.
                 </h1>
 
-                <p className="mt-5 max-w-xl text-base leading-7 text-muted-foreground">
-                  Na KAIRÓS, acreditamos que a Igreja é um lugar de acolhimento, discipulado, serviço e esperança.
-                  Somos uma comunidade guiada pela Palavra de Deus, movida pelo amor e dedicada a impactar vidas.
+                <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
+                  MER Church is a vibrant community centered on Jesus Christ, committed to worship, discipleship,
+                  and compassionate service. We believe every person is invited to belong, be transformed, and
+                  live with purpose.
                 </p>
 
-                <div className="mt-7 flex flex-wrap gap-3">
-                  <Button className="rounded-full px-5 py-2.5 text-sm">
-                    Visite-nos
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
+                <div className="mt-8 flex flex-col gap-4 sm:flex-row">
+                  <a
+                    href="#mission"
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-[#1f2a44] px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-slate-200 transition hover:bg-[#141d33]"
+                  >
+                    Discover our mission
+                    <ArrowRight size={16} />
+                  </a>
+                  <a
+                    href="#visit"
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-3.5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                  >
+                    Plan your visit
+                  </a>
+                </div>
 
-                  <Button variant="outline" className="rounded-full px-5 py-2.5 text-sm">
-                    Fale connosco
-                  </Button>
+                <div className="mt-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                  {stats.map((stat) => (
+                    <div key={stat.label} className="rounded-2xl border border-[#eadfce] bg-white/80 p-4 shadow-sm backdrop-blur-sm">
+                      <div className="text-2xl font-black text-slate-900">{stat.value}</div>
+                      <div className="mt-1 text-sm text-slate-600">{stat.label}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
               <div className="relative">
-                <div className="rounded-[28px] border border-border bg-card p-5 shadow-[0_25px_80px_rgba(15,23,42,0.08)]">
-                  <div className="rounded-[22px] bg-gradient-to-br from-primary/12 via-background to-primary/5 p-5">
-                    <div className="mb-4 flex items-center justify-between">
-                      <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.16em] text-primary">
-                        <Sparkles className="h-3.5 w-3.5" />
-                        Nossa identidade
-                      </span>
-
-                      <span className="rounded-full border border-border bg-background px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
-                        {user ? 'Comunidade ativa' : 'Você é bem-vindo'}
-                      </span>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div className="rounded-2xl border border-border bg-background/80 p-4">
-                        <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Visão</p>
-                        <p className="mt-2 text-lg font-semibold text-foreground">
-                          Formar pessoas transformadas para transformar o mundo.
-                        </p>
+                <div className="rounded-[2rem] border border-[#ecd9bf] bg-white p-6 shadow-[0_30px_80px_rgba(15,23,42,0.08)]">
+                  <div className="rounded-[1.5rem] bg-gradient-to-br from-[#1d273d] via-[#28395c] to-[#6d4c2f] p-6 text-white">
+                    <p className="text-sm uppercase tracking-[0.2em] text-slate-200">Sunday gatherings</p>
+                    <div className="mt-6 space-y-4">
+                      <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <CalendarCheck2 size={18} className="text-[#f7d7a9]" />
+                          <span className="font-medium">Worship service</span>
+                        </div>
+                        <span className="text-sm text-slate-200">9:00 AM</span>
                       </div>
 
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <Card className="border-border bg-background/80 p-4">
-                          <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Atuação</p>
-                          <p className="mt-2 text-2xl font-bold text-foreground">+8</p>
-                          <p className="mt-1 text-sm text-muted-foreground">anos de caminhada</p>
-                        </Card>
+                      <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <CheckCircle2 size={18} className="text-[#f7d7a9]" />
+                          <span className="font-medium">Bible study</span>
+                        </div>
+                        <span className="text-sm text-slate-200">11:15 AM</span>
+                      </div>
 
-                        <Card className="border-border bg-background/80 p-4">
-                          <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Acolhimento</p>
-                          <p className="mt-2 text-2xl font-bold text-foreground">1k+</p>
-                          <p className="mt-1 text-sm text-muted-foreground">pessoas impactadas</p>
-                        </Card>
+                      <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <MapPin size={18} className="text-[#f7d7a9]" />
+                          <span className="font-medium">Location</span>
+                        </div>
+                        <span className="text-sm text-slate-200">City Center</span>
                       </div>
                     </div>
+                  </div>
+
+                  <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Why people stay</p>
+                    <p className="mt-3 text-base leading-7 text-slate-700">
+                      We create a space where people can truly belong, grow spiritually, and be part of something larger than themselves.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -151,139 +152,152 @@ const AboutPage = () => {
           </div>
         </section>
 
-        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-          <div className="mb-8 max-w-2xl">
-            <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-primary">A nossa essência</p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              Uma igreja com propósito, presença e profundidade espiritual.
-            </h2>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-3">
-            {missionPillars.map(({ icon: Icon, title, description }) => (
-              <Card key={title} className="group h-full border-border bg-card p-6 transition-all duration-200 hover:-translate-y-1 hover:border-primary/30 hover:shadow-[0_16px_40px_rgba(15,23,42,0.05)]">
-                <div className="mb-4 inline-flex rounded-xl border border-primary/15 bg-primary/5 p-3 text-primary">
-                  <Icon className="h-5 w-5" />
-                </div>
-                <h3 className="text-xl font-semibold text-foreground">{title}</h3>
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">{description}</p>
-              </Card>
-            ))}
-          </div>
-        </section>
-
-        <section className="border-y border-border/80 bg-muted/20">
-          <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[0.92fr_1.08fr] lg:px-8">
+        <main className="mx-auto max-w-7xl px-4 py-16 md:px-6 lg:px-8">
+          <section id="mission" className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
             <div>
-              <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-primary">A nossa história</p>
-              <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-                Crescemos em fé e servimos com compromisso.
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#8d6b45]">Our mission</p>
+              <h2 className="mt-4 text-3xl font-black tracking-tight text-slate-900 md:text-4xl">
+                Rooted in Christ. Reaching people with hope.
               </h2>
             </div>
 
-            <div className="space-y-5">
-              <p className="text-base leading-7 text-muted-foreground">
-                Desde o início, nossa comunidade tem buscado viver uma fé que não se limita ao culto, mas se expressa em serviço,
-                cuidado com o próximo, discipulado e ação concreta em favor de pessoas e famílias.
+            <div className="space-y-5 text-lg leading-8 text-slate-600">
+              <p>
+                At MER Church, we believe the gospel is transformative. Our mission is to help people encounter Jesus,
+                discover their calling, and live with courage, compassion, and purpose.
               </p>
-              <p className="text-base leading-7 text-muted-foreground">
-                Acreditamos que a igreja deve ser um lugar de encontro, cura, direção e renovação. Por isso, investimos em grupos,
-                encontros, formação, apoio e ações de impacto social e espiritual.
+              <p>
+                We are committed to spiritual formation, community care, and practical acts of love that reflect the heart
+                of Christ across every generation and every neighborhood.
               </p>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-          <div className="mb-10 flex items-end justify-between gap-4">
-            <div>
-              <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-primary">Valores</p>
-              <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground">O que nos move</h2>
-            </div>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {values.map((value) => (
-              <div key={value} className="flex items-start gap-3 rounded-2xl border border-border bg-card p-4">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-                <p className="text-sm font-medium text-foreground">{value}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="border-y border-border/80 bg-muted/25">
-          <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <section className="mt-20">
             <div className="mb-10 max-w-2xl">
-              <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-primary">Liderança</p>
-              <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground">O coração da nossa comunidade</h2>
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#8d6b45]">What we value</p>
+              <h2 className="mt-4 text-3xl font-black tracking-tight text-slate-900 md:text-4xl">
+                Faith-filled living shaped by grace and generosity.
+              </h2>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-3">
-              {leadership.map(({ name, title, summary }) => (
-                <Card key={name} className="overflow-hidden border-border bg-card">
-                  <div className="h-32 bg-gradient-to-br from-primary/15 via-primary/5 to-background" />
-                  <div className="p-5">
-                    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-lg font-semibold text-primary">
-                      {name.charAt(0)}
-                    </div>
-                    <h3 className="text-lg font-semibold text-foreground">{name}</h3>
-                    <p className="mt-1 text-sm font-medium text-primary">{title}</p>
-                    <p className="mt-3 text-sm leading-6 text-muted-foreground">{summary}</p>
+            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {values.map((value) => (
+                <div key={value} className="rounded-3xl border border-[#f0e6d8] bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#f5ead8] text-[#7a552f]">
+                    <CheckCircle2 size={22} />
                   </div>
-                </Card>
+                  <p className="text-lg font-semibold text-slate-800">{value}</p>
+                </div>
               ))}
             </div>
-          </div>
-        </section>
+          </section>
 
-        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-          <div className="mb-10 max-w-2xl">
-            <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-primary">Caminho</p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground">Alguns marcos importantes</h2>
-          </div>
+          <section className="mt-20">
+            <div className="mb-10 max-w-2xl">
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#8d6b45]">Ministries</p>
+              <h2 className="mt-4 text-3xl font-black tracking-tight text-slate-900 md:text-4xl">
+                Opportunities to connect, grow, and serve.
+              </h2>
+            </div>
 
-          <div className="grid gap-6 lg:grid-cols-3">
-            {moments.map(({ year, title, text }) => (
-              <Card key={year} className="border-border bg-card p-5">
-                <div className="mb-4 flex items-center gap-2 text-primary">
-                  <CalendarClock className="h-4 w-4" />
-                  <span className="text-sm font-semibold">{year}</span>
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+              {ministries.map(({ title, description, icon: Icon }) => (
+                <div key={title} className="rounded-3xl border border-[#f0e6d8] bg-[#fffdf9] p-6 shadow-sm">
+                  <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#efe4d4] text-[#6d4c2f]">
+                    <Icon size={20} />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900">{title}</h3>
+                  <p className="mt-3 text-base leading-7 text-slate-600">{description}</p>
                 </div>
-                <h3 className="text-lg font-semibold text-foreground">{title}</h3>
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">{text}</p>
-              </Card>
-            ))}
-          </div>
-        </section>
+              ))}
+            </div>
+          </section>
 
-        <section className="mx-auto max-w-7xl px-4 pb-20 sm:px-6 lg:px-8">
-          <Card className="overflow-hidden border-primary/20 bg-gradient-to-r from-primary/10 via-background to-primary/5 p-6 sm:p-8">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <section className="mt-20 rounded-[2rem] bg-[#1d273d] px-6 py-8 text-white md:px-8 lg:px-10">
+            <div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:items-center">
               <div>
-                <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-primary">Junte-se a nós</p>
-                <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground">Venha fazer parte da nossa comunidade.</h2>
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-                  Seja bem-vindo à KAIRÓS. Esteja presente em momentos de culto, discipulado, serviço e crescimento espiritual.
-                </p>
+                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#f1dcb1]">Our story</p>
+                <h2 className="mt-4 text-3xl font-black tracking-tight md:text-4xl">From a vision to a growing church family.</h2>
               </div>
 
-              <div className="flex flex-wrap gap-3">
-                <Button className="rounded-full px-5 py-2.5 text-sm">
-                  Participar
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-                <Button variant="outline" className="rounded-full px-5 py-2.5 text-sm">
-                  <MapPin className="mr-2 h-4 w-4" />
-                  Localização
-                </Button>
+              <div className="space-y-6">
+                {journey.map((item) => (
+                  <div key={item.year} className="flex gap-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#f1dcb1] text-[#1d273d] font-bold">
+                      {item.year}
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-white">{item.title}</h3>
+                      <p className="mt-2 text-sm leading-6 text-slate-200">{item.text}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          </Card>
-        </section>
+          </section>
+
+          <section id="visit" className="mt-20 grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#8d6b45]">Visit us</p>
+              <h2 className="mt-4 text-3xl font-black tracking-tight text-slate-900 md:text-4xl">Come as you are and experience genuine community.</h2>
+              <p className="mt-5 text-lg leading-8 text-slate-600">
+                Whether you are new to faith, returning to church, or exploring spiritual life, you are welcome here.
+                We would love to walk with you and help you find your place in the church family.
+              </p>
+
+              <div className="mt-8 space-y-4">
+                <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+                  <MapPin className="mt-1 text-[#7a552f]" size={20} />
+                  <div>
+                    <p className="font-semibold text-slate-900">Location</p>
+                    <p className="text-slate-600">123 Hope Avenue, City Center</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+                  <CalendarCheck2 className="mt-1 text-[#7a552f]" size={20} />
+                  <div>
+                    <p className="font-semibold text-slate-900">Service times</p>
+                    <p className="text-slate-600">Sunday Worship: 9:00 AM & 11:00 AM</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[2rem] border border-[#f0e6d8] bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.05)]">
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#8d6b45]">Next steps</p>
+              <h3 className="mt-4 text-2xl font-black text-slate-900">We’d love to meet you.</h3>
+
+              <div className="mt-6 space-y-4">
+                <a
+                  href="mailto:hello@merchurch.org"
+                  className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 transition hover:bg-slate-100"
+                >
+                  <span>Email the church</span>
+                  <ArrowRight size={16} />
+                </a>
+
+                <a
+                  href="tel:+1234567890"
+                  className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 transition hover:bg-slate-100"
+                >
+                  <span>Call us</span>
+                  <ArrowRight size={16} />
+                </a>
+
+                <a
+                  href="/contact"
+                  className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 transition hover:bg-slate-100"
+                >
+                  <span>Connect with our team</span>
+                  <ArrowRight size={16} />
+                </a>
+              </div>
+            </div>
+          </section>
+        </main>
       </div>
     </Layout>
   )
 }
-
-export default AboutPage
