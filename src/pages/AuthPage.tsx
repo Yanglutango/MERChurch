@@ -56,6 +56,27 @@ const getPasswordStrength = (password: string) => {
   return { score: 3, label: 'Forte', tone: 'bg-emerald-500' }
 }
 
+const GoogleMark = () => (
+  <svg viewBox="0 0 48 48" aria-hidden="true" className="h-4 w-4 shrink-0">
+    <path
+      fill="#FFC107"
+      d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20c10.493 0 19.438-7.64 19.438-18 0-1.341-.138-2.639-.389-3.917z"
+    />
+    <path
+      fill="#FF3D00"
+      d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"
+    />
+    <path
+      fill="#4CAF50"
+      d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.222 0-9.651-3.342-11.303-7.98l-6.564 5.06C4.36 39.557 13.033 44 24 44z"
+    />
+    <path
+      fill="#1976D2"
+      d="M43.611 20.083H42V20H24v8h11.303c-1.043 2.946-3.122 5.477-5.892 7.053l6.19 5.238C39.32 39.237 44 34.265 44 24c0-1.341-.138-2.639-.389-3.917z"
+    />
+  </svg>
+)
+
 const AuthPage = () => {
   const navigate = useNavigate()
   const [isLogin, setIsLogin] = useState(true)
@@ -75,7 +96,8 @@ const AuthPage = () => {
   const [otp, setOtp] = useState('')
 
   const passwordStrength = useMemo(() => getPasswordStrength(password), [password])
-  const roleBadgeLabel = role === 'admin' ? 'Admin' : role === 'guest' ? 'Convidado' : 'Membro'
+  const roleBadgeLabel =
+    showAdminAccess ? 'Admin' : role === 'guest' ? 'Convidado' : 'Membro'
 
   const resetFlow = () => {
     setStep('credentials')
@@ -87,7 +109,7 @@ const AuthPage = () => {
     if (showAdminAccess) {
       setShowAdminAccess(false)
       setAdminKey('')
-      if (role === 'admin') setRole('member')
+      setRole('member')
       setFormMessage(null)
       return
     }
@@ -227,7 +249,7 @@ const AuthPage = () => {
     return handleRegister(e)
   }
 
-  const handleRoleChange = (selectedRole: Role) => {
+  const handleRoleChange = (selectedRole: Exclude<Role, 'admin'>) => {
     setRole(selectedRole)
     setShowAdminAccess(false)
     setAdminKey('')
@@ -253,7 +275,7 @@ const AuthPage = () => {
             <div className="rounded-lg border border-border bg-muted/60 p-1" role="group" aria-label="Tipo de acesso">
               <div className="grid grid-cols-2 gap-1">
                 {roleOptions.map(({ value, label, icon: Icon }) => {
-                  const isSelected = role === value || (value === 'member' && role === 'admin')
+                  const isSelected = role === value && !showAdminAccess
 
                   return (
                     <button
@@ -507,7 +529,7 @@ const AuthPage = () => {
                   type="button"
                   onClick={handleSendOtp}
                   disabled={loading || !identifier || !isValidEmail(identifier)}
-                  className="h-11 w-full rounded-md"
+                  className="h-11 w-full rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   {loading ? (
                     <span className="flex items-center justify-center gap-2">
@@ -522,7 +544,7 @@ const AuthPage = () => {
                   )}
                 </Button>
               ) : (
-                <Button type="submit" disabled={loading} className="h-11 w-full rounded-md">
+                <Button type="submit" disabled={loading} className="h-11 w-full rounded-lg bg-primary text-primary-foreground hover:bg-primary/90">
                   {loading ? (
                     <span className="flex items-center justify-center gap-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -550,8 +572,16 @@ const AuthPage = () => {
                 </div>
               </div>
 
-              <Button type="button" variant="outline" onClick={() => handleOAuthLogin('google')} className="h-11 w-full rounded-md">
-                Continuar com Google
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleOAuthLogin('google')}
+                className="h-11 w-full rounded-lg border-slate-200 bg-white text-slate-900 shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+              >
+                <span className="flex items-center justify-center gap-2.5">
+                  <GoogleMark />
+                  Continuar com Google
+                </span>
               </Button>
             </div>
           )}
