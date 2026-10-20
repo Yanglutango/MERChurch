@@ -52,7 +52,7 @@ const ministries = [
 ]
 
 const values = [
-  'Worship e ensino centrados em Cristo',
+  'Adoração e ensino centrados em Cristo',
   'Hospitalidade genuína e pertencimento',
   'Dependência consciente da oração',
   'Serviço movido por compaixão e verdade',
@@ -77,7 +77,7 @@ const journey = [
     text: 'A nossa missão foi além dos cultos para abranger apoio, cuidado prático e impacto na comunidade local. Nesse mesmo ano, começamos o projeto "Sopa Solidária", uma campanha para alimentar pessoas desabrigadas e necessitadas.',
   },
   {
-    year: '2025-2026',
+    year: '2025/26',
     title: 'Rumo ao crescimento digital',
     text: 'Com a evolução tecnológica acelerando a cada dia, nossos jovens tiveram a ideia da criação e implementação da KAIROS - uma plataforma digital para a congregação, visando o benefício da mesma e o maior alcance de pessoas.'
   },
