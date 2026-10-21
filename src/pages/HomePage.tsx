@@ -26,7 +26,7 @@ import { AdminAction } from '../components/shared/AdminAction'
 
 const RowSkeleton = () => (
   <div className="flex items-center gap-3 py-3 animate-pulse">
-    <div className="h-9 w-9 rounded-lg bg-muted flex-shrink-0" />
+    <div className="h-9 w-9 flex-shrink-0 rounded-lg bg-muted" />
     <div className="flex-1 space-y-1.5">
       <div className="h-3 w-2/3 rounded bg-muted" />
       <div className="h-2.5 w-1/3 rounded bg-muted" />
@@ -82,10 +82,22 @@ const HomePage = () => {
         ] = await Promise.all([
           supabase.from('user_profiles').select('id', { count: 'exact', head: true }).eq('role', 'member'),
           supabase.from('small_groups').select('id', { count: 'exact', head: true }).eq('is_active', true),
-          supabase.from('events').select('id, title, date, location').gte('date', new Date().toISOString()).order('date', { ascending: true }).limit(1).maybeSingle(),
-          supabase.from('sermons').select('id, title, speaker, date, views').order('date', { ascending: false }).limit(1).maybeSingle(),
+          supabase
+            .from('events')
+            .select('id, title, date, location')
+            .gte('date', new Date().toISOString())
+            .order('date', { ascending: true })
+            .limit(1)
+            .maybeSingle(),
+          supabase
+            .from('sermons')
+            .select('id, title, speaker, date, views')
+            .order('date', { ascending: false })
+            .limit(1)
+            .maybeSingle(),
           supabase.from('events').select('id, title, date, location').eq('is_live', true).limit(1).maybeSingle(),
-          supabase.from('live_sessions')
+          supabase
+            .from('live_sessions')
             .select('title, start_time')
             .eq('is_active', false)
             .gte('start_time', new Date().toISOString())
@@ -123,13 +135,13 @@ const HomePage = () => {
     const agenda = { icon: Calendar, label: 'Agenda', path: '/agenda' }
     const community = { icon: MessageCircle, label: 'Comunidade', path: '/community' }
     const dashboard = { icon: BarChart3, label: 'Dashboard', path: '/dashboard' }
-    const prayer = { icon: Heart, label: 'Oração', path: '/prayer' }
     const academy = { icon: GraduationCap, label: 'Cursos', path: '/academy' }
     const about = { icon: Users, label: 'Sobre a MER', path: '/about' }
+    const prayer = { icon: Heart, label: 'Oração', path: '/prayer' }
 
     if (isAdmin) return [dashboard, live, sermons, community]
     if (isGuest) return [live, sermons, agenda, about]
-    return [live, sermons, community, academy]
+    return [live, sermons, community, academy, prayer]
   })()
 
   const statItems = isGuest
@@ -156,12 +168,7 @@ const HomePage = () => {
       ? 'Sua jornada espiritual continua.'
       : 'Dados ao vivo e gestão da plataforma.'
 
-  const statusLabel = isLive
-    ? 'Ao vivo agora'
-    : nextSession
-      ? 'Próxima transmissão'
-      : 'Sem transmissão agendada'
-
+  const statusLabel = isLive ? 'Ao vivo agora' : nextSession ? 'Próxima transmissão' : 'Sem transmissão agendada'
   const statusMeta = isLive
     ? 'Estamos em culto agora'
     : nextSession
@@ -193,7 +200,7 @@ const HomePage = () => {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">{subtitle}</p>
-                <div className="flex items-center gap-2.5">
+                <div className="flex flex-wrap items-center gap-2.5">
                   {isLive ? (
                     <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
                       <span className="absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75 animate-ping" />
@@ -219,8 +226,8 @@ const HomePage = () => {
         </header>
 
         <div className="mt-8 flex flex-col gap-8 lg:flex-row lg:items-start">
-          <main className="flex-1">
-            <section className="mb-8">
+          <main className="flex-1 space-y-8">
+            <section>
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Acesso rápido</h2>
               </div>
