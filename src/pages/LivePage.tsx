@@ -353,34 +353,45 @@ const LivePage = () => {
   return (
     <Layout title="Transmissão Ao Vivo">
       <div className="mx-auto max-w-6xl space-y-5 px-4 py-6 lg:px-8 lg:py-8">
-        <div className="flex flex-col justify-between gap-3 border-b border-border pb-4 sm:flex-row sm:items-center">
-          <div className="flex min-w-0 items-center gap-3">
+        <div className="rounded-2xl border border-amber-500/20 bg-gradient-to-r from-amber-500/10 via-stone-900/80 to-neutral-900/90 p-4 shadow-[0_20px_60px_rgba(0,0,0,0.25)]">
+          <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+            <div className="flex min-w-0 items-center gap-3">
+              {isOnline ? (
+                <span className="relative flex h-3 w-3 flex-shrink-0">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75 animate-ping" />
+                  <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500" />
+                </span>
+              ) : (
+                <Circle className="h-3 w-3 flex-shrink-0 fill-muted-foreground text-muted-foreground" />
+              )}
+              <div className="min-w-0">
+                <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-amber-300/80">
+                  MER Church
+                </p>
+                <h1 className="truncate text-xl font-semibold text-white md:text-2xl">
+                  {currentSessionTitle}
+                </h1>
+              </div>
+            </div>
+
             {isOnline ? (
-              <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
-                <span className="absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75 animate-ping" />
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500" />
+              <span className="inline-flex items-center rounded-full border border-red-500/30 bg-red-500/10 px-2.5 py-1 text-xs font-medium text-red-200">
+                Ao vivo agora
               </span>
             ) : (
-              <Circle className="h-2.5 w-2.5 flex-shrink-0 fill-muted-foreground text-muted-foreground" />
+              <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                Transmissão offline
+              </span>
             )}
-            <h1 className="truncate text-xl font-semibold text-foreground md:text-2xl">
-              {currentSessionTitle}
-            </h1>
           </div>
-
-          {isOnline && (
-            <span className="flex-shrink-0 text-xs font-medium text-red-600 dark:text-red-400">
-              Ao vivo agora
-            </span>
-          )}
         </div>
 
         <div className="grid items-start gap-5 lg:grid-cols-3">
           <div className="space-y-4 lg:col-span-2">
-            <Card className="overflow-hidden rounded-lg border bg-black group">
+            <Card className="overflow-hidden rounded-2xl border border-white/10 bg-black shadow-[0_25px_70px_rgba(0,0,0,0.28)]">
               <div className="relative aspect-video bg-black">
                 {sessionLoading ? (
-                  <div className="absolute inset-0 flex items-center justify-center bg-muted/20">
+                  <div className="absolute inset-0 flex items-center justify-center bg-neutral-950/90">
                     <LoadingState message="Preparando transmissão…" />
                   </div>
                 ) : isOnline && activeSession?.stream_url ? (
@@ -412,25 +423,29 @@ const LivePage = () => {
                     </button>
                   </>
                 ) : (
-                  <div className="absolute inset-0 flex items-center justify-center bg-neutral-950 p-6">
+                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-neutral-950 via-stone-950 to-neutral-900 p-6">
                     <div className="max-w-md space-y-5 text-center">
-                      <RadioIcon className="mx-auto h-9 w-9 text-neutral-500" strokeWidth={1.5} />
+                      <div className="flex justify-center">
+                        <div className="rounded-full border border-amber-500/30 bg-amber-500/10 p-3">
+                          <RadioIcon className="h-9 w-9 text-amber-300" strokeWidth={1.5} />
+                        </div>
+                      </div>
 
                       {nextSession ? (
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                           <div>
-                            <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-neutral-400">
+                            <p className="mb-1.5 text-xs font-medium uppercase tracking-[0.2em] text-neutral-400">
                               Próximo culto
                             </p>
-                            <h3 className="text-xl font-semibold leading-tight text-white">
+                            <h3 className="text-2xl font-semibold leading-tight text-white">
                               {nextSession.title}
                             </h3>
                           </div>
 
-                          <div className="flex flex-col items-center gap-1 text-sm text-neutral-300">
+                          <div className="flex flex-col items-center gap-2 text-sm text-neutral-300">
                             {nextSession.preacher_name && <span>{nextSession.preacher_name}</span>}
                             {nextSession.start_time && (
-                              <span className="flex items-center gap-1.5">
+                              <span className="flex items-center gap-1.5 text-neutral-200">
                                 <Clock className="h-3.5 w-3.5" />
                                 {formatSessionTime(nextSession.start_time, {
                                   weekday: 'short',
@@ -445,27 +460,27 @@ const LivePage = () => {
                             )}
                           </div>
 
-                          <Button className="w-full" onClick={() => navigate('/prayer')}>
+                          <Button className="w-full bg-amber-500 text-stone-950 hover:bg-amber-400" onClick={() => navigate('/prayer')}>
                             <Heart className="mr-2 h-4 w-4" />Pedir oração agora
                           </Button>
                         </div>
                       ) : (
-                        <div className="space-y-3">
-                          <h3 className="text-base font-medium text-white">Nenhuma transmissão agendada</h3>
-                          <p className="text-xs leading-relaxed text-neutral-400">
+                        <div className="space-y-4">
+                          <h3 className="text-xl font-semibold text-white">Nenhuma transmissão agendada</h3>
+                          <p className="text-sm leading-relaxed text-neutral-300">
                             Acesse a biblioteca para rever cultos anteriores ou active notificações.
                           </p>
                           <div className="flex gap-2 pt-1">
                             <Button
                               variant="secondary"
-                              className="flex-1 text-xs"
+                              className="flex-1 bg-white/5 text-xs text-white hover:bg-white/10"
                               onClick={() => navigate('/sermons')}
                             >
                               <BookOpen className="mr-1.5 h-4 w-4" />Biblioteca
                             </Button>
                             <Button
                               variant="outline"
-                              className="flex-1 border-neutral-700 text-xs text-white hover:bg-neutral-900"
+                              className="flex-1 border-neutral-700 text-xs text-white hover:bg-neutral-800"
                               onClick={() => navigate('/about')}
                             >
                               <Bell className="mr-1.5 h-4 w-4" />Notificações
@@ -480,9 +495,12 @@ const LivePage = () => {
             </Card>
 
             {isOnline && activeSession && (
-              <Card className="rounded-lg border p-5">
+              <Card className="rounded-2xl border border-amber-500/20 bg-gradient-to-r from-amber-500/5 via-neutral-950 to-neutral-950 p-5 shadow-[0_12px_45px_rgba(0,0,0,0.14)]">
                 <div className="space-y-4">
                   <div>
+                    <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.2em] text-amber-300/80">
+                      Culto em andamento
+                    </p>
                     <h3 className="text-lg font-semibold leading-tight text-foreground">
                       {activeSession.title}
                     </h3>
@@ -493,10 +511,10 @@ const LivePage = () => {
                     )}
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-border pt-3 text-xs text-muted-foreground">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border pt-3 text-xs text-muted-foreground">
                     {activeSession.preacher_name && (
-                      <span className="flex items-center gap-1.5">
-                        <Flame className="h-3.5 w-3.5" strokeWidth={1.75} />
+                      <span className="flex items-center gap-1.5 text-amber-100/90">
+                        <Flame className="h-3.5 w-3.5 text-amber-300" strokeWidth={1.75} />
                         {activeSession.preacher_name}
                       </span>
                     )}
@@ -512,14 +530,14 @@ const LivePage = () => {
                         Iniciou às {sessionClockLabel}
                       </span>
                     )}
-                    <span className="flex items-center gap-1.5">
+                    <span className="flex items-center gap-1.5 text-rose-200">
                       <Heart className="h-3.5 w-3.5" strokeWidth={1.75} />
                       {prayerCount} pedidos de oração
                     </span>
                   </div>
 
                   <div className="flex flex-wrap gap-2 pt-1">
-                    <Button size="sm" onClick={() => navigate('/prayer')}>
+                    <Button size="sm" className="bg-amber-500 text-stone-950 hover:bg-amber-400" onClick={() => navigate('/prayer')}>
                       <Heart className="mr-1.5 h-4 w-4" />Pedir oração
                     </Button>
                     <Button size="sm" variant="secondary" onClick={() => navigate('/sermons')}>
@@ -534,7 +552,7 @@ const LivePage = () => {
             )}
 
             {isGuest && (
-              <Card className="rounded-lg border bg-muted/30 p-4">
+              <Card className="rounded-2xl border border-amber-500/20 bg-gradient-to-r from-amber-500/10 to-neutral-900 p-4">
                 <div className="flex items-center justify-between gap-4">
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-foreground">Participe da comunidade</p>
@@ -542,7 +560,7 @@ const LivePage = () => {
                       Faça login para interagir no chat ao vivo.
                     </p>
                   </div>
-                  <Button size="sm" onClick={() => navigate('/about')} className="flex-shrink-0">
+                  <Button size="sm" onClick={() => navigate('/about')} className="flex-shrink-0 bg-amber-500 text-stone-950 hover:bg-amber-400">
                     Entrar
                   </Button>
                 </div>
@@ -551,10 +569,10 @@ const LivePage = () => {
           </div>
 
           <div className="h-[600px] lg:col-span-1 lg:h-[calc(100vh-220px)]">
-            <Card className="flex h-full flex-col overflow-hidden rounded-lg border">
-              <div className="flex flex-shrink-0 items-center justify-between border-b border-border px-4 py-3">
+            <Card className="flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#101010] shadow-[0_20px_50px_rgba(0,0,0,0.18)]">
+              <div className="flex flex-shrink-0 items-center justify-between border-b border-border bg-neutral-950/70 px-4 py-3">
                 <div className="min-w-0">
-                  <h3 className="text-sm font-medium text-foreground">Chat da comunidade</h3>
+                  <h3 className="text-sm font-medium text-white">Chat da comunidade</h3>
                   <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Circle
                       className={`h-1.5 w-1.5 ${
@@ -566,9 +584,9 @@ const LivePage = () => {
                 </div>
 
                 {isAdmin && (
-                  <span className="flex flex-shrink-0 items-center gap-1 rounded-md border border-amber-300 px-2 py-1 dark:border-amber-800">
-                    <Shield className="h-3.5 w-3.5 text-amber-700 dark:text-amber-400" strokeWidth={1.75} />
-                    <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400">Mod</span>
+                  <span className="flex flex-shrink-0 items-center gap-1 rounded-md border border-amber-300/40 bg-amber-500/10 px-2 py-1">
+                    <Shield className="h-3.5 w-3.5 text-amber-300" strokeWidth={1.75} />
+                    <span className="text-[11px] font-medium text-amber-200">Mod</span>
                   </span>
                 )}
               </div>
@@ -576,7 +594,7 @@ const LivePage = () => {
               <div
                 ref={chatContainerRef}
                 onScroll={handleScroll}
-                className="relative flex-1 overflow-y-auto p-2"
+                className="relative flex-1 overflow-y-auto bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.06),_transparent_35%)] p-2"
               >
                 {isGuest ? (
                   <div className="flex h-full items-center justify-center p-4">
@@ -605,18 +623,18 @@ const LivePage = () => {
                   messages.map((msg) => (
                     <div
                       key={msg.id}
-                      className="group relative flex items-start gap-2.5 rounded-md p-2 transition-colors hover:bg-muted/50"
+                      className="group relative flex items-start gap-2.5 rounded-xl p-2 transition-colors hover:bg-white/5"
                     >
-                      <Avatar className="h-7 w-7 flex-shrink-0">
+                      <Avatar className="h-7 w-7 flex-shrink-0 border border-white/10">
                         <AvatarImage src={msg.user?.avatar_url || ''} alt={msg.user?.username || 'User'} />
-                        <AvatarFallback className="bg-primary text-xs font-medium text-primary-foreground">
+                        <AvatarFallback className="bg-amber-500 text-xs font-medium text-stone-950">
                           {msg.user?.username?.substring(0, 2)?.toUpperCase() || 'U'}
                         </AvatarFallback>
                       </Avatar>
 
                       <div className="min-w-0 flex-1">
                         <div className="mb-0.5 flex items-baseline gap-1.5">
-                          <span className="truncate text-xs font-medium text-foreground">
+                          <span className="truncate text-xs font-medium text-white">
                             {msg.user?.username || 'Membro'}
                           </span>
                           <span className="flex-shrink-0 text-[10px] text-muted-foreground">
@@ -668,7 +686,7 @@ const LivePage = () => {
               </div>
 
               {!isGuest ? (
-                <div className="flex-shrink-0 space-y-2 border-t border-border p-3">
+                <div className="flex-shrink-0 space-y-2 border-t border-border bg-neutral-950/70 p-3">
                   <div className="flex gap-2">
                     <Input
                       value={newMessage}
@@ -680,14 +698,14 @@ const LivePage = () => {
                         }
                       }}
                       placeholder="Uma palavra de fé..."
-                      className="h-9 flex-1 text-xs"
+                      className="h-9 flex-1 border-white/10 bg-white/5 text-xs text-white placeholder:text-muted-foreground"
                       maxLength={200}
                       disabled={sending || !isOnline}
                     />
                     <Button
                       onClick={() => void sendMessage()}
                       disabled={sending || !newMessage.trim() || !isOnline}
-                      className="h-9 w-9 flex-shrink-0 p-0"
+                      className="h-9 w-9 flex-shrink-0 bg-amber-500 p-0 text-stone-950 hover:bg-amber-400"
                       aria-label={isOnline ? 'Enviar mensagem' : 'Transmissão offline'}
                     >
                       <Send className="h-4 w-4" />
@@ -698,7 +716,7 @@ const LivePage = () => {
                   </p>
                 </div>
               ) : (
-                <div className="flex-shrink-0 border-t border-border p-3 text-center">
+                <div className="flex-shrink-0 border-t border-border bg-neutral-950/70 p-3 text-center">
                   <p className="text-xs text-muted-foreground">Faça login para participar do chat</p>
                 </div>
               )}
