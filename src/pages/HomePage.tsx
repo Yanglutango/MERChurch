@@ -28,8 +28,8 @@ const RowSkeleton = () => (
   <div className="flex items-center gap-3 py-3 animate-pulse">
     <div className="h-9 w-9 rounded-lg bg-muted flex-shrink-0" />
     <div className="flex-1 space-y-1.5">
-      <div className="h-3 w-2/3 bg-muted rounded" />
-      <div className="h-2.5 w-1/3 bg-muted rounded" />
+      <div className="h-3 w-2/3 rounded bg-muted" />
+      <div className="h-2.5 w-1/3 rounded bg-muted" />
     </div>
   </div>
 )
@@ -111,6 +111,7 @@ const HomePage = () => {
     }
 
     load()
+
     return () => {
       mounted = false
     }
@@ -164,14 +165,14 @@ const HomePage = () => {
   const statusMeta = isLive
     ? 'Estamos em culto agora'
     : nextSession
-      ? new Date(nextSession.start_time).toLocaleDateString('pt-BR', {
+      ? `${new Date(nextSession.start_time).toLocaleDateString('pt-BR', {
           weekday: 'short',
           day: '2-digit',
           month: 'short',
-        }) + ' • ' + new Date(nextSession.start_time).toLocaleTimeString('pt-BR', {
+        })} • ${new Date(nextSession.start_time).toLocaleTimeString('pt-BR', {
           hour: '2-digit',
           minute: '2-digit',
-        })
+        })}`
       : 'Acompanhe a agenda da semana'
 
   return (
@@ -218,8 +219,8 @@ const HomePage = () => {
         </header>
 
         <div className="mt-8 flex flex-col gap-8 lg:flex-row lg:items-start">
-          <main className="flex-1 space-y-8">
-            <section>
+          <main className="flex-1">
+            <section className="mb-8">
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Acesso rápido</h2>
               </div>
@@ -240,76 +241,74 @@ const HomePage = () => {
               </div>
             </section>
 
-            <section>
-              <div className="mb-3 flex items-center justify-between">
+            <section className="overflow-hidden rounded-[1.35rem] border border-border bg-card">
+              <div className="border-b border-border px-4 py-3">
                 <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Acompanhe</h2>
               </div>
 
-              <div className="overflow-hidden rounded-[1.35rem] border border-border bg-card">
-                {statsLoading ? (
-                  <div className="px-4">
-                    <RowSkeleton />
-                    <RowSkeleton />
-                  </div>
-                ) : (
-                  <div className="divide-y divide-border">
-                    <button
-                      onClick={() => navigate('/agenda')}
-                      className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-muted/50"
-                    >
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted text-foreground">
-                        <Calendar className="h-4 w-4" strokeWidth={1.8} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[11px] text-muted-foreground">Próximo evento</p>
-                        {upcomingEvent ? (
-                          <>
-                            <p className="truncate text-sm font-medium text-foreground">{upcomingEvent.title}</p>
-                            <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
-                              <Clock className="h-3 w-3" />
-                              {new Date(upcomingEvent.date).toLocaleDateString('pt-BR', {
-                                day: '2-digit',
-                                month: 'short',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
-                            </p>
-                          </>
-                        ) : (
-                          <p className="text-sm text-muted-foreground">Nenhum evento agendado</p>
-                        )}
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                    </button>
+              {statsLoading ? (
+                <div className="px-4">
+                  <RowSkeleton />
+                  <RowSkeleton />
+                </div>
+              ) : (
+                <div className="divide-y divide-border">
+                  <button
+                    onClick={() => navigate('/agenda')}
+                    className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-muted/50"
+                  >
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted text-foreground">
+                      <Calendar className="h-4 w-4" strokeWidth={1.8} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11px] text-muted-foreground">Próximo evento</p>
+                      {upcomingEvent ? (
+                        <>
+                          <p className="truncate text-sm font-medium text-foreground">{upcomingEvent.title}</p>
+                          <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+                            <Clock className="h-3 w-3" />
+                            {new Date(upcomingEvent.date).toLocaleDateString('pt-BR', {
+                              day: '2-digit',
+                              month: 'short',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Nenhum evento agendado</p>
+                      )}
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  </button>
 
-                    <button
-                      onClick={() => navigate('/sermons')}
-                      className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-muted/50"
-                    >
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted text-foreground">
-                        <BookOpen className="h-4 w-4" strokeWidth={1.8} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[11px] text-muted-foreground">Última mensagem</p>
-                        {recentSermon ? (
-                          <>
-                            <p className="truncate text-sm font-medium text-foreground">{recentSermon.title}</p>
-                            <p className="mt-0.5 text-[11px] text-muted-foreground">
-                              {recentSermon.speaker} · {new Date(recentSermon.date).toLocaleDateString('pt-BR', {
-                                day: '2-digit',
-                                month: 'short',
-                              })}
-                            </p>
-                          </>
-                        ) : (
-                          <p className="text-sm text-muted-foreground">Nenhum sermão disponível</p>
-                        )}
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                    </button>
-                  </div>
-                )}
-              </div>
+                  <button
+                    onClick={() => navigate('/sermons')}
+                    className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-muted/50"
+                  >
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted text-foreground">
+                      <BookOpen className="h-4 w-4" strokeWidth={1.8} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11px] text-muted-foreground">Última mensagem</p>
+                      {recentSermon ? (
+                        <>
+                          <p className="truncate text-sm font-medium text-foreground">{recentSermon.title}</p>
+                          <p className="mt-0.5 text-[11px] text-muted-foreground">
+                            {recentSermon.speaker} · {new Date(recentSermon.date).toLocaleDateString('pt-BR', {
+                              day: '2-digit',
+                              month: 'short',
+                            })}
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Nenhum sermão disponível</p>
+                      )}
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  </button>
+                </div>
+              )}
             </section>
           </main>
 
@@ -360,7 +359,7 @@ const HomePage = () => {
                   <MapPin className="h-4 w-4 text-primary" />
                   <div className="min-w-0 flex-1">
                     <p className="text-[11px] text-muted-foreground">Próximo evento</p>
-                    <p className="text-sm font-medium text-foreground truncate">
+                    <p className="truncate text-sm font-medium text-foreground">
                       {upcomingEvent ? upcomingEvent.title : 'A definir'}
                     </p>
                   </div>
