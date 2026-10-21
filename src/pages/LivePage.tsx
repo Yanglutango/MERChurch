@@ -366,7 +366,7 @@ const LivePage = () => {
               )}
               <div className="min-w-0">
                 <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-amber-300/80">
-                  MER Church
+                  MER - Live
                 </p>
                 <h1 className="truncate text-xl font-semibold text-white md:text-2xl">
                   {currentSessionTitle}
