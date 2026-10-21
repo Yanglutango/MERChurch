@@ -6,7 +6,6 @@ import { Input } from '../components/ui/input'
 import { Button } from '../components/ui/button'
 import { Avatar, AvatarImage, AvatarFallback } from '../components/ui/avatar'
 import { useAuth } from '../hooks/useAuth'
-import { useAppStore } from '../stores/appStore'
 import { supabase } from '../lib/supabase'
 import {
   Send, MessageCircle, Shield, Ban, Clock, Pin, Flame, Heart, BookOpen,
@@ -32,10 +31,18 @@ interface UserProfile {
   avatar_url: string | null
 }
 
+const formatSessionTime = (value: string | null, options: Intl.DateTimeFormatOptions) => {
+  if (!value) return null
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+
+  return date.toLocaleString('pt-BR', options)
+}
+
 const LivePage = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { t } = useAppStore()
 
   const [messages, setMessages] = useState<LiveMessage[]>([])
   const [newMessage, setNewMessage] = useState('')
@@ -51,7 +58,6 @@ const LivePage = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const chatContainerRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
-  const playerContainerRef = useRef<HTMLDivElement>(null)
   const profileCache = useRef<Record<string, UserProfile>>({})
 
   const isGuest = user?.role === 'guest'
@@ -77,14 +83,10 @@ const LivePage = () => {
         supabase.from('live_sessions').select('*').eq('is_active', false).gte('start_time', new Date().toISOString()).order('start_time', { ascending: true }).limit(1).maybeSingle(),
         supabase.from('prayer_requests').select('id', { count: 'exact', head: true }),
       ])
+
       setActiveSession(activeRes.data as LiveSession | null)
       setNextSession(nextRes.data as LiveSession | null)
       setPrayerCount(prayersRes.count || 0)
-      // Removido o contador de espectadores: era Math.random() no código
-      // anterior, um número fabricado sem correspondência com a realidade.
-      // Para implementar um valor real, a fonte correta é a contagem de
-      // presença do canal Realtime do Supabase (channel.presenceState()),
-      // não uma query — isso fica como próximo passo quando quiseres.
     } catch (err) {
       console.error('Erro ao carregar dados da transmissão:', err)
     } finally {
@@ -105,7 +107,7 @@ const LivePage = () => {
       const chronologicalMessages = (data || []).reverse().map((msg) => ({
         ...msg,
         createdAt: msg.created_at,
-        user: msg.user as unknown as UserProfile
+        user: msg.user as unknown as UserProfile,
       })) as unknown as LiveMessage[]
 
       setMessages(chronologicalMessages)
@@ -146,7 +148,7 @@ const LivePage = () => {
           const formattedMessage = {
             ...payload.new,
             user: profile || { username: 'Membro', avatar_url: null },
-            createdAt: payload.new.created_at || payload.new.createdAt
+            createdAt: payload.new.created_at || payload.new.createdAt,
           } as unknown as LiveMessage
 
           setMessages((prev) => [...prev.slice(-99), formattedMessage])
@@ -169,6 +171,7 @@ const LivePage = () => {
 
   useEffect(() => {
     if (!chatContainerRef.current) return
+
     const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current
     const isNearBottom = scrollHeight - scrollTop - clientHeight < 150
 
@@ -208,29 +211,56 @@ const LivePage = () => {
     } else {
       setNewMessage('')
     }
+
     setSending(false)
   }, [newMessage, sending, user])
 
   const handleScroll = () => {
     if (!chatContainerRef.current) return
+
     const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current
     const isNearBottom = scrollHeight - scrollTop - clientHeight < 100
+
     if (isNearBottom) setShowScrollButton(false)
   }
 
   const handlePinMessage = (id: string) => {
     toast.success('Mensagem fixada')
+    console.log('Pin message:', id)
   }
 
   const handleBanUser = (userId: string) => {
     toast.error('Usuário removido do chat')
+    console.log('Ban user:', userId)
   }
 
   const toggleFullscreen = () => {
     setIsFullscreen((prev) => !prev)
   }
 
-  // ── Ecrã de tela cheia ─────────────────────────────────────────────────────
+  const shareLiveSession = async () => {
+    const shareUrl = typeof window !== 'undefined' ? window.location.href : ''
+    const shareTitle = activeSession?.title || 'Transmissão ao vivo'
+
+    try {
+      if (navigator.share && shareUrl) {
+        await navigator.share({
+          title: shareTitle,
+          text: 'Acompanhe a transmissão ao vivo da MER Church.',
+          url: shareUrl,
+        })
+        return
+      }
+
+      if (shareUrl) {
+        await navigator.clipboard.writeText(shareUrl)
+        toast.success('Link da transmissão copiado para a área de transferência.')
+      }
+    } catch {
+      toast.error('Não foi possível compartilhar a transmissão neste momento.')
+    }
+  }
+
   if (isFullscreen && isOnline && activeSession?.stream_url) {
     return (
       <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
@@ -257,11 +287,21 @@ const LivePage = () => {
     )
   }
 
+  const currentSessionTitle = sessionLoading
+    ? 'Carregando transmissão…'
+    : activeSession?.title || 'Transmissão ao vivo'
+
+  const sessionDateLabel = activeSession?.start_time
+    ? formatSessionTime(activeSession.start_time, { weekday: 'short', day: '2-digit', month: 'short' })
+    : null
+
+  const sessionClockLabel = activeSession?.start_time
+    ? formatSessionTime(activeSession.start_time, { hour: '2-digit', minute: '2-digit' })
+    : null
+
   return (
     <Layout title="Transmissão Ao Vivo">
       <div className="max-w-6xl mx-auto px-4 lg:px-8 py-6 lg:py-8 space-y-5">
-
-        {/* ── Cabeçalho — um único sinal de estado, sem duplicação ──────────── */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-border">
           <div className="flex items-center gap-3 min-w-0">
             {isOnline ? (
@@ -272,9 +312,7 @@ const LivePage = () => {
             ) : (
               <Circle className="h-2.5 w-2.5 flex-shrink-0 text-muted-foreground fill-muted-foreground" />
             )}
-            <h1 className="text-xl md:text-2xl font-semibold text-foreground truncate">
-              {sessionLoading ? 'Carregando…' : isOnline ? activeSession!.title : 'Transmissão ao vivo'}
-            </h1>
+            <h1 className="text-xl md:text-2xl font-semibold text-foreground truncate">{currentSessionTitle}</h1>
           </div>
 
           {isOnline && (
@@ -285,9 +323,7 @@ const LivePage = () => {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-5 items-start">
-
-          {/* ── Player de vídeo ──────────────────────────────────────────────── */}
-          <div ref={playerContainerRef} className="lg:col-span-2 space-y-4">
+          <div className="lg:col-span-2 space-y-4">
             <Card className="overflow-hidden border rounded-lg bg-black group">
               <div className="relative aspect-video bg-black">
                 {sessionLoading ? (
@@ -316,7 +352,6 @@ const LivePage = () => {
                     </button>
                   </>
                 ) : (
-                  // Estado offline — sem órbitas decorativas, informação em primeiro plano
                   <div className="absolute inset-0 bg-neutral-950 flex items-center justify-center p-6">
                     <div className="text-center max-w-md space-y-5">
                       <RadioIcon className="h-9 w-9 text-neutral-500 mx-auto" strokeWidth={1.5} />
@@ -335,9 +370,15 @@ const LivePage = () => {
                             {nextSession.start_time && (
                               <span className="flex items-center gap-1.5">
                                 <Clock className="h-3.5 w-3.5" />
-                                {new Date(nextSession.start_time).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })}
-                                {' às '}
-                                {new Date(nextSession.start_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                {formatSessionTime(nextSession.start_time, {
+                                  weekday: 'short',
+                                  day: '2-digit',
+                                  month: 'short',
+                                })}{' às '}
+                                {formatSessionTime(nextSession.start_time, {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
                               </span>
                             )}
                           </div>
@@ -356,7 +397,7 @@ const LivePage = () => {
                             <Button variant="secondary" className="flex-1 text-xs" onClick={() => navigate('/sermons')}>
                               <BookOpen className="h-4 w-4 mr-1.5" />Biblioteca
                             </Button>
-                            <Button variant="outline" className="flex-1 text-xs text-white border-neutral-700 hover:bg-neutral-900">
+                            <Button variant="outline" className="flex-1 text-xs text-white border-neutral-700 hover:bg-neutral-900" onClick={() => navigate('/about')}>
                               <Bell className="h-4 w-4 mr-1.5" />Notificações
                             </Button>
                           </div>
@@ -368,7 +409,6 @@ const LivePage = () => {
               </div>
             </Card>
 
-            {/* Metadados da sessão — linha de factos, não pills decorativos */}
             {isOnline && activeSession && (
               <Card className="p-5 border rounded-lg">
                 <div className="space-y-4">
@@ -388,10 +428,16 @@ const LivePage = () => {
                         {activeSession.preacher_name}
                       </span>
                     )}
-                    {activeSession.start_time && (
+                    {sessionDateLabel && (
                       <span className="flex items-center gap-1.5">
                         <Clock className="h-3.5 w-3.5" strokeWidth={1.75} />
-                        Iniciou às {new Date(activeSession.start_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        {sessionDateLabel}
+                      </span>
+                    )}
+                    {sessionClockLabel && (
+                      <span className="flex items-center gap-1.5">
+                        <Clock className="h-3.5 w-3.5" strokeWidth={1.75} />
+                        Iniciou às {sessionClockLabel}
                       </span>
                     )}
                     <span className="flex items-center gap-1.5">
@@ -407,7 +453,7 @@ const LivePage = () => {
                     <Button size="sm" variant="secondary" onClick={() => navigate('/sermons')}>
                       <BookOpen className="h-4 w-4 mr-1.5" />Biblioteca
                     </Button>
-                    <Button size="sm" variant="outline">
+                    <Button size="sm" variant="outline" onClick={shareLiveSession}>
                       <Share2 className="h-4 w-4 mr-1.5" />Compartilhar
                     </Button>
                   </div>
@@ -432,10 +478,8 @@ const LivePage = () => {
             )}
           </div>
 
-          {/* ── Chat ao vivo ─────────────────────────────────────────────────── */}
           <div className="lg:col-span-1 h-[600px] lg:h-[calc(100vh-220px)]">
             <Card className="flex flex-col border rounded-lg overflow-hidden h-full">
-
               <div className="px-4 py-3 border-b border-border flex items-center justify-between flex-shrink-0">
                 <div className="min-w-0">
                   <h3 className="font-medium text-sm text-foreground">Chat da comunidade</h3>
@@ -514,7 +558,7 @@ const LivePage = () => {
                           </button>
                           <div className="w-px h-4 bg-border" />
                           <button
-                            onClick={() => handleBanUser(msg.user_id)}
+                            onClick={() => handleBanUser(msg.userId)}
                             aria-label="Remover usuário do chat"
                             className="p-1.5 hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
                           >
@@ -531,7 +575,7 @@ const LivePage = () => {
                 {showScrollButton && (
                   <button
                     onClick={() => scrollToBottom('smooth')}
-                    className="absolute bottom-3 right-3 h-8 w-8 rounded-full bg-card border border-border shadow-sm flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors z-10"
+                    className="absolute bottom-3 right-3 h-8 w-8 rounded-full bg-card border border-border shadow-sm flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
                     aria-label="Ir para o final"
                   >
                     <ArrowDown className="h-4 w-4" />
