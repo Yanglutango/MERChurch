@@ -181,7 +181,7 @@ const HomePage = () => {
         <header className="space-y-5">
           <div className="flex items-center justify-between gap-4">
             <div className="space-y-1">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">MER Church</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">Missão Evangélica da Reconciliação</p>
               <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-[-0.03em] text-foreground lg:text-3xl">
                 {isAdmin && <Shield className="h-5 w-5 text-primary" strokeWidth={2} />}
                 {greeting}
