@@ -8,8 +8,22 @@ import { Avatar, AvatarImage, AvatarFallback } from '../components/ui/avatar'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 import {
-  Send, MessageCircle, Shield, Ban, Clock, Pin, Flame, Heart, BookOpen,
-  Radio as RadioIcon, ArrowDown, Share2, Maximize, X, Bell, Circle,
+  Send,
+  MessageCircle,
+  Shield,
+  Ban,
+  Clock,
+  Pin,
+  Flame,
+  Heart,
+  BookOpen,
+  Radio as RadioIcon,
+  ArrowDown,
+  Share2,
+  Maximize,
+  X,
+  Bell,
+  Circle,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { LiveMessage } from '../types'
@@ -31,13 +45,28 @@ interface UserProfile {
   avatar_url: string | null
 }
 
-const formatSessionTime = (value: string | null, options: Intl.DateTimeFormatOptions) => {
+const formatSessionTime = (
+  value: string | null,
+  options?: Intl.DateTimeFormatOptions,
+) => {
   if (!value) return null
 
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return null
 
-  return date.toLocaleString('pt-BR', options)
+  return options ? date.toLocaleString('pt-BR', options) : date.toLocaleString('pt-BR')
+}
+
+const isYouTubeUrl = (url: string) => {
+  if (!url) return false
+  return url.includes('youtube.com') || url.includes('youtu.be')
+}
+
+const getYouTubeId = (url: string) => {
+  if (!url) return null
+
+  const match = url.match(/(?:v=|youtu\.be\/|embed\/)([^&\s?]+)/)
+  return match ? match[1] : null
 }
 
 const LivePage = () => {
@@ -55,40 +84,45 @@ const LivePage = () => {
   const [showScrollButton, setShowScrollButton] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const chatContainerRef = useRef<HTMLDivElement>(null)
-  const videoRef = useRef<HTMLVideoElement>(null)
+  const messagesEndRef = useRef<HTMLDivElement | null>(null)
+  const chatContainerRef = useRef<HTMLDivElement | null>(null)
+  const videoRef = useRef<HTMLVideoElement | null>(null)
   const profileCache = useRef<Record<string, UserProfile>>({})
 
   const isGuest = user?.role === 'guest'
   const isAdmin = user?.role === 'admin'
-  const isOnline = !!activeSession?.is_active
-
-  const isYouTubeUrl = useCallback((url: string) => url.includes('youtube.com') || url.includes('youtu.be'), [])
-
-  const getYouTubeId = useCallback((url: string) => {
-    const match = url.match(/(?:v=|youtu\.be\/|embed\/)([^&\s?]+)/)
-    return match ? match[1] : null
-  }, [])
+  const isOnline = Boolean(activeSession?.is_active)
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
-    messagesEndRef.current?.scrollIntoView({ behavior })
+    messagesEndRef.current?.scrollIntoView({ behavior, block: 'end' })
     setShowScrollButton(false)
   }, [])
 
   const loadSession = useCallback(async () => {
     try {
       const [activeRes, nextRes, prayersRes] = await Promise.all([
-        supabase.from('live_sessions').select('*').eq('is_active', true).limit(1).maybeSingle(),
-        supabase.from('live_sessions').select('*').eq('is_active', false).gte('start_time', new Date().toISOString()).order('start_time', { ascending: true }).limit(1).maybeSingle(),
+        supabase
+          .from('live_sessions')
+          .select('*')
+          .eq('is_active', true)
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from('live_sessions')
+          .select('*')
+          .eq('is_active', false)
+          .gte('start_time', new Date().toISOString())
+          .order('start_time', { ascending: true })
+          .limit(1)
+          .maybeSingle(),
         supabase.from('prayer_requests').select('id', { count: 'exact', head: true }),
       ])
 
-      setActiveSession(activeRes.data as LiveSession | null)
-      setNextSession(nextRes.data as LiveSession | null)
-      setPrayerCount(prayersRes.count || 0)
-    } catch (err) {
-      console.error('Erro ao carregar dados da transmissão:', err)
+      setActiveSession((activeRes.data as LiveSession | null) ?? null)
+      setNextSession((nextRes.data as LiveSession | null) ?? null)
+      setPrayerCount(prayersRes.count ?? 0)
+    } catch (error) {
+      console.error('Erro ao carregar dados da transmissão:', error)
     } finally {
       setSessionLoading(false)
     }
@@ -104,11 +138,13 @@ const LivePage = () => {
 
       if (error) throw error
 
-      const chronologicalMessages = (data || []).reverse().map((msg) => ({
-        ...msg,
-        createdAt: msg.created_at,
-        user: msg.user as unknown as UserProfile,
-      })) as unknown as LiveMessage[]
+      const chronologicalMessages = (data || [])
+        .reverse()
+        .map((msg) => ({
+          ...msg,
+          createdAt: msg.created_at,
+          user: msg.user as unknown as UserProfile,
+        })) as unknown as LiveMessage[]
 
       setMessages(chronologicalMessages)
     } catch (error) {
@@ -120,8 +156,8 @@ const LivePage = () => {
   }, [scrollToBottom])
 
   useEffect(() => {
-    loadSession()
-    loadInitialMessages()
+    void loadSession()
+    void loadInitialMessages()
 
     const chatChannel = supabase
       .channel('live-chat-room')
@@ -129,7 +165,7 @@ const LivePage = () => {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'live_messages' },
         async (payload) => {
-          const userId = payload.new.user_id
+          const userId = payload.new.user_id as string
           let profile = profileCache.current[userId]
 
           if (!profile) {
@@ -151,15 +187,19 @@ const LivePage = () => {
             createdAt: payload.new.created_at || payload.new.createdAt,
           } as unknown as LiveMessage
 
-          setMessages((prev) => [...prev.slice(-99), formattedMessage])
-        }
+          setMessages((prev) => {
+            const exists = prev.some((msg) => msg.id === formattedMessage.id)
+            if (exists) return prev
+            return [...prev.slice(-99), formattedMessage]
+          })
+        },
       )
       .subscribe()
 
     const sessionChannel = supabase
       .channel('live-session-status')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'live_sessions' }, () => {
-        loadSession()
+        void loadSession()
       })
       .subscribe()
 
@@ -196,23 +236,27 @@ const LivePage = () => {
       video.removeAttribute('src')
       video.load()
     }
-  }, [activeSession?.stream_url, isYouTubeUrl])
+  }, [activeSession?.stream_url])
 
   const sendMessage = useCallback(async () => {
     if (!newMessage.trim() || sending || !user?.id) return
+
     setSending(true)
 
-    const { error } = await supabase
-      .from('live_messages')
-      .insert({ user_id: user.id, message: newMessage.trim() })
+    try {
+      const { error } = await supabase
+        .from('live_messages')
+        .insert({ user_id: user.id, message: newMessage.trim() })
 
-    if (error) {
-      toast.error('Erro ao enviar mensagem')
-    } else {
+      if (error) throw error
+
       setNewMessage('')
+    } catch (error) {
+      console.error('Erro ao enviar mensagem:', error)
+      toast.error('Erro ao enviar mensagem')
+    } finally {
+      setSending(false)
     }
-
-    setSending(false)
   }, [newMessage, sending, user])
 
   const handleScroll = () => {
@@ -225,13 +269,13 @@ const LivePage = () => {
   }
 
   const handlePinMessage = (id: string) => {
-    toast.success('Mensagem fixada')
     console.log('Pin message:', id)
+    toast.info('Funcionalidade de fixar mensagem em desenvolvimento.')
   }
 
   const handleBanUser = (userId: string) => {
-    toast.error('Usuário removido do chat')
     console.log('Ban user:', userId)
+    toast.info('Moderação avançada em desenvolvimento.')
   }
 
   const toggleFullscreen = () => {
@@ -261,12 +305,31 @@ const LivePage = () => {
     }
   }
 
+  const currentSessionTitle = sessionLoading
+    ? 'Carregando transmissão…'
+    : activeSession?.title || 'Transmissão ao vivo'
+
+  const sessionDateLabel = activeSession?.start_time
+    ? formatSessionTime(activeSession.start_time, {
+        weekday: 'short',
+        day: '2-digit',
+        month: 'short',
+      })
+    : null
+
+  const sessionClockLabel = activeSession?.start_time
+    ? formatSessionTime(activeSession.start_time, {
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : null
+
   if (isFullscreen && isOnline && activeSession?.stream_url) {
     return (
-      <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
         <button
           onClick={toggleFullscreen}
-          className="absolute top-4 right-4 z-10 p-2 bg-black/50 hover:bg-black/70 rounded-md text-white transition-colors"
+          className="absolute right-4 top-4 z-10 rounded-md bg-black/50 p-2 text-white transition-colors hover:bg-black/70"
           aria-label="Fechar tela cheia"
         >
           <X className="h-6 w-6" />
@@ -275,56 +338,46 @@ const LivePage = () => {
         {isYouTubeUrl(activeSession.stream_url) ? (
           <iframe
             src={`https://www.youtube.com/embed/${getYouTubeId(activeSession.stream_url)}?autoplay=1&rel=0&modestbranding=1&fs=1`}
-            className="w-full h-full border-0"
+            className="h-full w-full border-0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
             title={activeSession.title}
           />
         ) : (
-          <video ref={videoRef} className="w-full h-full object-contain" controls autoPlay playsInline />
+          <video ref={videoRef} className="h-full w-full object-contain" controls autoPlay playsInline />
         )}
       </div>
     )
   }
 
-  const currentSessionTitle = sessionLoading
-    ? 'Carregando transmissão…'
-    : activeSession?.title || 'Transmissão ao vivo'
-
-  const sessionDateLabel = activeSession?.start_time
-    ? formatSessionTime(activeSession.start_time, { weekday: 'short', day: '2-digit', month: 'short' })
-    : null
-
-  const sessionClockLabel = activeSession?.start_time
-    ? formatSessionTime(activeSession.start_time, { hour: '2-digit', minute: '2-digit' })
-    : null
-
   return (
     <Layout title="Transmissão Ao Vivo">
-      <div className="max-w-6xl mx-auto px-4 lg:px-8 py-6 lg:py-8 space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-border">
-          <div className="flex items-center gap-3 min-w-0">
+      <div className="mx-auto max-w-6xl space-y-5 px-4 py-6 lg:px-8 lg:py-8">
+        <div className="flex flex-col justify-between gap-3 border-b border-border pb-4 sm:flex-row sm:items-center">
+          <div className="flex min-w-0 items-center gap-3">
             {isOnline ? (
               <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
                 <span className="absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75 animate-ping" />
                 <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500" />
               </span>
             ) : (
-              <Circle className="h-2.5 w-2.5 flex-shrink-0 text-muted-foreground fill-muted-foreground" />
+              <Circle className="h-2.5 w-2.5 flex-shrink-0 fill-muted-foreground text-muted-foreground" />
             )}
-            <h1 className="text-xl md:text-2xl font-semibold text-foreground truncate">{currentSessionTitle}</h1>
+            <h1 className="truncate text-xl font-semibold text-foreground md:text-2xl">
+              {currentSessionTitle}
+            </h1>
           </div>
 
           {isOnline && (
-            <span className="text-xs font-medium text-red-600 dark:text-red-400 flex-shrink-0">
+            <span className="flex-shrink-0 text-xs font-medium text-red-600 dark:text-red-400">
               Ao vivo agora
             </span>
           )}
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-5 items-start">
-          <div className="lg:col-span-2 space-y-4">
-            <Card className="overflow-hidden border rounded-lg bg-black group">
+        <div className="grid items-start gap-5 lg:grid-cols-3">
+          <div className="space-y-4 lg:col-span-2">
+            <Card className="overflow-hidden rounded-lg border bg-black group">
               <div className="relative aspect-video bg-black">
                 {sessionLoading ? (
                   <div className="absolute inset-0 flex items-center justify-center bg-muted/20">
@@ -335,34 +388,43 @@ const LivePage = () => {
                     {isYouTubeUrl(activeSession.stream_url) ? (
                       <iframe
                         src={`https://www.youtube.com/embed/${getYouTubeId(activeSession.stream_url)}?autoplay=1&rel=0&modestbranding=1`}
-                        className="absolute inset-0 w-full h-full border-0"
+                        className="absolute inset-0 h-full w-full border-0"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
                         title={activeSession.title}
                       />
                     ) : (
-                      <video ref={videoRef} className="absolute inset-0 w-full h-full object-contain" controls autoPlay playsInline />
+                      <video
+                        ref={videoRef}
+                        className="absolute inset-0 h-full w-full object-contain"
+                        controls
+                        autoPlay
+                        playsInline
+                      />
                     )}
+
                     <button
                       onClick={toggleFullscreen}
-                      className="absolute bottom-4 right-4 z-10 p-2 bg-black/60 hover:bg-black/80 rounded-md text-white transition-all opacity-0 group-hover:opacity-100"
+                      className="absolute bottom-4 right-4 z-10 rounded-md bg-black/60 p-2 text-white opacity-0 transition-all hover:bg-black/80 group-hover:opacity-100"
                       aria-label="Ver em tela cheia"
                     >
                       <Maximize className="h-4 w-4" />
                     </button>
                   </>
                 ) : (
-                  <div className="absolute inset-0 bg-neutral-950 flex items-center justify-center p-6">
-                    <div className="text-center max-w-md space-y-5">
-                      <RadioIcon className="h-9 w-9 text-neutral-500 mx-auto" strokeWidth={1.5} />
+                  <div className="absolute inset-0 flex items-center justify-center bg-neutral-950 p-6">
+                    <div className="max-w-md space-y-5 text-center">
+                      <RadioIcon className="mx-auto h-9 w-9 text-neutral-500" strokeWidth={1.5} />
 
                       {nextSession ? (
                         <div className="space-y-3">
                           <div>
-                            <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1.5">
+                            <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-neutral-400">
                               Próximo culto
                             </p>
-                            <h3 className="text-xl font-semibold text-white leading-tight">{nextSession.title}</h3>
+                            <h3 className="text-xl font-semibold leading-tight text-white">
+                              {nextSession.title}
+                            </h3>
                           </div>
 
                           <div className="flex flex-col items-center gap-1 text-sm text-neutral-300">
@@ -384,21 +446,29 @@ const LivePage = () => {
                           </div>
 
                           <Button className="w-full" onClick={() => navigate('/prayer')}>
-                            <Heart className="h-4 w-4 mr-2" />Pedir oração agora
+                            <Heart className="mr-2 h-4 w-4" />Pedir oração agora
                           </Button>
                         </div>
                       ) : (
                         <div className="space-y-3">
                           <h3 className="text-base font-medium text-white">Nenhuma transmissão agendada</h3>
-                          <p className="text-xs text-neutral-400 leading-relaxed">
+                          <p className="text-xs leading-relaxed text-neutral-400">
                             Acesse a biblioteca para rever cultos anteriores ou active notificações.
                           </p>
                           <div className="flex gap-2 pt-1">
-                            <Button variant="secondary" className="flex-1 text-xs" onClick={() => navigate('/sermons')}>
-                              <BookOpen className="h-4 w-4 mr-1.5" />Biblioteca
+                            <Button
+                              variant="secondary"
+                              className="flex-1 text-xs"
+                              onClick={() => navigate('/sermons')}
+                            >
+                              <BookOpen className="mr-1.5 h-4 w-4" />Biblioteca
                             </Button>
-                            <Button variant="outline" className="flex-1 text-xs text-white border-neutral-700 hover:bg-neutral-900" onClick={() => navigate('/about')}>
-                              <Bell className="h-4 w-4 mr-1.5" />Notificações
+                            <Button
+                              variant="outline"
+                              className="flex-1 border-neutral-700 text-xs text-white hover:bg-neutral-900"
+                              onClick={() => navigate('/about')}
+                            >
+                              <Bell className="mr-1.5 h-4 w-4" />Notificações
                             </Button>
                           </div>
                         </div>
@@ -410,18 +480,20 @@ const LivePage = () => {
             </Card>
 
             {isOnline && activeSession && (
-              <Card className="p-5 border rounded-lg">
+              <Card className="rounded-lg border p-5">
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-lg font-semibold text-foreground leading-tight">{activeSession.title}</h3>
+                    <h3 className="text-lg font-semibold leading-tight text-foreground">
+                      {activeSession.title}
+                    </h3>
                     {activeSession.description && (
-                      <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+                      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                         {activeSession.description}
                       </p>
                     )}
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-3 border-t border-border text-xs text-muted-foreground">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-border pt-3 text-xs text-muted-foreground">
                     {activeSession.preacher_name && (
                       <span className="flex items-center gap-1.5">
                         <Flame className="h-3.5 w-3.5" strokeWidth={1.75} />
@@ -448,13 +520,13 @@ const LivePage = () => {
 
                   <div className="flex flex-wrap gap-2 pt-1">
                     <Button size="sm" onClick={() => navigate('/prayer')}>
-                      <Heart className="h-4 w-4 mr-1.5" />Pedir oração
+                      <Heart className="mr-1.5 h-4 w-4" />Pedir oração
                     </Button>
                     <Button size="sm" variant="secondary" onClick={() => navigate('/sermons')}>
-                      <BookOpen className="h-4 w-4 mr-1.5" />Biblioteca
+                      <BookOpen className="mr-1.5 h-4 w-4" />Biblioteca
                     </Button>
                     <Button size="sm" variant="outline" onClick={shareLiveSession}>
-                      <Share2 className="h-4 w-4 mr-1.5" />Compartilhar
+                      <Share2 className="mr-1.5 h-4 w-4" />Compartilhar
                     </Button>
                   </div>
                 </div>
@@ -462,11 +534,11 @@ const LivePage = () => {
             )}
 
             {isGuest && (
-              <Card className="p-4 border rounded-lg bg-muted/30">
+              <Card className="rounded-lg border bg-muted/30 p-4">
                 <div className="flex items-center justify-between gap-4">
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-foreground">Participe da comunidade</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
+                    <p className="mt-0.5 text-xs text-muted-foreground">
                       Faça login para interagir no chat ao vivo.
                     </p>
                   </div>
@@ -478,18 +550,23 @@ const LivePage = () => {
             )}
           </div>
 
-          <div className="lg:col-span-1 h-[600px] lg:h-[calc(100vh-220px)]">
-            <Card className="flex flex-col border rounded-lg overflow-hidden h-full">
-              <div className="px-4 py-3 border-b border-border flex items-center justify-between flex-shrink-0">
+          <div className="h-[600px] lg:col-span-1 lg:h-[calc(100vh-220px)]">
+            <Card className="flex h-full flex-col overflow-hidden rounded-lg border">
+              <div className="flex flex-shrink-0 items-center justify-between border-b border-border px-4 py-3">
                 <div className="min-w-0">
-                  <h3 className="font-medium text-sm text-foreground">Chat da comunidade</h3>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5">
-                    <Circle className={`h-1.5 w-1.5 ${isOnline ? 'text-green-600 fill-green-600' : 'text-muted-foreground fill-muted-foreground'}`} />
+                  <h3 className="text-sm font-medium text-foreground">Chat da comunidade</h3>
+                  <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Circle
+                      className={`h-1.5 w-1.5 ${
+                        isOnline ? 'fill-green-600 text-green-600' : 'fill-muted-foreground text-muted-foreground'
+                      }`}
+                    />
                     {messages.length} mensagens
                   </p>
                 </div>
+
                 {isAdmin && (
-                  <span className="flex items-center gap-1 px-2 py-1 rounded-md border border-amber-300 dark:border-amber-800 flex-shrink-0">
+                  <span className="flex flex-shrink-0 items-center gap-1 rounded-md border border-amber-300 px-2 py-1 dark:border-amber-800">
                     <Shield className="h-3.5 w-3.5 text-amber-700 dark:text-amber-400" strokeWidth={1.75} />
                     <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400">Mod</span>
                   </span>
@@ -499,15 +576,15 @@ const LivePage = () => {
               <div
                 ref={chatContainerRef}
                 onScroll={handleScroll}
-                className="flex-1 overflow-y-auto p-2 relative"
+                className="relative flex-1 overflow-y-auto p-2"
               >
                 {isGuest ? (
-                  <div className="h-full flex items-center justify-center p-4">
-                    <div className="text-center max-w-xs space-y-3">
-                      <MessageCircle className="h-8 w-8 text-muted-foreground mx-auto" strokeWidth={1.5} />
+                  <div className="flex h-full items-center justify-center p-4">
+                    <div className="max-w-xs space-y-3 text-center">
+                      <MessageCircle className="mx-auto h-8 w-8 text-muted-foreground" strokeWidth={1.5} />
                       <div>
                         <h4 className="text-sm font-medium text-foreground">Chat protegido</h4>
-                        <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                           Apenas membros autenticados podem participar.
                         </p>
                       </div>
@@ -517,50 +594,57 @@ const LivePage = () => {
                     </div>
                   </div>
                 ) : loadingMessages ? (
-                  <div className="h-full flex items-center justify-center">
+                  <div className="flex h-full items-center justify-center">
                     <LoadingState message="" />
                   </div>
                 ) : messages.length === 0 ? (
-                  <div className="h-full flex items-center justify-center text-center p-4">
+                  <div className="flex h-full items-center justify-center p-4 text-center">
                     <p className="text-xs text-muted-foreground">Seja o primeiro a saudar.</p>
                   </div>
                 ) : (
                   messages.map((msg) => (
                     <div
                       key={msg.id}
-                      className="group relative flex items-start gap-2.5 p-2 rounded-md hover:bg-muted/50 transition-colors"
+                      className="group relative flex items-start gap-2.5 rounded-md p-2 transition-colors hover:bg-muted/50"
                     >
                       <Avatar className="h-7 w-7 flex-shrink-0">
                         <AvatarImage src={msg.user?.avatar_url || ''} alt={msg.user?.username || 'User'} />
-                        <AvatarFallback className="text-xs font-medium bg-primary text-primary-foreground">
+                        <AvatarFallback className="bg-primary text-xs font-medium text-primary-foreground">
                           {msg.user?.username?.substring(0, 2)?.toUpperCase() || 'U'}
                         </AvatarFallback>
                       </Avatar>
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-baseline gap-1.5 mb-0.5">
-                          <span className="font-medium text-xs text-foreground truncate">{msg.user?.username || 'Membro'}</span>
-                          <span className="text-[10px] text-muted-foreground flex-shrink-0">
-                            {new Date(msg.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-0.5 flex items-baseline gap-1.5">
+                          <span className="truncate text-xs font-medium text-foreground">
+                            {msg.user?.username || 'Membro'}
+                          </span>
+                          <span className="flex-shrink-0 text-[10px] text-muted-foreground">
+                            {new Date(msg.createdAt).toLocaleTimeString('pt-BR', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
                           </span>
                         </div>
-                        <p className="text-xs text-foreground/90 break-words leading-relaxed">{msg.message}</p>
+                        <p className="break-words text-xs leading-relaxed text-foreground/90">
+                          {msg.message}
+                        </p>
                       </div>
 
                       {isAdmin && (
-                        <div className="absolute right-2 top-2 flex items-center gap-0.5 bg-card border border-border rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                        <div className="absolute right-2 top-2 z-10 flex items-center gap-0.5 rounded-md border border-border bg-card opacity-0 transition-opacity group-hover:opacity-100">
                           <button
                             onClick={() => handlePinMessage(msg.id)}
                             aria-label="Fixar mensagem"
-                            className="p-1.5 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                            className="p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                           >
                             <Pin className="h-3.5 w-3.5" />
                           </button>
-                          <div className="w-px h-4 bg-border" />
+                          <div className="h-4 w-px bg-border" />
                           <button
                             onClick={() => handleBanUser(msg.userId)}
                             aria-label="Remover usuário do chat"
-                            className="p-1.5 hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                            className="p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                           >
                             <Ban className="h-3.5 w-3.5" />
                           </button>
@@ -575,7 +659,7 @@ const LivePage = () => {
                 {showScrollButton && (
                   <button
                     onClick={() => scrollToBottom('smooth')}
-                    className="absolute bottom-3 right-3 h-8 w-8 rounded-full bg-card border border-border shadow-sm flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                    className="absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm transition-colors hover:text-foreground"
                     aria-label="Ir para o final"
                   >
                     <ArrowDown className="h-4 w-4" />
@@ -584,32 +668,37 @@ const LivePage = () => {
               </div>
 
               {!isGuest ? (
-                <div className="p-3 border-t border-border flex-shrink-0 space-y-2">
+                <div className="flex-shrink-0 space-y-2 border-t border-border p-3">
                   <div className="flex gap-2">
                     <Input
                       value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+                      onChange={(event) => setNewMessage(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' && !event.shiftKey) {
+                          event.preventDefault()
+                          void sendMessage()
+                        }
+                      }}
                       placeholder="Uma palavra de fé..."
-                      className="flex-1 h-9 text-xs"
+                      className="h-9 flex-1 text-xs"
                       maxLength={200}
                       disabled={sending || !isOnline}
                     />
                     <Button
-                      onClick={sendMessage}
+                      onClick={() => void sendMessage()}
                       disabled={sending || !newMessage.trim() || !isOnline}
-                      className="h-9 w-9 p-0 flex-shrink-0"
+                      className="h-9 w-9 flex-shrink-0 p-0"
                       aria-label={isOnline ? 'Enviar mensagem' : 'Transmissão offline'}
                     >
                       <Send className="h-4 w-4" />
                     </Button>
                   </div>
-                  <p className="text-[11px] text-muted-foreground text-center">
+                  <p className="text-center text-[11px] text-muted-foreground">
                     {isAdmin ? 'Modo de moderação ativo' : 'Seja respeitoso e encorajador'}
                   </p>
                 </div>
               ) : (
-                <div className="p-3 border-t border-border text-center flex-shrink-0">
+                <div className="flex-shrink-0 border-t border-border p-3 text-center">
                   <p className="text-xs text-muted-foreground">Faça login para participar do chat</p>
                 </div>
               )}
