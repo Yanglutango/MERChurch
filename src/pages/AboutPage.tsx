@@ -84,7 +84,7 @@ const journey = [
 ]
 
 const schedule = [
-  { day: 'Domingo', time: 'Culto de Celebração • 09:00 e 18:00', icon: CalendarCheck2 },
+  { day: 'Domingo', time: 'Culto de Celebração • 09:00', icon: CalendarCheck2 },
   { day: 'Terça-feira', time: 'Culto de Adoração • 17:00', icon: Radio },
   { day: 'Quarta-feira', time: 'Culto de Palavra • 16:30', icon: BookOpen },
   { day: 'Quinta-feira', time: 'Culto de Oração • 16:30', icon: HeartHandshake },
