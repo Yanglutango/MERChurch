@@ -6,6 +6,26 @@ import { cn } from "@/lib/utils"
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const
 
+const isSafeCssColor = (value: unknown): value is string => {
+  if (typeof value !== "string") return false
+
+  const color = value.trim()
+
+  if (!color || color.includes(";") || color.includes("{") || color.includes("}")) {
+    return false
+  }
+
+  const cssColorPatterns = [
+    /^#[0-9a-fA-F]{3,8}$/,
+    /^rgba?\(\s*(?:\d{1,3}\s*,\s*){2}\d{1,3}\s*(?:,\s*(?:0|0?\.\d+|1)\s*)?\)$/,
+    /^hsla?\(\s*(?:\d{1,3}\s*,\s*\d{1,3}%\s*,\s*\d{1,3}%\s*(?:,\s*(?:0|0?\.\d+|1)\s*)?)\)$/,
+    /^[a-zA-Z]+$/,
+    /^var\(--[A-Za-z0-9_-]+\)$/,
+  ]
+
+  return cssColorPatterns.some((pattern) => pattern.test(color))
+}
+
 export type ChartConfig = {
   [k in string]: {
     label?: React.ReactNode
@@ -74,28 +94,33 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
     return null
   }
 
-  return (
-    <style
-      dangerouslySetInnerHTML={{
-        __html: Object.entries(THEMES)
-          .map(
-            ([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
-${colorConfig
-  .map(([key, itemConfig]) => {
-    const color =
-      itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
-      itemConfig.color
-    return color ? `  --color-${key}: ${color};` : null
-  })
-  .join("\n")}
-}
-`
-          )
-          .join("\n"),
-      }}
-    />
-  )
+  const css = Object.entries(THEMES)
+    .map(([theme, prefix]) => {
+      const declarations = colorConfig
+        .map(([key, itemConfig]) => {
+          const rawColor =
+            itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
+            itemConfig.color
+
+          if (!isSafeCssColor(rawColor)) {
+            return null
+          }
+
+          return `  --color-${key}: ${rawColor};`
+        })
+        .filter(Boolean)
+        .join("\n")
+
+      return declarations ? `${prefix} [data-chart=${id}] {\n${declarations}\n}` : null
+    })
+    .filter(Boolean)
+    .join("\n")
+
+  if (!css) {
+    return null
+  }
+
+  return <style>{css}</style>
 }
 
 const ChartTooltip = RechartsPrimitive.Tooltip
