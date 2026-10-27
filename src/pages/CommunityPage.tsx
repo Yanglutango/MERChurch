@@ -34,6 +34,22 @@ interface Comment {
   user: { username: string; avatar_url: string | null };
 }
 
+const isSafeImageUrl = (value: string | null | undefined) => {
+  if (!value) return false
+
+  try {
+    const parsedUrl = new URL(value)
+    const protocol = parsedUrl.protocol.toLowerCase()
+
+    if (!['http:', 'https:'].includes(protocol)) return false
+
+    const pathname = parsedUrl.pathname.toLowerCase()
+    return /\.(png|jpe?g|gif|webp|avif|bmp|ico)$/i.test(pathname)
+  } catch {
+    return false
+  }
+}
+
 // Avatar de fallback — cor única (primary) para todos os utilizadores.
 // Antes a cor mudava consoante era "eu" (navy) ou "outro" (teal), uma
 // distinção sem significado real e inconsistente com o resto da app.
@@ -202,6 +218,10 @@ const CommunityPage = () => {
       if (uploadError) throw uploadError
 
       const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(filePath)
+      if (!isSafeImageUrl(publicUrlData.publicUrl)) {
+        throw new Error('URL de imagem inválida')
+      }
+
       setImageInput(publicUrlData.publicUrl)
       toast.success('Imagem carregada')
     } catch (error) {
@@ -228,8 +248,15 @@ const CommunityPage = () => {
   }
 
   const handleCreatePost = async () => {
-    if (!newPostContent.trim() && !imageInput.trim()) {
+    const trimmedImageUrl = imageInput.trim()
+
+    if (!newPostContent.trim() && !trimmedImageUrl) {
       toast.error('Escreva algo ou adicione uma imagem para publicar')
+      return
+    }
+
+    if (trimmedImageUrl && !isSafeImageUrl(trimmedImageUrl)) {
+      toast.error('URL de imagem inválida. Use uma imagem segura em http(s).')
       return
     }
 
@@ -241,7 +268,7 @@ const CommunityPage = () => {
         .insert({
           user_id: user!.id,
           content: newPostContent.trim(),
-          image_url: imageInput.trim() || null
+          image_url: trimmedImageUrl || null
         })
         .select('*, user:user_profiles(username, avatar_url)')
         .single()
@@ -394,6 +421,8 @@ const CommunityPage = () => {
     .sort((a, b) => (b.likes_count || 0) - (a.likes_count || 0))
     .slice(0, 5)
 
+  const safePreviewImage = isSafeImageUrl(imageInput) ? imageInput : ''
+
   if (loading) return <Layout title="Comunidade"><LoadingState fullScreen message="Carregando feed..." /></Layout>
 
   return (
@@ -437,7 +466,7 @@ const CommunityPage = () => {
                 </div>
 
                 {/* Imagem — URL directa (compacta) ou upload de ficheiro, sem sobrepor os dois fluxos */}
-                {imageInput ? (
+                {safePreviewImage ? (
                   <div className="flex items-center gap-2 bg-muted/50 p-2 rounded-md border border-border">
                     {uploadingImage ? (
                       <div className="flex items-center gap-2 flex-1 py-1">
@@ -447,7 +476,7 @@ const CommunityPage = () => {
                     ) : (
                       <>
                         <img
-                          src={imageInput}
+                          src={safePreviewImage}
                           className="h-9 w-9 rounded object-cover border border-border flex-shrink-0"
                           alt="Pré-visualização"
                           onError={() => setImageInput('')}
@@ -495,7 +524,7 @@ const CommunityPage = () => {
                     >
                       <Image className="h-4 w-4 mr-1.5" strokeWidth={1.75} />Foto
                     </Button>
-                    {!imageInput && (
+                    {!safePreviewImage && (
                       <Button
                         type="button" variant="ghost" size="sm"
                         onClick={() => setShowUrlField(v => !v)}
@@ -507,7 +536,7 @@ const CommunityPage = () => {
                   </div>
                   <Button
                     onClick={handleCreatePost}
-                    disabled={publishing || (!newPostContent.trim() && !imageInput.trim())}
+                    disabled={publishing || (!newPostContent.trim() && !safePreviewImage)}
                     size="sm"
                     className="h-8 rounded-md px-4"
                   >
@@ -524,6 +553,7 @@ const CommunityPage = () => {
               ) : (
                 filteredPosts.map(post => {
                   const isOwnPost = user?.id === post.user_id
+                  const postImage = isSafeImageUrl(post.image_url) ? post.image_url : null
                   return (
                     <Card key={post.id} className="p-4 border rounded-lg space-y-3.5">
                       <div className="flex items-center justify-between gap-3">
@@ -558,10 +588,10 @@ const CommunityPage = () => {
 
                       <div className="space-y-3">
                         <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">{post.content}</p>
-                        {post.image_url && (
+                        {postImage && (
                           <div className="rounded-md overflow-hidden border border-border bg-muted/30 max-h-96 flex items-center justify-center">
                             <img
-                              src={post.image_url}
+                              src={postImage}
                               alt="Publicação da comunidade"
                               className="w-full h-full object-cover max-h-96"
                               onError={(e) => { (e.target as HTMLElement).style.display = 'none' }}
