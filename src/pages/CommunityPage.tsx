@@ -34,21 +34,30 @@ interface Comment {
   user: { username: string; avatar_url: string | null };
 }
 
-const isSafeImageUrl = (value: string | null | undefined) => {
-  if (!value) return false
+const sanitizeImageUrl = (value: string | null | undefined) => {
+  if (!value) return ''
+
+  const trimmedValue = value.trim()
+  if (!trimmedValue) return ''
 
   try {
-    const parsedUrl = new URL(value)
+    const parsedUrl = new URL(trimmedValue)
     const protocol = parsedUrl.protocol.toLowerCase()
 
-    if (!['http:', 'https:'].includes(protocol)) return false
+    if (!['http:', 'https:'].includes(protocol)) return ''
 
     const pathname = parsedUrl.pathname.toLowerCase()
-    return /\.(png|jpe?g|gif|webp|avif|bmp|ico)$/i.test(pathname)
+    if (!/\.(png|jpe?g|gif|webp|avif|bmp|ico)(?:[?#].*)?$/i.test(pathname)) {
+      return ''
+    }
+
+    return parsedUrl.toString()
   } catch {
-    return false
+    return ''
   }
 }
+
+const isSafeImageUrl = (value: string | null | undefined) => !!sanitizeImageUrl(value)
 
 // Avatar de fallback — cor única (primary) para todos os utilizadores.
 // Antes a cor mudava consoante era "eu" (navy) ou "outro" (teal), uma
@@ -218,11 +227,12 @@ const CommunityPage = () => {
       if (uploadError) throw uploadError
 
       const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(filePath)
-      if (!isSafeImageUrl(publicUrlData.publicUrl)) {
+      const safeUrl = sanitizeImageUrl(publicUrlData.publicUrl)
+      if (!safeUrl) {
         throw new Error('URL de imagem inválida')
       }
 
-      setImageInput(publicUrlData.publicUrl)
+      setImageInput(safeUrl)
       toast.success('Imagem carregada')
     } catch (error) {
       console.error('Error uploading image:', error)
@@ -248,14 +258,14 @@ const CommunityPage = () => {
   }
 
   const handleCreatePost = async () => {
-    const trimmedImageUrl = imageInput.trim()
+    const trimmedImageUrl = sanitizeImageUrl(imageInput)
 
     if (!newPostContent.trim() && !trimmedImageUrl) {
       toast.error('Escreva algo ou adicione uma imagem para publicar')
       return
     }
 
-    if (trimmedImageUrl && !isSafeImageUrl(trimmedImageUrl)) {
+    if (imageInput.trim() && !trimmedImageUrl) {
       toast.error('URL de imagem inválida. Use uma imagem segura em http(s).')
       return
     }
@@ -421,7 +431,7 @@ const CommunityPage = () => {
     .sort((a, b) => (b.likes_count || 0) - (a.likes_count || 0))
     .slice(0, 5)
 
-  const safePreviewImage = isSafeImageUrl(imageInput) ? imageInput : ''
+  const safePreviewImage = sanitizeImageUrl(imageInput)
 
   if (loading) return <Layout title="Comunidade"><LoadingState fullScreen message="Carregando feed..." /></Layout>
 
@@ -553,7 +563,7 @@ const CommunityPage = () => {
               ) : (
                 filteredPosts.map(post => {
                   const isOwnPost = user?.id === post.user_id
-                  const postImage = isSafeImageUrl(post.image_url) ? post.image_url : null
+                  const postImage = sanitizeImageUrl(post.image_url)
                   return (
                     <Card key={post.id} className="p-4 border rounded-lg space-y-3.5">
                       <div className="flex items-center justify-between gap-3">
