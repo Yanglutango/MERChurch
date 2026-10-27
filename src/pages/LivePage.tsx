@@ -59,14 +59,56 @@ const formatSessionTime = (
 
 const isYouTubeUrl = (url: string) => {
   if (!url) return false
-  return url.includes('youtube.com') || url.includes('youtu.be')
+
+  try {
+    const parsedUrl = new URL(url)
+    const hostname = parsedUrl.hostname.toLowerCase().replace(/^www\./, '')
+
+    return (
+      hostname === 'youtube.com' ||
+      hostname === 'm.youtube.com' ||
+      hostname.endsWith('.youtube.com') ||
+      hostname === 'youtu.be' ||
+      hostname.endsWith('.youtu.be') ||
+      hostname === 'youtube-nocookie.com' ||
+      hostname.endsWith('.youtube-nocookie.com')
+    )
+  } catch {
+    return false
+  }
 }
 
 const getYouTubeId = (url: string) => {
   if (!url) return null
 
-  const match = url.match(/(?:v=|youtu\.be\/|embed\/)([^&\s?]+)/)
-  return match ? match[1] : null
+  try {
+    const parsedUrl = new URL(url)
+    const hostname = parsedUrl.hostname.toLowerCase().replace(/^www\./, '')
+
+    if (hostname === 'youtu.be' || hostname.endsWith('.youtu.be')) {
+      const pathParts = parsedUrl.pathname.split('/').filter(Boolean)
+      return pathParts[0] || null
+    }
+
+    if (
+      hostname === 'youtube.com' ||
+      hostname === 'm.youtube.com' ||
+      hostname.endsWith('.youtube.com') ||
+      hostname === 'youtube-nocookie.com' ||
+      hostname.endsWith('.youtube-nocookie.com')
+    ) {
+      const videoId = parsedUrl.searchParams.get('v')
+      if (videoId) return videoId
+
+      const pathParts = parsedUrl.pathname.split('/').filter(Boolean)
+      if (pathParts[0] === 'embed' && pathParts[1]) return pathParts[1]
+      if (pathParts[0] === 'shorts' && pathParts[1]) return pathParts[1]
+    }
+
+    return null
+  } catch {
+    return null
+  }
 }
 
 const LivePage = () => {
@@ -677,7 +719,7 @@ const LivePage = () => {
                 {showScrollButton && (
                   <button
                     onClick={() => scrollToBottom('smooth')}
-                    className="absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm transition-colors hover:text-foreground"
+                    className="absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground"
                     aria-label="Ir para o final"
                   >
                     <ArrowDown className="h-4 w-4" />
