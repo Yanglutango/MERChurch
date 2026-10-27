@@ -60,11 +60,66 @@ const LEVEL_LABELS: Record<string, string> = {
   beginner: 'Básico', intermediate: 'Intermediário', advanced: 'Avançado',
 }
 
+const isYouTubeVideoUrl = (url: string) => {
+  if (!url) return false
+
+  try {
+    const parsedUrl = new URL(url)
+    const hostname = parsedUrl.hostname.toLowerCase().replace(/^www\./, '')
+
+    return (
+      hostname === 'youtube.com' ||
+      hostname === 'm.youtube.com' ||
+      hostname.endsWith('.youtube.com') ||
+      hostname === 'youtu.be' ||
+      hostname.endsWith('.youtu.be') ||
+      hostname === 'youtube-nocookie.com' ||
+      hostname.endsWith('.youtube-nocookie.com')
+    )
+  } catch {
+    return false
+  }
+}
+
+const getYouTubeEmbedUrl = (url: string) => {
+  if (!url) return null
+
+  try {
+    const parsedUrl = new URL(url)
+    const hostname = parsedUrl.hostname.toLowerCase().replace(/^www\./, '')
+
+    if (hostname === 'youtu.be' || hostname.endsWith('.youtu.be')) {
+      const pathParts = parsedUrl.pathname.split('/').filter(Boolean)
+      const videoId = pathParts[0]
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : null
+    }
+
+    if (
+      hostname === 'youtube.com' ||
+      hostname === 'm.youtube.com' ||
+      hostname.endsWith('.youtube.com') ||
+      hostname === 'youtube-nocookie.com' ||
+      hostname.endsWith('.youtube-nocookie.com')
+    ) {
+      const videoId = parsedUrl.searchParams.get('v')
+      if (videoId) return `https://www.youtube.com/embed/${videoId}`
+
+      const pathParts = parsedUrl.pathname.split('/').filter(Boolean)
+      if (pathParts[0] === 'embed' && pathParts[1]) return `https://www.youtube.com/embed/${pathParts[1]}`
+      if (pathParts[0] === 'shorts' && pathParts[1]) return `https://www.youtube.com/embed/${pathParts[1]}`
+    }
+
+    return null
+  } catch {
+    return null
+  }
+}
+
 const CourseDetailPage = () => {
   const { courseId } = useParams<{ courseId: string }>()
   const navigate = useNavigate()
   const { user } = useAuth()
-  
+
   const [course, setCourse] = useState<CourseDetail | null>(null)
   const [lessons, setLessons] = useState<Lesson[]>([])
   const [completedLessons, setCompletedLessons] = useState<string[]>([])
@@ -72,7 +127,7 @@ const CourseDetailPage = () => {
   const [loading, setLoading] = useState(true)
   const [isEnrolled, setIsEnrolled] = useState(false)
   const [enrolling, setEnrolling] = useState(false)
-  
+
   // ✅ CORREÇÃO #21: Adicionar estado para discussões, certificados e stats
   const [discussions, setDiscussions] = useState<CourseDiscussion[]>([])
   const [certificate, setCertificate] = useState<CourseCertificate | null>(null)
@@ -92,7 +147,7 @@ const CourseDetailPage = () => {
   // ✅ CORREÇÃO #22: Combinar todas as queries em uma chamada
   const loadCourse = useCallback(async () => {
     if (!courseId || !user?.id) return
-    
+
     setLoading(true)
     try {
       const [courseRes, lessonsRes, enrollRes, progressRes, completedRes, discussionsRes, certificateRes, statsRes] = await Promise.all([
@@ -119,7 +174,7 @@ const CourseDetailPage = () => {
       setDiscussions(discussionsRes.data || [])
       setCertificate(certificateRes.data || null)
       setUserStats(statsRes.data || null)
-      
+
       if (progressRes.data) {
         setCourseProgress(progressRes.data)
       }
@@ -215,7 +270,7 @@ const CourseDetailPage = () => {
 
       // Gerar certificado
       const verificationCode = `CERT-${courseId.substring(0, 8).toUpperCase()}-${user.id.substring(0, 8).toUpperCase()}`
-      
+
       const { data: cert, error: certError } = await supabase.from('course_certificates').insert({
         user_id: user.id,
         course_id: courseId,
@@ -284,7 +339,7 @@ const CourseDetailPage = () => {
   // ✅ CORREÇÃO #28: Download certificado
   const downloadCertificate = useCallback(async () => {
     if (!certificate) return
-    
+
     try {
       // Aqui você geraria um PDF do certificado
       // Por enquanto, apenas mostramos a mensagem
@@ -305,10 +360,10 @@ const CourseDetailPage = () => {
   if (!course) {
     return (
       <Layout title="Curso">
-        <EmptyState 
-          icon={GraduationCap} 
-          title="Curso não encontrado" 
-          description="Este curso não existe ou foi removido." 
+        <EmptyState
+          icon={GraduationCap}
+          title="Curso não encontrado"
+          description="Este curso não existe ou foi removido."
           action={<Button onClick={() => navigate('/academy')}>Voltar</Button>}
         />
       </Layout>
@@ -359,9 +414,9 @@ const CourseDetailPage = () => {
                     <span className="font-bold text-foreground">{courseStats.progressPercent}%</span>
                   </div>
                   <div className="h-2 bg-muted rounded-full overflow-hidden">
-                    <div 
+                    <div
                       className="h-full bg-gradient-to-r from-[#0A2E4A] to-[#4A90A4] rounded-full transition-all duration-500"
-                      style={{ width: `${courseStats.progressPercent}%` }} 
+                      style={{ width: `${courseStats.progressPercent}%` }}
                     />
                   </div>
                   <p className="text-[10px] text-muted-foreground mt-1">
@@ -434,7 +489,7 @@ const CourseDetailPage = () => {
                       key={lesson.id}
                       onClick={() => canAccess && setSelectedLesson(lesson)}
                       disabled={!canAccess}
-                      className={`w-full flex items-center gap-3 p-3 text-left transition-colors ${isSelected ? 'bg-[#0A2E4A]/8 dark:bg-[#4A90A4]/10' : canAccess ? 'hover:bg-muted/50' : 'opacity-50'}`}
+                      className={`w-full flex items-center gap-3 p-3 text-left transition-colors ${isSelected ? 'bg-[#0A2E4A]/8 dark:bg-[#4A90A4]/10' : canAccess ? 'hover:bg-muted/50' : 'opacity-60'}`}
                     >
                       <div className="flex-shrink-0">
                         {isCompleted ? (
@@ -494,9 +549,9 @@ const CourseDetailPage = () => {
                 {/* Video */}
                 {selectedLesson.video_url && (
                   <div className="aspect-video bg-black">
-                    {selectedLesson.video_url.includes('youtube.com') || selectedLesson.video_url.includes('youtu.be') ? (
+                    {isYouTubeVideoUrl(selectedLesson.video_url) ? (
                       <iframe
-                        src={selectedLesson.video_url.replace('watch?v=', 'embed/')}
+                        src={getYouTubeEmbedUrl(selectedLesson.video_url) ?? undefined}
                         className="w-full h-full"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
@@ -522,7 +577,7 @@ const CourseDetailPage = () => {
                     <Button
                       size="sm"
                       onClick={() => toggleLessonComplete(selectedLesson.id)}
-                      className={`flex-shrink-0 h-8 px-3 text-xs font-bold ${completedLessons.includes(selectedLesson.id) ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-muted hover:bg-muted-foreground/20'}`}
+                      className={`flex-shrink-0 h-8 px-3 text-xs font-bold ${completedLessons.includes(selectedLesson.id) ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-muted hover:bg-muted/80 text-foreground'}`}
                     >
                       {completedLessons.includes(selectedLesson.id) ? (
                         <><CheckSquare className="h-3.5 w-3.5 mr-1.5" />Concluída</>
@@ -560,8 +615,8 @@ const CourseDetailPage = () => {
                         <p className="text-sm font-bold text-foreground">Você chegou ao fim do curso!</p>
                         <p className="text-xs text-muted-foreground">Parabéns por completar "{course.title}"</p>
                         {certificate && (
-                          <Button 
-                            size="sm" 
+                          <Button
+                            size="sm"
                             onClick={downloadCertificate}
                             className="bg-green-600 hover:bg-green-700 text-white font-bold"
                           >
@@ -589,7 +644,7 @@ const CourseDetailPage = () => {
                 <div className="p-4 space-y-4 max-h-[500px] overflow-y-auto">
                   {/* New discussion form */}
                   {!discussionOpen ? (
-                    <Button 
+                    <Button
                       onClick={() => setDiscussionOpen(true)}
                       variant="outline"
                       className="w-full"
