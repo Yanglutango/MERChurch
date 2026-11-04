@@ -98,6 +98,21 @@ const principles = [
   { title: 'Valores', text: 'Fé, unidade, humildade, serviço e compromisso com a obra de Deus.', icon: ShieldCheck },
 ]
 
+const leadership = [
+  { name: 'Nome do Pastor', role: 'Pastor Principal', description: 'Lidera a visão espiritual da congregação e o cuidado pastoral da igreja.', image: '' },
+  { name: 'Nome do Pastor', role: 'Pastor', description: 'Apoia o ensino, o acompanhamento espiritual e o cuidado dos membros.', image: '' },
+  { name: 'Nome do Líder', role: 'Presidente dos Jovens', description: 'Coordena o ministério de jovens, as suas actividades e o seu crescimento na fé.', image: '' },
+  { name: 'Nome do Líder', role: 'Presidente das Mulheres', description: 'Coordena o ministério de mulheres e promove comunhão, oração e serviço.', image: '' },
+]
+
+const getInitials = (name: string) =>
+  name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('')
+
 export default function AboutPage() {
   return (
     <Layout title="Sobre">
@@ -271,6 +286,33 @@ export default function AboutPage() {
                 </div>
               ))}
             </div>
+          </section>
+
+          <section className="mt-20 rounded-[2rem] bg-[linear-gradient(135deg,#0A2E4A_0%,#123d5c_45%,#4A90A4_100%)]">
+              <section className="mt-20">
+            <div className="mb-10 max-w-2xl">
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">Liderança</p>
+              <h2 className="mt-4 text-3xl font-black tracking-[-0.03em] text-foreground md:text-4xl">
+                Servos que cuidam, ensinam e caminham connosco.
+              </h2>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+              {leadership.map(({ name, role, description }) => (
+                <div
+                  key={role}
+                  className="rounded-3xl border border-border bg-card p-6 shadow-[0_14px_35px_rgba(15,23,42,0.03)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_18px_42px_rgba(10,46,74,0.05)]"
+                >
+                  <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/15 text-lg font-bold text-primary">
+                    {getInitials(name)}
+                  </div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">{role}</p>
+                  <h3 className="mt-2 text-xl font-bold text-foreground">{name}</h3>
+                  <p className="mt-3 text-base leading-7 text-muted-foreground">{description}</p>
+                </div>
+              ))}
+            </div>
+          </section>
           </section>
 
           <section className="mt-20 rounded-[2rem] bg-[linear-gradient(135deg,#0A2E4A_0%,#123d5c_45%,#4A90A4_100%)] px-6 py-8 text-primary-foreground md:px-8 lg:px-10">
