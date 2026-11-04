@@ -99,10 +99,11 @@ const principles = [
 ]
 
 const leadership = [
-  { name: 'Nome do Pastor', role: 'Pastor Principal', description: 'Lidera a visão espiritual da congregação e o cuidado pastoral da igreja.', image: '' },
-  { name: 'Nome do Pastor', role: 'Pastor', description: 'Apoia o ensino, o acompanhamento espiritual e o cuidado dos membros.', image: '' },
-  { name: 'Nome do Líder', role: 'Presidente dos Jovens', description: 'Coordena o ministério de jovens, as suas actividades e o seu crescimento na fé.', image: '' },
-  { name: 'Nome do Líder', role: 'Presidente das Mulheres', description: 'Coordena o ministério de mulheres e promove comunhão, oração e serviço.', image: '' },
+  { name: 'Garcia Doki Lutango', role: 'Pastor Principal', description: 'Lidera a visão espiritual da congregação e o cuidado pastoral da igreja.', image: '' },
+  { name: 'Nzinga Manuel Lutango', role: 'Pastora', description: 'Apoia o ensino, o acompanhamento espiritual e o cuidado dos membros.', image: '' },
+  { name: 'Afonso Nsiya Makulu', role: 'Pastor', description: 'Apoia o ensino, o acompanhamento espiritual e o cuidado dos membros.', image: '' },
+  { name: 'Gideão Samuel', role: 'Presidente dos Jovens', description: 'Coordena o ministério de jovens, as suas actividades e o seu crescimento na fé.', image: '' },
+  { name: 'Albertina Kambinda', role: 'Presidente das Mulheres', description: 'Coordena o ministério de mulheres e promove comunhão, oração e serviço.', image: '' },
 ]
 
 const getInitials = (name: string) =>
@@ -288,7 +289,6 @@ export default function AboutPage() {
             </div>
           </section>
 
-          <section className="mt-20 rounded-[2rem] bg-[linear-gradient(135deg,#0A2E4A_0%,#123d5c_45%,#4A90A4_100%)]">
               <section className="mt-20">
             <div className="mb-10 max-w-2xl">
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">Liderança</p>
@@ -312,7 +312,6 @@ export default function AboutPage() {
                 </div>
               ))}
             </div>
-          </section>
           </section>
 
           <section className="mt-20 rounded-[2rem] bg-[linear-gradient(135deg,#0A2E4A_0%,#123d5c_45%,#4A90A4_100%)] px-6 py-8 text-primary-foreground md:px-8 lg:px-10">
