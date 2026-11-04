@@ -302,11 +302,12 @@ export default function AboutPage() {
               {leadership.map(({ name, role, description, image }) => (
                 <div
                   key={role}
-                  className="rounded-4xl border border-border bg-card p-6 shadow-[0_14px_35px_rgba(15,23,42,0.03)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_18px_42px_rgba(10,46,74,0.05)]"
+                  className="rounded-3xl border border-border bg-card p-6 shadow-[0_14px_35px_rgba(15,23,42,0.03)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_18px_42px_rgba(10,46,74,0.05)]"
                 >
                   <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/15 text-lg font-bold text-primary">
                     {getInitials(name)}
                   </div>
+                  <img src=""></img>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">{role}</p>
                   <h3 className="mt-2 text-xl font-bold text-foreground">{name}</h3>
                   <p className="mt-3 text-base leading-7 text-muted-foreground">{description}</p>
