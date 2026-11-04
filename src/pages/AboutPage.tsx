@@ -104,6 +104,7 @@ const leadership = [
   { name: 'Afonso Nsiya Makulu', role: 'Pastor', description: 'Apoia o ensino, o acompanhamento espiritual e o cuidado dos membros.', image: '' },
   { name: 'Gideão Samuel', role: 'Presidente dos Jovens', description: 'Coordena o ministério de jovens, as suas actividades e o seu crescimento na fé.', image: '' },
   { name: 'Albertina Kambinda', role: 'Presidente das Mulheres', description: 'Coordena o ministério de mulheres e promove comunhão, oração e serviço.', image: '' },
+  { name: 'Mireille Baseya', role: 'Presidente da Escola Bíblica Dominical', description: 'Coordena a Escola Dominical e promove o ensino e fundamentação de crianças e adolescentes.', image: '' },
 ]
 
 const getInitials = (name: string) =>
@@ -298,10 +299,10 @@ export default function AboutPage() {
             </div>
 
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-              {leadership.map(({ name, role, description }) => (
+              {leadership.map(({ name, role, description, image }) => (
                 <div
                   key={role}
-                  className="rounded-3xl border border-border bg-card p-6 shadow-[0_14px_35px_rgba(15,23,42,0.03)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_18px_42px_rgba(10,46,74,0.05)]"
+                  className="rounded-4xl border border-border bg-card p-6 shadow-[0_14px_35px_rgba(15,23,42,0.03)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_18px_42px_rgba(10,46,74,0.05)]"
                 >
                   <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/15 text-lg font-bold text-primary">
                     {getInitials(name)}
