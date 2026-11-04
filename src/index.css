@@ -91,6 +91,35 @@
   h3 { font-weight: 600; font-size: clamp(1.1rem, 2.5vw, 1.5rem); line-height: 1.4; letter-spacing: -0.02em; }
   h4, h5, h6 { font-weight: 600; line-height: 1.5; letter-spacing: -0.015em; }
   p { line-height: 1.7; }
+
+  /* Shared form-control foundation: consistent, accessible fields across the app. */
+  input:not([type='checkbox']):not([type='radio']):not([type='file']),
+  textarea,
+  select {
+    border-color: hsl(var(--border));
+    border-radius: 0.75rem;
+    transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+  }
+
+  input:not([type='checkbox']):not([type='radio']):not([type='file']):focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline: none;
+    border-color: hsl(var(--ring));
+    box-shadow: 0 0 0 3px hsl(var(--ring) / 0.18);
+  }
+
+  input:not([type='checkbox']):not([type='radio']):not([type='file']):disabled,
+  textarea:disabled,
+  select:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: hsl(var(--muted-foreground) / 0.75);
+  }
 }
 
 @layer components {
